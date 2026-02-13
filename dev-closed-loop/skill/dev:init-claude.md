@@ -10,8 +10,8 @@
 ## 模板來源（由 setup.sh 安裝時自動替換路徑）
 
 ```
-模板檔案：{{REPO_PATH}}/開發設計閉環/CLAUDE_TEMPLATE.md
-文檔目錄：{{REPO_PATH}}/開發設計閉環/.claudedocs/
+模板檔案：{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md
+文檔目錄：{{REPO_PATH}}/dev-closed-loop/.claudedocs/
 ```
 
 ---
@@ -52,7 +52,7 @@
 
 1. 確認當前工作目錄是一個合理的專案目錄（不是 home 目錄、不是根目錄）
 2. 檢查模板來源是否存在：
-   - 用 Read 讀取 `{{REPO_PATH}}/開發設計閉環/CLAUDE_TEMPLATE.md`
+   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md`
    - 若讀取失敗 → 告知用戶模板路徑不存在，終止
 3. 檢查當前目錄是否已有 `CLAUDE.md`：
    - 若已存在 → 進入「衝突處理」流程（見下方）
@@ -180,7 +180,7 @@
 
 ### Step 4：模板填充與生成
 
-1. 用 Read 工具讀取模板：`{{REPO_PATH}}/開發設計閉環/CLAUDE_TEMPLATE.md`
+1. 用 Read 工具讀取模板：`{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md`
 2. 將模板內容中的 placeholder 替換為實際值：
 
 | Placeholder | 替換為 |
@@ -194,7 +194,7 @@
 3. 用 Write 工具將替換後的內容寫入當前目錄的 `CLAUDE.md`
 4. 用 Bash 複製 .claudedocs/ 目錄到當前專案：
    ```bash
-   cp -r "{{REPO_PATH}}/開發設計閉環/.claudedocs/" "./.claudedocs/"
+   cp -r "{{REPO_PATH}}/dev-closed-loop/.claudedocs/" "./.claudedocs/"
    ```
 
 **若用戶選擇「合併」模式**：

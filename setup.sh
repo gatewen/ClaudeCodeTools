@@ -7,7 +7,7 @@ set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 COMMANDS_DIR="$HOME/.claude/commands"
-SKILL_SOURCE="$REPO_DIR/開發設計閉環/skill/dev:init-claude.md"
+SKILL_SOURCE="$REPO_DIR/dev-closed-loop/skill/dev:init-claude.md"
 SKILL_TARGET="$COMMANDS_DIR/dev:init-claude.md"
 
 echo "================================================"
@@ -111,10 +111,10 @@ else
 fi
 
 # 確認模板檔案可達
-if [ -f "$REPO_DIR/開發設計閉環/CLAUDE_TEMPLATE.md" ]; then
+if [ -f "$REPO_DIR/dev-closed-loop/CLAUDE_TEMPLATE.md" ]; then
     echo "✅ 模板檔案存在"
 else
-    echo "❌ 模板檔案不存在：$REPO_DIR/開發設計閉環/CLAUDE_TEMPLATE.md"
+    echo "❌ 模板檔案不存在：$REPO_DIR/dev-closed-loop/CLAUDE_TEMPLATE.md"
     exit 1
 fi
 
@@ -129,7 +129,7 @@ EXPECTED_FILES=(
     "規範/產出物格式.md"
     "記錄/問題追蹤.md"
 )
-DOCS_DIR="$REPO_DIR/開發設計閉環/.claudedocs"
+DOCS_DIR="$REPO_DIR/dev-closed-loop/.claudedocs"
 DOCS_OK=true
 for f in "${EXPECTED_FILES[@]}"; do
     if [ ! -f "$DOCS_DIR/$f" ]; then
