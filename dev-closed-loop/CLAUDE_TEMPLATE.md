@@ -43,6 +43,73 @@
 每個 Phase 調用指定的 Agent 來執行。Agent 有自己的預設行為，但在閉環中必須服從以下約束。
 約束是硬性規則，Agent 的預設行為不得覆蓋。
 
+### 閉環可見性規則（所有 Phase 通用）
+
+閉環執行時，用戶必須能清楚知道**目前在哪個 Phase、誰在處理、進度如何**。以下規則強制執行。
+
+**1. 進度追蹤（TaskCreate）**
+
+觸發閉環時，立即用 TaskCreate 建立 5 個任務，讓用戶在狀態列看到整體進度：
+
+```
+TaskCreate: "Phase 1：架構師 — 設計規格"        activeForm: "📐 設計中..."
+TaskCreate: "Phase 2：程序設計師 — 實作 + 優化"   activeForm: "💻 實作中..."
+TaskCreate: "Phase 3：檢核師 — 檢核報告"         activeForm: "🔍 檢核中..."
+TaskCreate: "Phase 4：測試師 — 測試報告"         activeForm: "🧪 測試中..."
+TaskCreate: "Phase 5：自証師 — 自証結果"         activeForm: "✅ 自証中..."
+```
+
+進入每個 Phase 時，用 TaskUpdate 標記 `in_progress`。
+完成時標記 `completed`。斷點回退時在 description 補充回退原因。
+
+**2. Phase 進出標記**
+
+進入任何 Phase 時，輸出：
+
+```
+═══════════════════════════════════════
+📐 Phase 1：架構師 | 開始
+  目標：產出設計規格
+═══════════════════════════════════════
+```
+
+離開任何 Phase 時，輸出：
+
+```
+═══════════════════════════════════════
+📐 Phase 1：架構師 | 完成 ✅
+  產出：設計規格（BC-1~BC-3, EH-1~EH-2）
+═══════════════════════════════════════
+```
+
+若 Phase 失敗或觸發斷點：
+
+```
+═══════════════════════════════════════
+🔍 Phase 3：檢核師 | ⚠️ 斷點 A 觸發
+  原因：R-1 (high) 未修正
+  下一步：回到 Phase 2 修正
+═══════════════════════════════════════
+```
+
+**3. Agent 調用宣告**
+
+每次調用 Agent 時，輸出一行宣告：
+
+```
+→ 調用 Skill: sc:design（需求明確，直接做技術設計）
+→ 調用 Task agent: code-simplifier（強制程式碼優化）
+→ 調用 Task agent: security-engineer + code-reviewer（平行執行檢核）
+```
+
+Task agent 完成時，輸出結果摘要：
+
+```
+← code-simplifier 完成：優化了 3 個函式，無功能行為變更
+← security-engineer 完成：無安全問題
+← code-reviewer 完成：發現 2 個問題（R-1 high, R-2 medium）
+```
+
 ### Phase 1：架構師 📐
 
 **調用方式（擇一）**：
