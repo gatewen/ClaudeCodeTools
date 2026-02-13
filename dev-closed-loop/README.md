@@ -14,7 +14,7 @@
 |------|------|
 | `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含產出物格式、自証檢查表、Agent 調度規則） |
 | `.claudedocs/` | 補充文檔（8 檔），給人類閱讀 |
-| `skill/dev:init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/`） |
+| `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
 
 ### 設計歷史（了解這套方法怎麼來的）
 

@@ -7,8 +7,8 @@ set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 COMMANDS_DIR="$HOME/.claude/commands"
-SKILL_SOURCE="$REPO_DIR/dev-closed-loop/skill/dev:init-claude.md"
-SKILL_TARGET="$COMMANDS_DIR/dev:init-claude.md"
+SKILL_SOURCE="$REPO_DIR/dev-closed-loop/skill/init-claude.md"
+SKILL_TARGET="$COMMANDS_DIR/dev/init-claude.md"
 
 echo "================================================"
 echo "  AI-ClaudeCode 安裝腳本"
@@ -33,6 +33,9 @@ if [ ! -d "$COMMANDS_DIR" ]; then
     echo "⚠️  ~/.claude/commands/ 目錄不存在，建立中..."
     mkdir -p "$COMMANDS_DIR"
 fi
+
+# 確認部署子目錄存在
+mkdir -p "$COMMANDS_DIR/dev"
 
 # --------------------------------------------------
 # 2. 檢查依賴
@@ -85,7 +88,7 @@ echo "--- 部署 Skill ---"
 # 讀取 Skill 源碼，替換 {{REPO_PATH}} 為實際路徑，寫入目標
 sed "s|{{REPO_PATH}}|$REPO_DIR|g" "$SKILL_SOURCE" > "$SKILL_TARGET"
 
-echo "✅ dev:init-claude.md 已部署到 $SKILL_TARGET"
+echo "✅ init-claude.md 已部署到 $SKILL_TARGET"
 
 # --------------------------------------------------
 # 4. 驗證

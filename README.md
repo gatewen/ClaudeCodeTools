@@ -44,7 +44,7 @@ AI-ClaudeCode/
     ├── CLAUDE_TEMPLATE.md          ← 閉環模板（核心）
     ├── .claudedocs/                ← 補充文檔（8 檔）
     ├── skill/
-    │   └── dev:init-claude.md      ← Skill 源碼
+    │   └── init-claude.md           ← Skill 源碼
     ├── design/                     ← 設計歷史
     └── README.md                   ← 閉環說明
 ```
