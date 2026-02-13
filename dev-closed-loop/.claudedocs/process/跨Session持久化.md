@@ -38,8 +38,12 @@
 │       ├── status.md
 │       ├── design-spec.md
 │       └── self-verify.md
-├── interfaces/                   # （v2 預留：介面契約 IF-x）
-└── changes/                      # （v2 預留：變更請求 CR-x）
+├── interfaces/
+│   ├── IF-1.md                   # 介面契約：[名稱]
+│   └── IF-2.md                   # 介面契約：[名稱]
+└── changes/
+    ├── CR-1.md                   # 變更請求：[摘要]
+    └── CR-2.md                   # 變更請求：[摘要]
 ```
 
 ### 各檔案說明
@@ -50,8 +54,8 @@
 | `modules/{name}/status.md` | 單一模組的閉環狀態和歷史 | 每次 Phase 轉換時更新 | 進入該模組閉環時讀取 |
 | `modules/{name}/design-spec.md` | Phase 1 的設計規格 | Phase 1 完成時寫入 | Phase 2-5 引用、依賴模組讀取 |
 | `modules/{name}/self-verify.md` | Phase 5 的自証結果 | Phase 5 完成時寫入 | 依賴模組確認前置模組已通過 |
-| `interfaces/` | v2 預留，存放介面契約 | — | — |
-| `changes/` | v2 預留，存放變更請求 | — | — |
+| `interfaces/IF-{n}.md` | 跨模組公開 API 的介面契約 | Phase 1 定義跨模組 API 時寫入 | 消費模組的 Phase 1 引用、Phase 5 驗證 |
+| `changes/CR-{n}.md` | 介面變更的連鎖影響記錄 | 模組修改了 IF-x 介面時建立 | 受影響模組閉環恢復時讀取 |
 
 ---
 
@@ -170,9 +174,9 @@
 
 ---
 
-## v2 預留：interfaces/ 和 changes/
+## 介面契約與變更請求
 
-`interfaces/` 目錄將在 v2 存放介面契約（IF-x 編號），定義模組間的呼叫介面。
-`changes/` 目錄將在 v2 存放變更請求（CR-x 編號），記錄跨模組的連鎖變更。
+v2 已定義 `interfaces/` 和 `changes/` 的檔案格式和管理規則。
 
-v1 階段這兩個目錄保持為空，不需要建立任何檔案。
+- `interfaces/IF-{n}.md`：跨模組公開 API 的介面契約，詳見[介面契約與變更管理](介面契約與變更管理.md)
+- `changes/CR-{n}.md`：介面變更的連鎖影響記錄，詳見[介面契約與變更管理](介面契約與變更管理.md)

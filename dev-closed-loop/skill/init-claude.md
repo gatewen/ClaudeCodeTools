@@ -220,6 +220,7 @@
    - `.claudedocs/standards/產出物格式.md`
    - `.claudedocs/records/問題追蹤.md`
    - `.claudedocs/process/跨Session持久化.md`
+   - `.claudedocs/process/介面契約與變更管理.md`
 
 3. **結果報告**：向用戶輸出完成摘要：
 
@@ -228,7 +229,7 @@
 
 生成的檔案：
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
-- .claudedocs/（9 份補充文檔，給人類閱讀）
+- .claudedocs/（10 份補充文檔，給人類閱讀）
 
 專案配置：
 - 語言：[語言]
