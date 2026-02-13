@@ -192,10 +192,10 @@
 | `{{BUILD_COMMAND}}` | 確認後的建置指令 |
 
 3. 用 Write 工具將替換後的內容寫入當前目錄的 `CLAUDE.md`
-4. 用 Bash 複製 .claudedocs/ 目錄到當前專案：
-   ```bash
-   cp -r "{{REPO_PATH}}/dev-closed-loop/.claudedocs/" "./.claudedocs/"
-   ```
+4. 複製 .claudedocs/ 目錄到當前專案：
+   - 用 Glob 列出 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/` 下所有 `.md` 檔案
+   - 用 Read 逐一讀取每個檔案內容
+   - 用 Write 將每個檔案寫入對應的 `.claudedocs/` 路徑（保持子目錄結構）
 
 **若用戶選擇「合併」模式**：
 - 先讀取現有的 CLAUDE.md 內容
@@ -227,7 +227,7 @@
 
 生成的檔案：
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
-- .claudedocs/（7 份補充文檔，給人類閱讀）
+- .claudedocs/（8 份補充文檔，給人類閱讀）
 
 專案配置：
 - 語言：[語言]
@@ -249,5 +249,5 @@
 - 偵測結果必須向用戶確認，**不能跳過確認步驟**
 - 每個 placeholder 都必須替換完畢，不能有殘留
 - 若模板來源路徑不存在，終止並告知，**不要嘗試從記憶中生成模板內容**
-- 複製 .claudedocs/ 時使用 `cp -r`，保持目錄結構完整
+- 複製 .claudedocs/ 時使用 Read + Write 工具逐一複製，保持目錄結構完整（不依賴平台特定的 shell 指令）
 - 若用戶取消，不做任何檔案修改

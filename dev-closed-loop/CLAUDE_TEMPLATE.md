@@ -163,7 +163,7 @@ Task agent 完成時，輸出結果摘要：
 - 標準檢核 → 調用 Skill `sc:analyze --focus quality`
 - 正式 code review → 調用 Task agent `superpowers:code-reviewer`
 - 安全面向 → 額外調用 Task agent `security-engineer`
-- 程式碼品質 → 額外調用 Task agent `code-review-optimizer`
+- 程式碼品質 → 額外調用 Task agent `superpowers:code-reviewer`
 
 **約束（Agent 必須遵守）**：
 - 必須拿 Phase 1 的設計規格跟 Phase 2 的程式碼做比對，不是只看程式碼本身
