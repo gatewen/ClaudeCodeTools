@@ -23,7 +23,7 @@
 **觸發條件**：新增函式/類別/模組、重構 ≥ 3 個函式、安全相關程式碼、用戶說「完整閉環」
 **跳過條件**：1-3 行 bug 修正、註解/設定微調、純文件更新、用戶說「快速修改」
 
-人類補充閱讀：[閉環核心理念](.claudedocs/概念/閉環核心理念.md) | [五階段閉環流程](.claudedocs/流程/五階段閉環流程.md)
+人類補充閱讀：[閉環核心理念](.claudedocs/concepts/閉環核心理念.md) | [五階段閉環流程](.claudedocs/process/五階段閉環流程.md)
 
 ### 前置需求
 
@@ -330,7 +330,7 @@
 2. 閱讀 skill 原始碼，確認沒有危險操作（如任意 bash 執行）
 3. 在非正式環境先測試再引入專案
 
-詳細的 Skills 選擇指南和推薦清單：[Agent 使用指南](.claudedocs/規範/Agent使用指南.md#外部-skills-資源)
+詳細的 Skills 選擇指南和推薦清單：[Agent 使用指南](.claudedocs/standards/Agent使用指南.md#外部-skills-資源)
 
 ---
 
@@ -341,11 +341,11 @@
 - 大功能用分支隔離，不要直接在主線改
 - commit message 帶上自証結果摘要
 - 斷點觸發回退時：先 commit 當前狀態（message 標 `[斷點X]`），再開始修正
-- 詳細規則：[Git 工作流](.claudedocs/規範/Git工作流.md)
+- 詳細規則：[Git 工作流](.claudedocs/standards/Git工作流.md)
 
 ## 問題追蹤
 
-開發中遇到的 Bug、技術踩坑、解法，都要記到 `.claudedocs/記錄/問題追蹤.md`。
+開發中遇到的 Bug、技術踩坑、解法，都要記到 `.claudedocs/records/問題追蹤.md`。
 記錄要有時間、問題描述、怎麼修的。
 
 ## 文檔管理規則
@@ -370,13 +370,13 @@ Claude 執行閉環不需要讀這些——所有必要資訊已在上方。
 
 | 順序  | 文檔                                        | 你會學到什麼              |
 | --- | ----------------------------------------- | ------------------- |
-| 1   | [閉環核心理念](.claudedocs/概念/閉環核心理念.md)        | 這套方法在幹嘛、為什麼有用       |
-| 2   | [五階段閉環流程](.claudedocs/流程/五階段閉環流程.md)      | 實際怎麼跑，每個階段做什麼       |
-| 3   | [Agent 使用指南](.claudedocs/規範/Agent使用指南.md) | 每個 Agent 的詳細說明和選擇邏輯 |
-| 4   | [產出物格式](.claudedocs/規範/產出物格式.md)          | 格式的完整說明和 ID 編號系統    |
-| 5   | [層級擴展](.claudedocs/流程/層級擴展.md)            | 從函式到模組到框架怎麼串        |
-| 6   | [Git 工作流](.claudedocs/規範/Git工作流.md)       | 閉環跟 Git 怎麼配合        |
-| 7   | [問題追蹤](.claudedocs/記錄/問題追蹤.md)            | 遇到問題怎麼記錄            |
+| 1   | [閉環核心理念](.claudedocs/concepts/閉環核心理念.md)        | 這套方法在幹嘛、為什麼有用       |
+| 2   | [五階段閉環流程](.claudedocs/process/五階段閉環流程.md)      | 實際怎麼跑，每個階段做什麼       |
+| 3   | [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | 每個 Agent 的詳細說明和選擇邏輯 |
+| 4   | [產出物格式](.claudedocs/standards/產出物格式.md)          | 格式的完整說明和 ID 編號系統    |
+| 5   | [層級擴展](.claudedocs/process/層級擴展.md)            | 從函式到模組到框架怎麼串        |
+| 6   | [Git 工作流](.claudedocs/standards/Git工作流.md)       | 閉環跟 Git 怎麼配合        |
+| 7   | [問題追蹤](.claudedocs/records/問題追蹤.md)            | 遇到問題怎麼記錄            |
 
 <!--
 使用方式：

@@ -212,13 +212,13 @@
 
 2. **.claudedocs 完整性檢查**：確認以下檔案都已複製：
    - `.claudedocs/README.md`
-   - `.claudedocs/概念/閉環核心理念.md`
-   - `.claudedocs/流程/五階段閉環流程.md`
-   - `.claudedocs/流程/層級擴展.md`
-   - `.claudedocs/規範/Agent使用指南.md`
-   - `.claudedocs/規範/Git工作流.md`
-   - `.claudedocs/規範/產出物格式.md`
-   - `.claudedocs/記錄/問題追蹤.md`
+   - `.claudedocs/concepts/閉環核心理念.md`
+   - `.claudedocs/process/五階段閉環流程.md`
+   - `.claudedocs/process/層級擴展.md`
+   - `.claudedocs/standards/Agent使用指南.md`
+   - `.claudedocs/standards/Git工作流.md`
+   - `.claudedocs/standards/產出物格式.md`
+   - `.claudedocs/records/問題追蹤.md`
 
 3. **結果報告**：向用戶輸出完成摘要：
 
@@ -237,8 +237,8 @@
 
 下一步：
 1. 開始開發時，Claude 會自動遵循五階段閉環流程
-2. 想了解閉環怎麼運作，讀 .claudedocs/概念/閉環核心理念.md
-3. 想看每個階段做什麼，讀 .claudedocs/流程/五階段閉環流程.md
+2. 想了解閉環怎麼運作，讀 .claudedocs/concepts/閉環核心理念.md
+3. 想看每個階段做什麼，讀 .claudedocs/process/五階段閉環流程.md
 ```
 
 ---

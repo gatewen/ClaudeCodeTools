@@ -121,13 +121,13 @@ fi
 # 確認 .claudedocs 完整
 EXPECTED_FILES=(
     "README.md"
-    "概念/閉環核心理念.md"
-    "流程/五階段閉環流程.md"
-    "流程/層級擴展.md"
-    "規範/Agent使用指南.md"
-    "規範/Git工作流.md"
-    "規範/產出物格式.md"
-    "記錄/問題追蹤.md"
+    "concepts/閉環核心理念.md"
+    "process/五階段閉環流程.md"
+    "process/層級擴展.md"
+    "standards/Agent使用指南.md"
+    "standards/Git工作流.md"
+    "standards/產出物格式.md"
+    "records/問題追蹤.md"
 )
 DOCS_DIR="$REPO_DIR/dev-closed-loop/.claudedocs"
 DOCS_OK=true

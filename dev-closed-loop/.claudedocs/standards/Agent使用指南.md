@@ -171,7 +171,7 @@ Phase 之間的產出物怎麼傳？
 |---------|---------|------|
 | 對話內傳遞 | sc/superpowers Skill | 自動看得到，不用特別處理 |
 | Prompt 傳遞 | Task agent | 在 Task 的 prompt 裡明確附上前面 Phase 的產出物 |
-| 檔案傳遞 | 跨 session | 把產出物寫到 `.claudedocs/記錄/` 裡，下次讀取 |
+| 檔案傳遞 | 跨 session | 把產出物寫到 `.claudedocs/records/` 裡，下次讀取 |
 
 大部分情況用「對話內傳遞」就好。需要在 prompt 裡手動傳遞的情境：
 - Phase 2→3 之間的 `code-simplifier`：帶上修改的檔案路徑和專案風格慣例
