@@ -357,6 +357,51 @@ Task agent 完成時，輸出結果摘要：
 
 ---
 
+## 跨 Session 持久化
+
+大型多模組專案（≥ 3 個模組且有跨模組依賴）通常需要多個 Session 才能完成。
+閉環狀態預設存在對話記憶中，跨 Session 會丟失。啟用持久化後，產出物寫入 `.claude-loop/` 目錄，新 Session 可從檔案恢復狀態。
+
+**觸發條件（符合任一即啟用）**：
+- 模組數 ≥ 3 且有跨模組依賴
+- 預計需多個 Session 開發
+- 用戶說「啟用持久化」
+
+### `.claude-loop/` 目錄結構
+
+```
+.claude-loop/
+├── project-state.md              # 全局狀態：模組清單、依賴圖、進度
+├── modules/
+│   └── {module-name}/
+│       ├── status.md             # 模組閉環狀態與歷史
+│       ├── design-spec.md        # Phase 1 設計規格（沿用現有格式）
+│       └── self-verify.md        # Phase 5 自証結果（沿用現有格式）
+├── interfaces/                   # （v2 預留：介面契約 IF-x）
+└── changes/                      # （v2 預留：變更請求 CR-x）
+```
+
+### 寫入時機
+
+| 事件 | 寫入檔案 |
+|------|---------|
+| Phase 1 完成 | `modules/{name}/design-spec.md` |
+| Phase 5 完成 | `modules/{name}/self-verify.md` |
+| 任何 Phase 轉換 | `modules/{name}/status.md` |
+| 模組閉環完成 | `project-state.md`（更新該模組進度） |
+
+### 讀取時機
+
+| 事件 | 讀取檔案 |
+|------|---------|
+| 新 Session 開始 | `project-state.md`（了解全局狀態） |
+| 進入模組閉環 | 依賴模組的 `design-spec.md` 和 `self-verify.md` |
+| Phase 5 自証 | 從檔案讀取產出物（不依賴對話記憶） |
+
+詳細的目錄格式、檔案模板和操作範例：[跨 Session 持久化](.claudedocs/process/跨Session持久化.md)
+
+---
+
 ## 跨 Phase 的調度補充
 
 ### 遇到問題時
@@ -444,6 +489,7 @@ Claude 執行閉環不需要讀這些——所有必要資訊已在上方。
 | 5   | [層級擴展](.claudedocs/process/層級擴展.md)            | 從函式到模組到框架怎麼串        |
 | 6   | [Git 工作流](.claudedocs/standards/Git工作流.md)       | 閉環跟 Git 怎麼配合        |
 | 7   | [問題追蹤](.claudedocs/records/問題追蹤.md)            | 遇到問題怎麼記錄            |
+| 8   | [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 大型專案的閉環狀態如何跨 Session 保存 |
 
 <!--
 使用方式：

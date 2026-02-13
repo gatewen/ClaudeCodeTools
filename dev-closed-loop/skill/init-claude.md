@@ -219,6 +219,7 @@
    - `.claudedocs/standards/Git工作流.md`
    - `.claudedocs/standards/產出物格式.md`
    - `.claudedocs/records/問題追蹤.md`
+   - `.claudedocs/process/跨Session持久化.md`
 
 3. **結果報告**：向用戶輸出完成摘要：
 
@@ -227,7 +228,7 @@
 
 生成的檔案：
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
-- .claudedocs/（8 份補充文檔，給人類閱讀）
+- .claudedocs/（9 份補充文檔，給人類閱讀）
 
 專案配置：
 - 語言：[語言]
@@ -239,6 +240,8 @@
 1. 開始開發時，Claude 會自動遵循五階段閉環流程
 2. 想了解閉環怎麼運作，讀 .claudedocs/concepts/閉環核心理念.md
 3. 想看每個階段做什麼，讀 .claudedocs/process/五階段閉環流程.md
+4. 若專案有 ≥ 3 個模組，建議建立 .claude-loop/ 持久化目錄
+   詳見 .claudedocs/process/跨Session持久化.md
 ```
 
 ---

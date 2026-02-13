@@ -127,6 +127,7 @@ EXPECTED_FILES=(
     "concepts/閉環核心理念.md"
     "process/五階段閉環流程.md"
     "process/層級擴展.md"
+    "process/跨Session持久化.md"
     "standards/Agent使用指南.md"
     "standards/Git工作流.md"
     "standards/產出物格式.md"
@@ -141,7 +142,7 @@ for f in "${EXPECTED_FILES[@]}"; do
     fi
 done
 if $DOCS_OK; then
-    echo "✅ .claudedocs 完整（8/8）"
+    echo "✅ .claudedocs 完整（9/9）"
 fi
 
 # --------------------------------------------------
