@@ -30,9 +30,14 @@
    - 輸出 "installed" → Superpowers 已安裝 ✅
    - 無輸出 → Superpowers 未安裝 ❌
 
-3. **結果處理**：
-   - 兩者都已安裝 → 繼續 Step 1
-   - 有缺少的 → 用 AskUserQuestion 告知用戶：
+3. **檢查 claude-mem**（可選）：用 Bash 執行 `grep -rq "claude-mem" ~/.claude/plugins/ 2>/dev/null && echo "installed" || grep -q "claude-mem" ~/.claude/.mcp.json 2>/dev/null && echo "installed"`
+   - 輸出 "installed" → claude-mem 已安裝 ✅
+   - 無輸出 → claude-mem 未安裝（可選功能，不影響閉環運作）
+
+4. **結果處理**：
+   - claude-mem 的缺少**不觸發** AskUserQuestion、不加入缺少項目列表，僅獨立顯示狀態（✅ 已安裝 或 ℹ️ 未安裝）
+   - SuperClaude 和 Superpowers 都已安裝 → 繼續 Step 1
+   - SuperClaude 或 Superpowers 有缺少的 → 用 AskUserQuestion 告知用戶：
      ```
      ⚠️ 閉環需要以下工具，但偵測到缺少：
 
@@ -243,6 +248,10 @@
 3. 想看每個階段做什麼，讀 .claudedocs/process/五階段閉環流程.md
 4. 若專案有 ≥ 3 個模組，建議建立 .claude-loop/ 持久化目錄
    詳見 .claudedocs/process/跨Session持久化.md
+
+[若 claude-mem 未安裝]
+💡 進階功能：安裝 claude-mem 插件可啟用跨時間語義記憶
+   （Phase 前自動查詢歷史決策、Phase 後自動保存經驗教訓）
 ```
 
 ---

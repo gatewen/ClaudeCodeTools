@@ -60,6 +60,13 @@ else
     MISSING="$MISSING superpowers"
 fi
 
+# 檢查 claude-mem（可選）
+if grep -rq "claude-mem" "$HOME/.claude/plugins/" 2>/dev/null || grep -q "claude-mem" "$HOME/.claude/.mcp.json" 2>/dev/null; then
+    echo "✅ claude-mem 已安裝（可選 — 跨時間語義記憶）"
+else
+    echo "ℹ️  claude-mem 未安裝（可選 — 安裝後可啟用跨時間語義記憶）"
+fi
+
 if [ -n "$MISSING" ]; then
     echo ""
     echo "⚠️  以下依賴缺少（閉環需要這些工具才能正常運作）："

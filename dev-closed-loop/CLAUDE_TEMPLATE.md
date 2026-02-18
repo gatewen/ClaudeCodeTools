@@ -135,6 +135,15 @@
 **機制**：產出物寫入 `.claude-loop/` 目錄，新 Session 從檔案恢復狀態。
 詳細目錄結構與操作規則：[跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md)
 
+## 跨時間語義記憶（claude-mem · 可選）
+
+若 `mcp__plugin_claude-mem_mcp-search__search` 工具可用，啟用以下規則。不可用則跳過，不影響閉環運作。
+
+- **Phase 1 前**：`search({ query: "[任務關鍵詞]", project: "{{PROJECT_NAME}}", limit: 5 })`，查詢相關歷史決策和教訓作為設計參考
+- **Phase 5 通過後**：`save_memory({ text: "[架構決策/關鍵教訓摘要]", project: "{{PROJECT_NAME}}" })`，保存值得跨任務記住的經驗
+- **斷點回退時**：`save_memory({ text: "斷點[A/B]：[錯誤原因和教訓]", project: "{{PROJECT_NAME}}" })`，記錄踩坑經驗避免重蹈覆轍
+- **保存原則**：存「為什麼這樣做」而非「做了什麼」；存「下次要避免什麼」而非「這次出了什麼錯」
+
 ---
 
 ## 工作規範
@@ -162,6 +171,7 @@
 |------|------|---------|
 | **SuperClaude** | `sc:*` 系列 Skills（Phase 1-5 主要調用） | `pipx install superclaude && superclaude install` |
 | **Superpowers** | `superpowers:*` 系列 Skills（Phase 2-5 補充） | Claude Code 插件：`superpowers@claude-plugins-official` |
+| **claude-mem** _(可選)_ | 跨時間語義記憶（Phase 前查詢歷史、Phase 後保存經驗） | Claude Code 插件：`claude-mem` |
 
 > Task agent（`code-simplifier`、`security-engineer` 等）是 Claude Code 內建功能，無需額外安裝。
 
@@ -173,7 +183,7 @@
 
 ## 📖 補充文檔
 
-`.claudedocs/` 目錄含 9 份文檔，給想深入了解閉環方法論的人看。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
+`.claudedocs/` 目錄含 10 份文檔，給想深入了解閉環方法論的人看。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
 部署說明：
