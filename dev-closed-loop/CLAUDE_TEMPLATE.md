@@ -68,20 +68,23 @@
 
 **Agent**：`sc:implement` | 有計畫 → `superpowers:executing-plans`
 **約束**：嚴格按 Phase 1 規格實作。每個 BC-x、EH-x 都要有對應程式碼。覺得設計有問題就回報，不自己改設計。
-**強制優化**：實作完必須調用 Task `code-simplifier`（審查清晰度/一致性/可維護性，不改行為規格）。
+**強制優化**：實作完必須調用 Task `code-simplifier`（審查清晰度/一致性/可維護性，不改行為規格）。斷點回退後：修正範圍 < 50 行 → 跳過；≥ 50 行 → 重跑。
 **⛔ 閘門**：無語法錯誤 ∧ 設計項都有實作 ∧ code-simplifier 已執行 → 才能進 Phase 3。
 
 ### Phase 3：檢核師 🔍
 
 **Agent**：`sc:analyze --focus quality` | Task `superpowers:code-reviewer` | 安全 → Task `security-engineer`
-**約束**：拿 Phase 1 規格比對 Phase 2 程式碼。問題標 R-x + 嚴重度（high/medium/low）。安全檢核不可跳過。
+**約束**：拿 Phase 1 規格比對 Phase 2 程式碼。問題標 R-x + 嚴重度（high/medium/low/by-design）。`by-design` 用於刻意的設計取捨，不計入斷點判定。安全檢核不可跳過。
 **⛔ 斷點 A**：有 high → 禁止進入 Phase 4，回 Phase 2 修正後重跑 Phase 3。
 
 ### Phase 4：測試師 🧪
 
 **Agent**：`sc:test` | `superpowers:test-driven-development`
 **約束**：每個測試標注 BC-x/EH-x。所有設計項都要有測試。必須用 Bash 實際執行 `{{TEST_COMMAND}}`。
-**⛔ 斷點 B**：有測試失敗 → 禁止進入 Phase 5，回 Phase 2 → 重跑 Phase 3 + 4。
+**測試設計原則**：場景足夠大以避免邊界觸發意外行為 | 斷言判行為而非具體值 | 有衍生狀態時同步設定所有關聯欄位。
+**⛔ 斷點 B**：有測試失敗 → 禁止進入 Phase 5，先判定原因：
+- 程式碼 bug → 回 Phase 2 修正 → 重跑 Phase 3 + 4
+- 測試設計問題（場景/斷言/前置條件有誤）→ 回 Phase 4 修正測試 → 通過即進 Phase 5
 
 ### Phase 5：自証師 ✅
 
@@ -96,7 +99,7 @@
 6. 全 ✅ → 通過；有 ❌ → 不通過 + 回退建議
 
 **回退規則**：設計-實作不一致 → P2（嚴重→P1）| 測試不足 → P4 | 檢核未修 → P2 | 產出物缺漏 → 對應 Phase
-**通過後**：commit，message 帶自証摘要。
+**通過後**：若專案有多模組，跑全專案 `{{TEST_COMMAND}}` 確認 0 回歸。commit，message 帶自証摘要。
 
 ---
 
@@ -104,7 +107,7 @@
 
 > 中型任務觸發。設計→實作→驗證 三步流程。
 
-**步驟 1 — 設計**：用簡要文字描述目標、參數型別、BC-x ≥ 1、EH-x 覆蓋主要異常。
+**步驟 1 — 設計**：簡要設計規格（目標 | 主要函式簽名與參數型別 | BC-x ≥ 1 | EH-x 覆蓋主要異常）。
 **步驟 2 — 實作**：按設計實作 + 調用 Task `code-simplifier` 優化。
 **步驟 3 — 驗證**：
 - 確認每個 BC-x/EH-x 有對應實作和測試
@@ -132,6 +135,7 @@
 ## 跨 Session 持久化
 
 **觸發條件**：模組數 ≥ 3 且有跨模組依賴 | 預計多 Session | 用戶說「啟用持久化」
+**輕量持久化**：大型任務的 Phase 1 設計規格（BC-x/EH-x 清單）建議寫入 `.claude-loop/modules/{name}/design-spec.md`，即使未啟用完整持久化，避免 context 壓縮導致設計意圖丟失。
 **機制**：產出物寫入 `.claude-loop/` 目錄，新 Session 從檔案恢復狀態。
 詳細目錄結構與操作規則：[跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md)
 
