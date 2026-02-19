@@ -26,8 +26,15 @@
 
 ### 2. TaskCreate 拆解（中型 + 大型必做）
 
-**大型任務** — 每個模組建 5 個 Phase 任務 + blockedBy 鏈：
-`[P1-設計] 模組名 → [P2-實作] → [P3-檢核] → [P4-測試] → [P5-自証]`
+**大型任務 — 單模組**：建 5 個 Phase 任務 + blockedBy 鏈：
+`[P1-設計] → [P2-實作] → [P3-檢核] → [P4-測試] → [P5-自証]`
+
+**大型任務 — 多模組**：先分析模組間 IF-x 依賴，再建任務鏈：
+- 每個模組建 `[P1] → [P2] → [P3] → [P4]` 鏈
+- 無 IF-x 依賴的模組 → 獨立 Track，可並發（用 Task 並行或 `superpowers:dispatching-parallel-agents`）
+- 有 IF-x 依賴的模組 → 被依賴方完成 P2（介面確定）後，依賴方才開始 P1
+- 所有 Track 完成 P4 後 → 統一 `[P5-整合自証]`（blockedBy 所有 P4）
+- ⛔ **並發安全約束**：Track 斷點獨立處理 | P5 等所有 P4 完成 | 設計變更跨 Track 時暫停受影響 Track
 
 **中型任務** — 建 3 個任務 + blockedBy 鏈：
 `[設計] 功能名 → [實作] 功能名 → [驗證] 功能名`
@@ -42,7 +49,7 @@
 
 ### 4. 逐步執行（必做）
 
-- 按 TaskList 順序，一次只做一個步驟
+- 同一 Track 內按順序，一次只做一個步驟；不同 Track 可並行
 - 每完成一步，用 TaskUpdate 標記 completed
 - blockedBy 未解除前，禁止將該任務設為 in_progress
 
@@ -73,7 +80,7 @@
 
 ### Phase 3：檢核師 🔍
 
-**Agent**：`sc:analyze --focus quality` | Task `superpowers:code-reviewer` | 安全 → Task `security-engineer`
+**Agent**：品質 → `sc:analyze --focus quality` 或 Task `superpowers:code-reviewer` | 安全 → Task `security-engineer`。品質與安全審查**可並行**發送，合併 R-x 結果後統一判定斷點 A。
 **約束**：拿 Phase 1 規格比對 Phase 2 程式碼。問題標 R-x + 嚴重度（high/medium/low/by-design）。`by-design` 用於刻意的設計取捨，不計入斷點判定。安全檢核不可跳過。**R-x 報告策略**：high/medium 逐一列出；low 級合併為一句摘要（例如「另有 N 個 low 級建議」），不逐一列舉。
 **⛔ 斷點 A**：有 high → 禁止進入 Phase 4，回 Phase 2 修正後重跑 Phase 3。
 
@@ -92,6 +99,7 @@
 **Agent**：先跑自証檢查表 → `sc:reflect --type completion`（可選）→ `superpowers:verification-before-completion`（可選）
 
 **自証（三段式，必須逐一執行）**：
+> 多 Track 並發時：自証涵蓋**所有 Track** 的設計項、程式碼和測試。步驟 8 的全專案回歸測試為**必做**（不論風險判定）。
 
 **Part A — 追溯檢查表**（設計 → 實作 → 測試）：
 1. 從 Phase 1 列出所有 BC-x、EH-x、IF-x（若有）→ **基準清單**
