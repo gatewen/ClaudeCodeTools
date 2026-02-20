@@ -25,6 +25,8 @@ CLAUDE.md 裡已經寫了每個 Phase 該調用哪個 Agent 和約束條件。
 所以 CLAUDE.md 裡的優先順序是：sc: > superpowers: > Task agent。
 只有在「這個工作可以獨立做、不需要前後文」的時候才用 Task agent。
 
+**Task agent 名稱說明**：本文件中提到的 Task agent 名稱（如 `system-architect`、`backend-architect`、`frontend-architect`、`python-expert`、`quality-engineer`）是角色描述而非固定 ID。調用時在 Task prompt 中描述對應角色的專長即可，Claude Code 會自動匹配合適的 agent 行為。
+
 ---
 
 ## 各 Phase 的選擇邏輯

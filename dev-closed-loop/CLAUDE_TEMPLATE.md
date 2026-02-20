@@ -178,7 +178,7 @@
 | 文檔 | Claude 何時讀取 |
 |------|---------------|
 | [產出物格式](.claudedocs/standards/產出物格式.md) | **進入 Phase 1/3/4/5 時必讀**（取得產出物模板） |
-| [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | 選擇 Agent 時參考 |
+| [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | 想了解 Agent 選擇邏輯和配合方式時 |
 | [五階段流程](.claudedocs/process/五階段閉環流程.md) | 需要更多 Phase 細節時 |
 | [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 啟用持久化時 |
 | [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md) | 跨模組開發時 |
