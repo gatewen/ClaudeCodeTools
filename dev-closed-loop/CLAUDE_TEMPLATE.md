@@ -206,6 +206,8 @@
 `.claudedocs/` 目錄含 10 份文檔，給想深入了解閉環方法論的人看。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
+closed-loop v4.0
+
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄
 2. CLAUDE_TEMPLATE.md 重新命名為 CLAUDE.md
