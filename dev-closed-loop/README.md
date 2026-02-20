@@ -13,7 +13,7 @@
 | 文件 | 說明 |
 |------|------|
 | `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含產出物格式、自証檢查表、Agent 調度規則） |
-| `.claudedocs/` | 補充文檔（8 檔），給人類閱讀 |
+| `.claudedocs/` | 補充文檔（10 檔），給人類閱讀 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
 
 ### 設計歷史（了解這套方法怎麼來的）
@@ -24,6 +24,7 @@
 | `design/02_深度分析.md` | 對原始構想的問題分析和改進方向 |
 | `design/03_落地路線圖.md` | 5 個 Phase 的執行計畫 |
 | `design/04_Skill設計規劃.md` | `dev:init-claude` Skill 的設計藍圖 |
+| `design/05-07` | 方法論分析、深度檢討、專案協調者研究 |
 
 ## 使用方式
 
@@ -43,7 +44,9 @@
 │   └── 閉環核心理念.md      ← 這套方法在幹嘛、為什麼有用
 ├── process/
 │   ├── 五階段閉環流程.md     ← 實際怎麼跑，每個階段做什麼
-│   └── 層級擴展.md          ← 從函式到模組到框架怎麼串
+│   ├── 層級擴展.md          ← 從函式到模組到框架怎麼串
+│   ├── 跨Session持久化.md   ← 大型專案怎麼跨 Session 保存狀態
+│   └── 介面契約與變更管理.md  ← 跨模組 API 怎麼定義和追蹤變更
 ├── standards/
 │   ├── Agent使用指南.md      ← 每個階段該用什麼工具
 │   ├── Git工作流.md          ← 閉環跟 Git 怎麼配合

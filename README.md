@@ -42,9 +42,9 @@ AI-ClaudeCode/
 ├── setup.sh                        ← 一鍵安裝腳本
 └── dev-closed-loop/
     ├── CLAUDE_TEMPLATE.md          ← 閉環模板（核心）
-    ├── .claudedocs/                ← 補充文檔（8 檔）
+    ├── .claudedocs/                ← 補充文檔（10 檔）
     ├── skill/
     │   └── init-claude.md           ← Skill 源碼
-    ├── design/                     ← 設計歷史
+    ├── design/                     ← 設計歷史（01-07）
     └── README.md                   ← 閉環說明
 ```
