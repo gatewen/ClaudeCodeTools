@@ -174,9 +174,9 @@ for f in "${LANG_FILES[@]}"; do
     fi
 done
 if $LANG_OK; then
-    echo "✅ 語言 Skills 完整（$LANG_COUNT/$LANG_TOTAL）"
+    echo "✅ 語言 Skills 完整（${LANG_COUNT}/${LANG_TOTAL}）"
 else
-    echo "⚠️  語言 Skills 不完整（$LANG_COUNT/$LANG_TOTAL）— 不影響核心功能"
+    echo "⚠️  語言 Skills 不完整（${LANG_COUNT}/${LANG_TOTAL}）— 不影響核心功能"
 fi
 
 # --------------------------------------------------
