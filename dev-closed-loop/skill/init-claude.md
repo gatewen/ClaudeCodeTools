@@ -111,6 +111,24 @@
 用 Bash 執行 `ls {{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/{對應檔名} 2>/dev/null` 確認檔案存在。
 記錄結果：有對應 Skill（✅）或無（—）。
 
+**語言工具鏈映射**（用於填充 `{{LINT_COMMAND}}` 和 `{{VERIFY_SEQUENCE}}` placeholder）：
+
+| 語言 | `{{LINT_COMMAND}}` | `{{VERIFY_SEQUENCE}}` |
+|------|-------------------|----------------------|
+| TypeScript | `npx tsc --noEmit && npx eslint src/` | `npx tsc --noEmit && npx eslint src/ && npx vitest run && npm run build` |
+| Python | `ruff check src/` | `mypy src/ && ruff check src/ && pytest tests/` |
+| Go | `go vet ./... && golangci-lint run ./...` | `go vet ./... && golangci-lint run ./... && go build ./... && go test -race ./...` |
+| Rust | `cargo clippy -- -D warnings` | `cargo fmt -- --check && cargo clippy -- -D warnings && cargo build && cargo test` |
+| C# | `dotnet build --warnaserrors` | `dotnet format --verify-no-changes && dotnet build --warnaserrors && dotnet test` |
+| 其他（無 Skill） | = `{{BUILD_COMMAND}}` 的值 | = `{{TEST_COMMAND}} && {{BUILD_COMMAND}}` |
+
+注意：以上為預設值。若 Step 2 偵測到專案已有自訂的 lint 指令（例如 package.json 的 scripts.lint），以偵測到的值為準。映射表中的 `{{TEST_COMMAND}}` 和 `{{BUILD_COMMAND}}` 指的是 Step 2 偵測到的值。
+
+**填充優先順序**：
+1. 若 Step 2 偵測到專案已有自訂指令 → 使用偵測值（尊重專案配置）
+2. 若 Step 2 未偵測到 → 使用映射表的預設值
+3. 若無對應 Skill → 回退到 `{{BUILD_COMMAND}}` / `{{TEST_COMMAND}} && {{BUILD_COMMAND}}`
+
 **框架偵測**（按語言分支）：
 - TypeScript/JavaScript：讀 package.json 的 dependencies/devDependencies
   - next → Next.js
@@ -189,6 +207,8 @@
 - 框架：[框架]          ← 若未偵測到加 ⚠️
 - 測試指令：[指令]       ← 若未偵測到加 ⚠️
 - 建置指令：[指令]       ← 若未偵測到加 ⚠️
+- 增量驗證：[LINT_COMMAND]
+- 完整驗證：[VERIFY_SEQUENCE]
 - 語言指南：✅ [語言].md / — 無對應語言指南
 （若從子目錄偵測：偵測來源：[子目錄名稱]/）
 
@@ -213,7 +233,9 @@
 | `{{FRAMEWORK}}` | 確認後的框架 |
 | `{{TEST_COMMAND}}` | 確認後的測試指令 |
 | `{{BUILD_COMMAND}}` | 確認後的建置指令 |
-| `{{LANGUAGE_GUIDE_REF}}` | 語言指南參考行（見下方邏輯） |
+| `{{LINT_COMMAND}}` | 增量驗證指令（見語言工具鏈映射） |
+| `{{VERIFY_SEQUENCE}}` | 完整驗證序列（見語言工具鏈映射） |
+| `{{LANGUAGE_SKILL_SECTION}}` | 語言規範區塊（見下方邏輯） |
 
 3. 用 Write 工具將替換後的內容寫入當前目錄的 `CLAUDE.md`
 4. 複製 .claudedocs/ 目錄到當前專案：
@@ -226,11 +248,29 @@
    - 用 Write 寫入 `.claudedocs/languages/README.md`
    - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/{語言}.md`
    - 用 Write 寫入 `.claudedocs/languages/{語言}.md`
-   - 將 `{{LANGUAGE_GUIDE_REF}}` 替換為：
-     `| [{語言名稱} 語言指南](.claudedocs/languages/{語言}.md) | **每個 Phase 進入時參考**（語言特定工具鏈、慣例、驗證指令） |`
+   - 將 `{{LANGUAGE_SKILL_SECTION}}` 替換為以下語言規範區塊：
+     ```
+     ## 語言規範
+
+     本專案使用 **{語言}**。已部署 [{語言} 語言指南](.claudedocs/languages/{語言小寫}.md)。
+
+     各 Phase 描述中的「**語言指南**」行會指示讀取對應段落。語言指南按 Phase 1-5 組織，對照如下：
+
+     | Phase | 讀取段落 | 用途 |
+     |-------|---------|------|
+     | Phase 1 📐 | 型別系統指南、BC-x/EH-x 模式 | 產出符合語言慣例的設計規格 |
+     | Phase 2 💻 | 編碼慣例、專案結構 | 遵循語言規範實作 |
+     | Phase 3 🔍 | 審查清單、安全/效能反模式 | 語言專屬檢核項目 |
+     | Phase 4 🧪 | 測試框架、測試模式 | 用語言原生測試工具驗證 |
+     | Phase 5 ✅ | 驗證指令序列 | 完整語言特定驗證 |
+     ```
+   - 將 `{{LINT_COMMAND}}` 替換為語言工具鏈映射表的對應值（優先使用 Step 2 偵測到的專案 lint 指令）
+   - 將 `{{VERIFY_SEQUENCE}}` 替換為語言工具鏈映射表的對應值（優先使用 Step 2 偵測到的專案指令組合）
 6. **無對應 Skill 時**：
    - 不建立 `languages/` 目錄
-   - 將 `{{LANGUAGE_GUIDE_REF}}` 替換為空字串（移除該行）
+   - 將 `{{LANGUAGE_SKILL_SECTION}}` 替換為空字串（整個區塊消失）
+   - 將 `{{LINT_COMMAND}}` 替換為 `{{BUILD_COMMAND}}` 的確認值
+   - 將 `{{VERIFY_SEQUENCE}}` 替換為 `{{TEST_COMMAND}} && {{BUILD_COMMAND}}` 的確認值
 
 **若用戶選擇「合併」模式**：
 - 先讀取現有的 CLAUDE.md 內容

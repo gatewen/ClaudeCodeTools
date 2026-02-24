@@ -33,10 +33,11 @@
 
 ### CLAUDE.md 動態引用
 
-CLAUDE.md 中的「待填寫」欄位根據偵測到的語言動態替換：
-- **測試指令** → 對應語言 Skill 的 Phase 4 測試指令
-- **建置指令** → 對應語言 Skill 的 Phase 5 建置指令
-- **增量驗證** → 對應語言 Skill 的 Phase 2 lint 指令
+CLAUDE.md 透過三個機制與語言 Skill 連接：
+
+1. **語言規範區塊**（`{{LANGUAGE_SKILL_SECTION}}`）：注入「強制規則」指令，要求 Claude 在進入每個 Phase 前先讀取語言指南對應段落
+2. **增量驗證指令**（`{{LINT_COMMAND}}`）：Phase 2 每完成一個檔案後執行的 lint 指令，從語言工具鏈映射取值
+3. **完整驗證序列**（`{{VERIFY_SEQUENCE}}`）：Phase 5 自証的完整驗證命令序列，從語言工具鏈映射取值
 
 ### 多語言專案
 
