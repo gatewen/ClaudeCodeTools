@@ -43,6 +43,7 @@ AI-ClaudeCode/
 └── dev-closed-loop/
     ├── CLAUDE_TEMPLATE.md          ← 閉環模板（核心）
     ├── .claudedocs/                ← 補充文檔（10 檔）
+    │   └── languages/             ← 語言 Skills（6 檔）
     ├── skill/
     │   └── init-claude.md           ← Skill 源碼
     ├── design/                     ← 設計歷史（01-07）

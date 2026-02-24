@@ -153,6 +153,31 @@ if $DOCS_OK; then
     echo "✅ .claudedocs 完整（10/10）"
 fi
 
+# 確認 languages 目錄完整
+LANG_FILES=(
+    "languages/README.md"
+    "languages/typescript.md"
+    "languages/python.md"
+    "languages/go.md"
+    "languages/rust.md"
+    "languages/csharp.md"
+)
+LANG_OK=true
+LANG_COUNT=0
+LANG_TOTAL=${#LANG_FILES[@]}
+for f in "${LANG_FILES[@]}"; do
+    if [ -f "$DOCS_DIR/$f" ]; then
+        ((LANG_COUNT++))
+    else
+        LANG_OK=false
+    fi
+done
+if $LANG_OK; then
+    echo "✅ 語言 Skills 完整（$LANG_COUNT/$LANG_TOTAL）"
+else
+    echo "⚠️  語言 Skills 不完整（$LANG_COUNT/$LANG_TOTAL）— 不影響核心功能"
+fi
+
 # --------------------------------------------------
 # 完成
 # --------------------------------------------------

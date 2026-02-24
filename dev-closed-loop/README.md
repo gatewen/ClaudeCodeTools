@@ -14,6 +14,7 @@
 |------|------|
 | `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含產出物格式、自証檢查表、Agent 調度規則） |
 | `.claudedocs/` | 補充文檔（10 檔），給人類閱讀 |
+| `.claudedocs/languages/` | 語言 Skills（5 語言），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
 
 ### 設計歷史（了解這套方法怎麼來的）
@@ -51,8 +52,15 @@
 │   ├── Agent使用指南.md      ← 每個階段該用什麼工具
 │   ├── Git工作流.md          ← 閉環跟 Git 怎麼配合
 │   └── 產出物格式.md         ← 每個階段要交什麼東西
-└── records/
-    └── 問題追蹤.md           ← 遇到問題怎麼記錄
+├── records/
+│   └── 問題追蹤.md           ← 遇到問題怎麼記錄
+└── languages/               ← 語言特定指南
+    ├── README.md
+    ├── typescript.md
+    ├── python.md
+    ├── go.md
+    ├── rust.md
+    └── csharp.md
 ```
 
 ## 閱讀建議

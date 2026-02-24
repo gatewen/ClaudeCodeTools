@@ -182,6 +182,7 @@
 | [五階段流程](.claudedocs/process/五階段閉環流程.md) | 需要更多 Phase 細節時 |
 | [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 啟用持久化時 |
 | [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md) | 跨模組開發時 |
+{{LANGUAGE_GUIDE_REF}}
 
 ## 前置需求
 
@@ -203,7 +204,7 @@
 
 ## 📖 補充文檔
 
-`.claudedocs/` 目錄含 10 份文檔，給想深入了解閉環方法論的人看。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
+`.claudedocs/` 目錄含核心文檔（10 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
 closed-loop v4.0
@@ -212,6 +213,6 @@ closed-loop v4.0
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄
 2. CLAUDE_TEMPLATE.md 重新命名為 CLAUDE.md
 3. 替換所有 {{PLACEHOLDER}} 為實際值：
-   {{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}}
+   {{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LANGUAGE_GUIDE_REF}}
 4. Claude Code 會自動讀取並遵循閉環調度規則
 -->

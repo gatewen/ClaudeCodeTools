@@ -12,6 +12,7 @@
 ```
 模板檔案：{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md
 文檔目錄：{{REPO_PATH}}/dev-closed-loop/.claudedocs/
+語言指南：{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/
 ```
 
 ---
@@ -94,6 +95,22 @@
 - 有 `*.rb` → Ruby
 - 以上都沒有 → 標記「未偵測到」
 
+**語言 Skill 偵測**：
+
+偵測到語言後，對照可用的語言 Skill：
+
+| 偵測語言 | 對應 Skill 檔案 |
+|---------|----------------|
+| TypeScript | `typescript.md` |
+| Python | `python.md` |
+| Go | `go.md` |
+| Rust | `rust.md` |
+| C# | `csharp.md` |
+| 其他 | 無對應 Skill（不影響閉環運作） |
+
+用 Bash 執行 `ls {{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/{對應檔名} 2>/dev/null` 確認檔案存在。
+記錄結果：有對應 Skill（✅）或無（—）。
+
 **框架偵測**（按語言分支）：
 - TypeScript/JavaScript：讀 package.json 的 dependencies/devDependencies
   - next → Next.js
@@ -172,6 +189,7 @@
 - 框架：[框架]          ← 若未偵測到加 ⚠️
 - 測試指令：[指令]       ← 若未偵測到加 ⚠️
 - 建置指令：[指令]       ← 若未偵測到加 ⚠️
+- 語言指南：✅ [語言].md / — 無對應語言指南
 （若從子目錄偵測：偵測來源：[子目錄名稱]/）
 
 請確認是否正確，或選擇「修正」手動輸入。
@@ -195,12 +213,24 @@
 | `{{FRAMEWORK}}` | 確認後的框架 |
 | `{{TEST_COMMAND}}` | 確認後的測試指令 |
 | `{{BUILD_COMMAND}}` | 確認後的建置指令 |
+| `{{LANGUAGE_GUIDE_REF}}` | 語言指南參考行（見下方邏輯） |
 
 3. 用 Write 工具將替換後的內容寫入當前目錄的 `CLAUDE.md`
 4. 複製 .claudedocs/ 目錄到當前專案：
    - 用 Glob 列出 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/` 下所有 `.md` 檔案
    - 用 Read 逐一讀取每個檔案內容
    - 用 Write 將每個檔案寫入對應的 `.claudedocs/` 路徑（保持子目錄結構）
+5. **語言 Skill 部署**（若偵測到有對應 Skill）：
+   - 建立 `.claudedocs/languages/` 目錄
+   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/README.md`
+   - 用 Write 寫入 `.claudedocs/languages/README.md`
+   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/{語言}.md`
+   - 用 Write 寫入 `.claudedocs/languages/{語言}.md`
+   - 將 `{{LANGUAGE_GUIDE_REF}}` 替換為：
+     `| [{語言名稱} 語言指南](.claudedocs/languages/{語言}.md) | **每個 Phase 進入時參考**（語言特定工具鏈、慣例、驗證指令） |`
+6. **無對應 Skill 時**：
+   - 不建立 `languages/` 目錄
+   - 將 `{{LANGUAGE_GUIDE_REF}}` 替換為空字串（移除該行）
 
 **若用戶選擇「合併」模式**：
 - 先讀取現有的 CLAUDE.md 內容
@@ -227,14 +257,20 @@
    - `.claudedocs/process/跨Session持久化.md`
    - `.claudedocs/process/介面契約與變更管理.md`
 
-3. **結果報告**：向用戶輸出完成摘要：
+3. **語言 Skill 完整性檢查**（若部署了語言 Skill）：
+   - `.claudedocs/languages/README.md`
+   - `.claudedocs/languages/{語言}.md`
+   （若未部署語言 Skill → 跳過此檢查）
+
+4. **結果報告**：向用戶輸出完成摘要：
 
 ```
 ✅ 開發設計閉環已部署完成
 
 生成的檔案：
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
-- .claudedocs/（10 份補充文檔，給人類閱讀）
+- .claudedocs/（10 份核心文檔，給人類閱讀）
+- .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
 
 專案配置：
 - 語言：[語言]
