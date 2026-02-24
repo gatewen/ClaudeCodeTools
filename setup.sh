@@ -161,6 +161,7 @@ LANG_FILES=(
     "languages/go.md"
     "languages/rust.md"
     "languages/csharp.md"
+    "languages/bash.md"
 )
 LANG_OK=true
 LANG_COUNT=0

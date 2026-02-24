@@ -18,6 +18,7 @@
 | Rust | [rust.md](rust.md) | `*.rs`, `Cargo.toml` | cargo build, cargo test, clippy |
 | Python | [python.md](python.md) | `*.py`, `pyproject.toml`, `setup.py` | pytest, mypy, ruff |
 | C# | [csharp.md](csharp.md) | `*.cs`, `*.csproj`, `*.sln` | dotnet build, dotnet test, dotnet-format |
+| Bash | [bash.md](bash.md) | `*.sh`, `*.bash`, shebang `#!/bin/bash` | shellcheck, bats, shfmt |
 
 ## 閉環整合方式
 

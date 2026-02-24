@@ -94,6 +94,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 有 `*.java` 或 `pom.xml` → Java
 - 有 `*.swift` → Swift
 - 有 `*.rb` → Ruby
+- 有 `*.sh` 且含 shebang `#!/bin/bash` 或 `#!/usr/bin/env bash` → Bash
 - 以上都沒有 → 標記「未偵測到」
 
 **語言 Skill 偵測**：
@@ -107,6 +108,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 | Go | `go.md` |
 | Rust | `rust.md` |
 | C# | `csharp.md` |
+| Bash | `bash.md` |
 | 其他 | 無對應 Skill（不影響閉環運作） |
 
 用 Bash 執行 `ls {{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/{對應檔名} 2>/dev/null` 確認檔案存在。
@@ -121,6 +123,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 | Go | `go vet ./... && golangci-lint run ./...` | `go vet ./... && golangci-lint run ./... && go build ./... && go test -race ./...` |
 | Rust | `cargo clippy -- -D warnings` | `cargo fmt -- --check && cargo clippy -- -D warnings && cargo build && cargo test` |
 | C# | `dotnet build --warnaserrors` | `dotnet format --verify-no-changes && dotnet build --warnaserrors && dotnet test` |
+| Bash | `shellcheck *.sh` | `bash -n *.sh && shellcheck *.sh && bats tests/` |
 | 其他（無 Skill） | = `{{BUILD_COMMAND}}` 的值 | = `{{TEST_COMMAND}} && {{BUILD_COMMAND}}` |
 
 注意：以上為預設值。若 Step 2 偵測到專案已有自訂的 lint 指令（例如 package.json 的 scripts.lint），以偵測到的值為準。映射表中的 `{{TEST_COMMAND}}` 和 `{{BUILD_COMMAND}}` 指的是 Step 2 偵測到的值。
