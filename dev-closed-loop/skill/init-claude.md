@@ -13,6 +13,7 @@
 模板檔案：{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md
 文檔目錄：{{REPO_PATH}}/dev-closed-loop/.claudedocs/
 語言指南：{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/
+Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 ```
 
 ---
@@ -277,6 +278,63 @@
 - 在末尾追加分隔線 `---` 和閉環模板內容
 - 提醒用戶手動整理合併後的內容
 
+### Step 4b：部署增量驗證 Hook
+
+閉環 Phase 2 增量驗證透過 PostToolUse hook 自動化。每次 Claude 寫入或編輯檔案後，hook 會自動對該檔案執行 per-file lint。
+
+1. **建立 hooks 目錄**：
+   - 用 Bash 執行 `mkdir -p .claude/hooks`
+
+2. **部署 lint 腳本**：
+   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh`
+   - 用 Write 寫入 `.claude/hooks/incremental-lint.sh`
+   - 用 Bash 執行 `chmod +x .claude/hooks/incremental-lint.sh`
+
+3. **配置 hooks（`.claude/settings.json`）**：
+   - 用 Bash 檢查 `.claude/settings.json` 是否存在
+   - **存在**：用 Read 讀取現有內容，用 python3 合併 hooks 配置（保留既有設定）：
+     ```python
+     import json, sys
+     existing = json.load(open('.claude/settings.json'))
+     hook_entry = {
+       "matcher": {"tool_name": "Write|Edit|MultiEdit"},
+       "hooks": [{"type": "command", "command": "bash .claude/hooks/incremental-lint.sh"}]
+     }
+     hooks = existing.setdefault("hooks", {})
+     post_hooks = hooks.setdefault("PostToolUse", [])
+     # 避免重複：檢查是否已有 incremental-lint
+     if not any("incremental-lint" in str(h) for h in post_hooks):
+       post_hooks.append(hook_entry)
+     json.dump(existing, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
+     ```
+   - **不存在**：用 Write 建立新的 `.claude/settings.json`：
+     ```json
+     {
+       "hooks": {
+         "PostToolUse": [
+           {
+             "matcher": {
+               "tool_name": "Write|Edit|MultiEdit"
+             },
+             "hooks": [
+               {
+                 "type": "command",
+                 "command": "bash .claude/hooks/incremental-lint.sh"
+               }
+             ]
+           }
+         ]
+       }
+     }
+     ```
+
+4. **確認輸出**：在 Step 5 的最終報告中加上 hook 狀態：
+   ```
+   ✅ 開發設計閉環已部署完成
+   ...
+   - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
+   ```
+
 ### Step 5：驗證
 
 生成完成後，執行以下檢查：
@@ -302,7 +360,12 @@
    - `.claudedocs/languages/{語言}.md`
    （若未部署語言 Skill → 跳過此檢查）
 
-4. **結果報告**：向用戶輸出完成摘要：
+4. **Hook 部署檢查**：
+   - `.claude/hooks/incremental-lint.sh` 存在且可執行
+   - `.claude/settings.json` 包含 `PostToolUse` hook 配置
+   （若任一檢查失敗 → 報錯並嘗試修正）
+
+5. **結果報告**：向用戶輸出完成摘要：
 
 ```
 ✅ 開發設計閉環已部署完成
@@ -311,6 +374,7 @@
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
 - .claudedocs/（10 份核心文檔，給人類閱讀）
 - .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
+- 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 
 專案配置：
 - 語言：[語言]
