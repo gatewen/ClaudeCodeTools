@@ -302,7 +302,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      import json, sys
      existing = json.load(open('.claude/settings.json'))
      hook_entry = {
-       "matcher": {"tool_name": "Write|Edit|MultiEdit"},
+       "matcher": "Write|Edit|MultiEdit",
        "hooks": [{"type": "command", "command": "bash .claude/hooks/incremental-lint.sh"}]
      }
      hooks = existing.setdefault("hooks", {})
@@ -318,9 +318,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
        "hooks": {
          "PostToolUse": [
            {
-             "matcher": {
-               "tool_name": "Write|Edit|MultiEdit"
-             },
+             "matcher": "Write|Edit|MultiEdit",
              "hooks": [
                {
                  "type": "command",
