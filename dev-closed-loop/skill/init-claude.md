@@ -242,16 +242,20 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 | `{{LANGUAGE_SKILL_SECTION}}` | 語言規範區塊（見下方邏輯） |
 
 3. 用 Write 工具將替換後的內容寫入當前目錄的 `CLAUDE.md`
-4. 複製 .claudedocs/ 目錄到當前專案：
-   - 用 Glob 列出 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/` 下所有 `.md` 檔案
-   - 用 Read 逐一讀取每個檔案內容
-   - 用 Write 將每個檔案寫入對應的 `.claudedocs/` 路徑（保持子目錄結構）
+4. 複製 .claudedocs/ 目錄到當前專案（靜態檔案，用 Bash cp 複製以避免 output token 溢出）：
+   - 用 Bash 執行：
+     ```bash
+     cp -r {{REPO_PATH}}/dev-closed-loop/.claudedocs/ .claudedocs/ && find .claudedocs -name '.DS_Store' -delete
+     ```
+   - 若偵測到有對應語言 Skill → 保留 `languages/` 子目錄（下方第 5 點會刪除非目標語言檔）
+   - 若無對應語言 Skill → 用 Bash 執行 `rm -rf .claudedocs/languages/` 移除語言目錄
 5. **語言 Skill 部署**（若偵測到有對應 Skill）：
-   - 建立 `.claudedocs/languages/` 目錄
-   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/README.md`
-   - 用 Write 寫入 `.claudedocs/languages/README.md`
-   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/{語言}.md`
-   - 用 Write 寫入 `.claudedocs/languages/{語言}.md`
+   - `.claudedocs/languages/` 已由 Step 4.4 的 `cp -r` 複製完成
+   - 移除非目標語言的 Skill 檔案，只保留偵測到的語言：
+     ```bash
+     # 保留 README.md 和目標語言檔，刪除其餘
+     find .claudedocs/languages -name '*.md' ! -name 'README.md' ! -name '{語言小寫}.md' -delete
+     ```
    - 將 `{{LANGUAGE_SKILL_SECTION}}` 替換為以下語言規範區塊：
      ```
      ## 語言規範
@@ -290,10 +294,11 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 1. **建立 hooks 目錄**：
    - 用 Bash 執行 `mkdir -p .claude/hooks`
 
-2. **部署 lint 腳本**：
-   - 用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh`
-   - 用 Write 寫入 `.claude/hooks/incremental-lint.sh`
-   - 用 Bash 執行 `chmod +x .claude/hooks/incremental-lint.sh`
+2. **部署 lint 腳本**（靜態檔案，用 cp 複製）：
+   - 用 Bash 執行：
+     ```bash
+     cp {{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh .claude/hooks/incremental-lint.sh && chmod +x .claude/hooks/incremental-lint.sh
+     ```
 
 3. **配置 hooks（`.claude/settings.json`）**：
    - 用 Bash 檢查 `.claude/settings.json` 是否存在
@@ -405,5 +410,5 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 偵測結果必須向用戶確認，**不能跳過確認步驟**
 - 每個 placeholder 都必須替換完畢，不能有殘留
 - 若模板來源路徑不存在，終止並告知，**不要嘗試從記憶中生成模板內容**
-- 複製 .claudedocs/ 時使用 Read + Write 工具逐一複製，保持目錄結構完整（不依賴平台特定的 shell 指令）
+- 靜態檔案（.claudedocs/、Hook 腳本）用 Bash `cp` 複製（POSIX 標準指令，零 output token 消耗）；需 placeholder 替換的檔案（CLAUDE_TEMPLATE.md）用 Read + Write
 - 若用戶取消，不做任何檔案修改
