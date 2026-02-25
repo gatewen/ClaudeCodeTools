@@ -61,7 +61,7 @@ else
 fi
 
 # 檢查 claude-mem（可選）
-if grep -rq "claude-mem" "$HOME/.claude/plugins/" 2>/dev/null || grep -q "claude-mem" "$HOME/.claude/.mcp.json" 2>/dev/null; then
+if grep -rqw "claude-mem" "$HOME/.claude/plugins/" 2>/dev/null || grep -qw "claude-mem" "$HOME/.claude/.mcp.json" 2>/dev/null; then
     echo "✅ claude-mem 已安裝（可選 — 跨時間語義記憶）"
 else
     echo "ℹ️  claude-mem 未安裝（可選 — 安裝後可啟用跨時間語義記憶）"
@@ -168,7 +168,7 @@ LANG_COUNT=0
 LANG_TOTAL=${#LANG_FILES[@]}
 for f in "${LANG_FILES[@]}"; do
     if [ -f "$DOCS_DIR/$f" ]; then
-        ((LANG_COUNT++))
+        LANG_COUNT=$((LANG_COUNT + 1))
     else
         LANG_OK=false
     fi
