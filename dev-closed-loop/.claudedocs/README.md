@@ -49,3 +49,15 @@
 - 新增內容放到對應的分類目錄，不要丟在根目錄
 - 用白話文寫，不要堆術語
 - 每次修訂在文檔底部更新「最後修訂」日期
+
+## 前置需求
+
+本閉環依賴以下工具，部署前請確認已安裝：
+
+| 工具 | 用途 | 安裝方式 |
+|------|------|---------|
+| **SuperClaude** | `sc:*` 系列 Skills | `pipx install superclaude && superclaude install` |
+| **Superpowers** | `superpowers:*` 系列 Skills | Claude Code 插件：`superpowers@claude-plugins-official` |
+| **claude-mem** _(可選)_ | 跨時間語義記憶 | Claude Code 插件：`claude-mem` |
+
+> Task agent（`code-simplifier`、`security-engineer` 等）是 Claude Code 內建功能，無需額外安裝。

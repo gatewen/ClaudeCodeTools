@@ -181,34 +181,19 @@
 - **品質**：跟專案慣例 | BC-x/EH-x 100% 測試覆蓋 | 外部輸入必驗證 | 敏感資料不寫死
 - **文檔**：放 `.claudedocs/`、白話文、修訂不新增、專業眼光不討好
 - **問題追蹤**：Bug 和踩坑記到 `.claudedocs/records/問題追蹤.md`
+- **驗證紀錄**：閉環驗證結果記到 `.claudedocs/records/問題追蹤.md`
 
 ## 參考文檔
 
-| 文檔 | Claude 何時讀取 |
-|------|---------------|
-| [產出物格式](.claudedocs/standards/產出物格式.md) | **進入 Phase 1/3/4/5 時必讀**（取得產出物模板） |
-| [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | 想了解 Agent 選擇邏輯和配合方式時 |
-| [五階段流程](.claudedocs/process/五階段閉環流程.md) | 需要更多 Phase 細節時 |
-| [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 啟用持久化時 |
-| [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md) | 跨模組開發時 |
+> ⛔ 以下文檔**禁止主動讀取**。僅在觸發條件成立時才讀取，違反將浪費 token 預算。
 
-## 前置需求
-
-本閉環依賴以下工具，部署前請確認已安裝：
-
-| 工具 | 用途 | 安裝方式 |
-|------|------|---------|
-| **SuperClaude** | `sc:*` 系列 Skills（Phase 1-5 主要調用） | `pipx install superclaude && superclaude install` |
-| **Superpowers** | `superpowers:*` 系列 Skills（Phase 2-5 補充） | Claude Code 插件：`superpowers@claude-plugins-official` |
-| **claude-mem** _(可選)_ | 跨時間語義記憶（Phase 前查詢歷史、Phase 後保存經驗） | Claude Code 插件：`claude-mem` |
-
-> Task agent（`code-simplifier`、`security-engineer` 等）是 Claude Code 內建功能，無需額外安裝。
-
-## 驗證紀錄
-
-| 輪次 | 專案 | 測試目標 | 結果 | 發現與修正 |
-|------|------|---------|------|-----------|
-| — | — | — | — | （在此追加每次驗證的結果） |
+| 文檔 | 觸發條件（僅此條件下讀取） |
+|------|--------------------------|
+| [產出物格式](.claudedocs/standards/產出物格式.md) | 進入 Phase 1/3/4/5，需要產出模板時 |
+| [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | ⛔ 用戶明確詢問 Agent 配合方式時才讀 |
+| [五階段流程](.claudedocs/process/五階段閉環流程.md) | ⛔ CLAUDE.md 已含完整 Phase 描述，僅用戶要求更多細節時才讀 |
+| [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 模組 ≥ 3 且啟用持久化時 |
+| [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md) | 跨模組 API 依賴時 |
 
 ## 📖 補充文檔
 
