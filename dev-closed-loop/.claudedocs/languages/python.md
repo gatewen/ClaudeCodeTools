@@ -236,6 +236,15 @@ from contextlib import contextmanager  # context manager
 | 重複計算 | CPU | `@lru_cache` 或 `@cached_property` |
 | 全域 import 未用到 | 載入時間 | 延遲 import（在函式內 import） |
 
+### 結構安全
+
+| 項目 | 嚴重度 | 檢查重點 |
+|------|--------|---------|
+| 非法狀態可表達 | medium | 互斥狀態用 `enum.Enum`，禁止多個 `bool` 欄位組合 |
+| 窮舉匹配缺失 | medium | `match` 語句加 `case _: assert_never(x)` 防遺漏（3.10+） |
+| 不必要的可變性 | low | 優先 `@dataclass(frozen=True)` / `Final` / `tuple` |
+| 資源未釋放 | high | 所有 IO 用 `with` context manager，禁止裸 `open()` / 裸連線 |
+
 ---
 
 ## Phase 4：測試師補充 🧪

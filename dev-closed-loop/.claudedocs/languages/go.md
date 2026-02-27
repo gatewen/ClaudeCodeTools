@@ -201,6 +201,15 @@ if err := limiter.Wait(ctx); err != nil {
 | 不必要的 reflect | 執行速度慢 | 用泛型或程式碼生成替代 |
 | 未設定 buffer | IO 效能差 | `bufio.Reader/Writer` |
 
+### 結構安全
+
+| 項目 | 嚴重度 | 檢查重點 |
+|------|--------|---------|
+| 非法狀態可表達 | medium | 互斥狀態用自訂 type + iota 常數，配合 `String()` 方法驗證有效值 |
+| 窮舉匹配缺失 | medium | type switch 加 `default: panic("unknown")` 防遺漏新增型別 |
+| 資源未釋放 | high | `Close()` 必有對應 `defer`，goroutine 必有結束機制（context/done channel） |
+| 錯誤忽略 | high | 禁止 `_ = err`，每個 error 必須明確處理或 `fmt.Errorf` wrap 後傳遞 |
+
 ---
 
 ## Phase 4：測試師補充 🧪

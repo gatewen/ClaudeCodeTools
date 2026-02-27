@@ -234,6 +234,15 @@ log_error() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $*" >&2; }
 | 逐行讀取大檔案在 while 迴圈中 | 緩慢 | 用 `awk` 或 `sed` 批次處理 |
 | 未使用並行 | 長時間循序操作 | `xargs -P` 或背景程序 + `wait` |
 
+### 結構安全
+
+| 項目 | 嚴重度 | 檢查重點 |
+|------|--------|---------|
+| 資源未清理 | high | `mktemp` 必有對應 `trap cleanup EXIT`，背景程序必有 `wait` 或 `kill` |
+| 分支窮舉缺失 | medium | `case` 語句必有 `*) die "unknown" ;;` 兜底，禁止靜默忽略未知選項 |
+| 錯誤靜默吞掉 | high | `set -Eeuo pipefail` 全覆蓋，禁止 `2>/dev/null` 吞掉關鍵錯誤，管線每段需可追蹤 |
+| 全域變數污染 | medium | 函式內變數必須 `local` 宣告，常數用 `readonly`，禁止隱式全域副作用 |
+
 ---
 
 ## Phase 4：測試師補充 🧪

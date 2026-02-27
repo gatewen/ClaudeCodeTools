@@ -80,6 +80,7 @@
 **Agent**：需求模糊 → `sc:brainstorm` | 需求明確 → `sc:design` | 複雜系統 → Task `Plan`
 **語言指南**：若已部署語言指南，先讀取 Phase 1 段落（型別系統指南、BC-x/EH-x 慣用模式）。
 **約束**：只產出設計規格，不寫程式碼。BC-x ≥ 2、所有參數有型別、EH-x 覆蓋可預見異常。若涉及跨模組 API → 從 `.claude-loop/interfaces/` 讀取或產出 IF-x 介面契約。涉及 status 變更的 BC-x 必須同時定義「變更後的行為約束」（哪些方法應被禁用、哪些子系統應停止）。
+**結構安全**：互斥狀態用 discriminated union / enum 建模，禁止用多個 boolean 組合。涉及資源（連線/檔案/訂閱）的 BC-x 須標注建立者和釋放者。
 **⛔ 閘門**：參數有型別 ∧ BC ≥ 2 ∧ EH 覆蓋異常 ∧ status 變更有行為約束 → 才能進 Phase 2。
 
 ### Phase 2：程序設計師 💻
@@ -97,6 +98,7 @@
 **Agent**：品質 → `sc:analyze --focus quality` 或 Task `superpowers:code-reviewer` | 安全 → Task `security-engineer`。品質與安全審查**可並行**發送，合併 R-x 結果後統一判定斷點 A。
 **語言指南**：若已部署語言指南，**必須**讀取 Phase 3 段落（審查清單、安全/效能反模式），將語言專屬問題納入 R-x 報告，標記來源 `[語言名]`（如 `R-5 [TypeScript]: 使用 any 型別 (high)`）。
 **約束**：拿 Phase 1 規格比對 Phase 2 程式碼。問題標 R-x + 嚴重度（high/medium/low/by-design）。`by-design` 用於刻意的設計取捨，不計入斷點判定。安全檢核不可跳過。**R-x 報告策略**：high/medium 逐一列出；low 級合併為一句摘要（例如「另有 N 個 low 級建議」），不逐一列舉。
+**結構安全**：除 BC-x/EH-x 比對外，額外檢查：資源生命週期——建立/釋放是否配對？有無洩漏路徑？（R-x, high）。錯誤靜默——是否有 catch-all 吃掉錯誤？每個 fallible 操作是否有明確 error path？（R-x, high）。狀態表示——有無可表達的非法狀態組合？（有狀態機時檢查，R-x, medium）。
 **⛔ 斷點 A**：有 high → 禁止進入 Phase 4，回 Phase 2 修正後重跑 Phase 3。
 
 ### Phase 4：測試師 🧪

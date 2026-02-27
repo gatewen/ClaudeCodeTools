@@ -229,6 +229,15 @@ public class OrderRepository(AppDbContext db) : IOrderRepository
 | Boxing | GC 壓力 | 泛型約束避免 `object` |
 | 未使用 Compiled Query | EF 重複編譯 | `EF.CompileAsyncQuery<>()` |
 
+### 結構安全
+
+| 項目 | 嚴重度 | 檢查重點 |
+|------|--------|---------|
+| 非法狀態可表達 | medium | 互斥狀態用 record + pattern matching 窮舉，禁止多個 `bool` 屬性組合 |
+| 窮舉匹配缺失 | medium | switch expression 加 `_ => throw new ArgumentOutOfRangeException()` 防遺漏 |
+| 不必要的可變性 | low | 優先 `readonly` / `init` properties / records，可變需理由 |
+| 資源未釋放 | high | `IDisposable` 必用 `using`，async 必用 `await using` |
+
 ---
 
 ## Phase 4：測試師補充 🧪

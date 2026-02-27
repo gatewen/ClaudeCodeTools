@@ -189,6 +189,15 @@ src/
 | 同步大量運算 | 主執行緒阻塞 | Web Worker 或分批處理 |
 | 陣列多次遍歷 | CPU 浪費 | 單次 `reduce` 或 pipeline |
 
+### 結構安全
+
+| 項目 | 嚴重度 | 檢查重點 |
+|------|--------|---------|
+| 非法狀態可表達 | medium | 互斥狀態用 discriminated union，禁止多個 `boolean` 組合 |
+| 窮舉匹配缺失 | medium | switch 的 default 用 `const _exhaustive: never = x` 防遺漏新 variant |
+| 不必要的可變性 | low | 優先 `readonly` / `Readonly<T>` / `as const`，`let` 需理由 |
+| 資源未釋放 | high | `addEventListener` 有對應 `removeEventListener`，subscription 必 `unsubscribe` |
+
 ---
 
 ## Phase 4：測試師補充 🧪

@@ -220,6 +220,17 @@ pub enum OrderError {
 | 未使用 `with_capacity` | 重複 allocation | 已知大小時預分配 |
 | `Rc` 用於跨執行緒 | 編譯錯誤/效能 | 用 `Arc` |
 
+### 結構安全
+
+> Rust 的所有權系統和窮舉 match 已原生提供大部分結構安全保證。以下為額外注意項。
+
+| 項目 | 嚴重度 | 檢查重點 |
+|------|--------|---------|
+| `#[non_exhaustive]` 缺失 | medium | 公開 API 的 enum 加 `#[non_exhaustive]`，控制 API 演化 |
+| `Drop` 順序依賴 | medium | 多資源的 struct，確認 `Drop` 析構順序符合預期 |
+| `Mutex` 中毒未處理 | high | `lock().unwrap()` 改為 `lock().expect("reason")` 或處理 `PoisonError` |
+| interior mutability 濫用 | medium | `RefCell` / `Cell` 使用需合理理由，優先用所有權轉移 |
+
 ---
 
 ## Phase 4：測試師補充 🧪
