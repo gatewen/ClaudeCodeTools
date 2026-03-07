@@ -380,7 +380,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 建置指令：[指令]
 
 下一步：
-1. 開始開發時，Claude 會自動遵循五階段閉環流程
+1. 開始開發時，Claude 會自動遵循閉環流程（含 Phase 1b 獨立設計審查）
 2. 想了解閉環怎麼運作，讀 .claudedocs/concepts/閉環核心理念.md
 3. 想看每個階段做什麼，讀 .claudedocs/process/五階段閉環流程.md
 4. 若專案有 ≥ 3 個模組，建議建立 .claude-loop/ 持久化目錄
