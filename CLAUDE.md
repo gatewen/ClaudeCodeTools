@@ -35,6 +35,29 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 
 ## 編輯規範
 
+### ⛔ 修改前：依賴影響分析（必做）
+
+修改任何檔案前，**先查下表列出受影響的連動檔案**，再動手。即使只改一行也要做——這個 repo 的檔案之間有內容層級的依賴，沒有編譯器會替你抓不一致。
+
+| 改動位置 | 必須同步檢查的連動檔案 |
+|---------|---------------------|
+| CLAUDE_TEMPLATE.md — Phase 流程 / 閘門 / 規則 | `.claudedocs/process/五階段閉環流程.md` · `.claudedocs/concepts/閉環核心理念.md` |
+| CLAUDE_TEMPLATE.md — 產出物格式 / ID 系統 | `.claudedocs/standards/產出物格式.md` |
+| CLAUDE_TEMPLATE.md — 持久化 / .claude-loop | `.claudedocs/process/跨Session持久化.md` |
+| CLAUDE_TEMPLATE.md — 介面契約 / IF-x / CR-x | `.claudedocs/process/介面契約與變更管理.md` |
+| CLAUDE_TEMPLATE.md — 層級擴展 / 模組層級 | `.claudedocs/process/層級擴展.md` |
+| CLAUDE_TEMPLATE.md — 結構變更（section / placeholder 增刪） | `dev-closed-loop/skill/init-claude.md` |
+| CLAUDE_TEMPLATE.md — 語言指南引用方式 | `.claudedocs/languages/*.md` |
+| `.claudedocs/` — 檔案增刪 | `setup.sh`（驗證清單）· `.claudedocs/README.md` |
+| 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 |
+
+**流程**：
+1. **查表** → 在回應中明確列出本次受影響的連動檔案清單
+2. **修改** → 主檔案 + 所有連動檔案一起改完
+3. **自檢** → 用 Read 抽查連動檔案，確認內容無矛盾
+
+### 靜態規則
+
 - `CLAUDE_TEMPLATE.md` 必須保留所有 `{{PLACEHOLDER}}` 標記——它們在部署時才被替換。
 - `.claudedocs/` 目錄必須維持 10 個檔案的完整結構（setup.sh 會驗證）。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
