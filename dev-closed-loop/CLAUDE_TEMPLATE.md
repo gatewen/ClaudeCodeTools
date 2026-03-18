@@ -87,6 +87,7 @@
 ### Phase 1b：設計審查 🔬
 
 **獨立性要求**：必須使用 Task 工具啟動獨立子 agent。子 agent **不繼承**主對話 context，只接收下方定義的審查包。目的：切斷認知偏見傳遞鏈，讓審查者以全新視角評估設計。
+**目錄準備**：主 agent 在發送第一個委派 Task 前，執行 `mkdir -p .claude-loop/artifacts`。
 **跳過條件**：用戶說「跳過設計審查」→ 直接進 Phase 2。Phase 5 步驟 4c 標記「用戶跳過」，不視為缺失。
 **審查包**（主 agent 在發送 Task 前準備）：
 - Phase 1 設計規格全文（BC-x/EH-x/IF-x 清單）
@@ -101,8 +102,9 @@
 - 挑戰式標準：是否有更簡單的替代方案？BC-x 數量與功能複雜度是否匹配（過多=過度設計，過少=覆蓋不足）？有無設計不足？
 - 驗證式標準：每個 BC-x 的預期行為是否可測試？EH-x 是否覆蓋外部失敗（網路/IO/權限/並發）？資源建立/釋放是否配對？互斥狀態是否用 union/enum 而非多 boolean？
 - 輸出格式：DR-x + 嚴重度（high/medium/low）+ 問題描述 + 建議修正
+- 寫入指令：「將完整審查報告寫入 `.claude-loop/artifacts/P1b-design-review.md`」
 
-**產出**：DR-x 審查報告。
+**產出**：DR-x 審查報告，寫入 `.claude-loop/artifacts/P1b-design-review.md`。
 - **high**：架構有明顯缺陷、遺漏關鍵邊界情境、或存在明顯更優的替代方案
 - **medium**：設計可改善但不影響正確性，或存在值得考慮的替代方向
 - **low**：風格偏好或微小建議（合併摘要，不逐一列舉）
@@ -130,12 +132,14 @@
 - 輸入：Phase 1 設計規格 + Phase 2 程式碼檔案路徑（子 agent 用 Read 自行讀取）+ 語言指南 Phase 3 段落（若有）
 - 審查規則：比對設計與實作一致性 + 結構安全（資源生命週期配對/錯誤靜默/非法狀態組合）+ 語言專屬審查（標 `[語言名]`）
 - 輸出：R-x + 嚴重度（high/medium/low/by-design）+ 問題描述 + 建議修正
+- 寫入指令：「將完整檢核報告寫入 `.claude-loop/artifacts/P3-quality-review.md`」
 
 **安全審查 Task prompt**：
 - 角色：「你是獨立安全檢核師」
 - 輸入：Phase 2 程式碼檔案路徑
 - 審查規則：輸入驗證 / 注入風險 / 認證授權 / 敏感資料暴露 / 依賴安全
 - 輸出：R-x + 嚴重度 + 問題描述 + 建議修正
+- 寫入指令：「將完整檢核報告寫入 `.claude-loop/artifacts/P3-security-review.md`」
 
 **約束**：問題標 R-x + 嚴重度（high/medium/low/by-design）。`by-design` 用於刻意的設計取捨，不計入斷點判定。安全檢核不可跳過。**R-x 報告策略**：high/medium 逐一列出；low 級合併為一句摘要（例如「另有 N 個 low 級建議」），不逐一列舉。
 **結構安全**（品質審查包含）：資源生命週期——建立/釋放是否配對？有無洩漏路徑？（R-x, high）。錯誤靜默——是否有 catch-all 吃掉錯誤？每個 fallible 操作是否有明確 error path？（R-x, high）。狀態表示——有無可表達的非法狀態組合？（有狀態機時檢查，R-x, medium）。
@@ -175,6 +179,7 @@
 - 角色：「你是獨立自証審查者（追溯檢查），與開發者無關，不知道開發過程」
 - 追溯規則：對每個 BC-x/EH-x，在程式碼中找到對應實作（標 ✅/❌ + 檔案:行數），在測試中找到對應案例（標 ✅/❌ + 測試名稱）
 - 輸出格式：逐項 ✅/❌ + 證據位置（檔案:行數 或測試名稱）。❌ 項附問題描述
+- 寫入指令：「將完整追溯檢查結果寫入 `.claude-loop/artifacts/P5A-traceability.md`」
 
 **檢查步驟**：
 0. 若有 PRD 分解：逐一確認每個 PRD#n 有 ≥ 1 個對應 BC-x/EH-x（✅/❌）。有 ❌ → 標記回退
@@ -184,7 +189,7 @@
 4. Phase 3 的 high/medium R-x 是否已修（✅/❌）
 4b. 若已部署語言指南：Phase 3 R-x 報告是否包含語言專屬項（帶 `[語言名]` 標記）？（✅/❌）
 4c. Phase 1b 的 DR-x high 是否已修正（✅/❌）？medium 的用戶決策是否有記錄（✅/❌）？
-**產出**：逐項 ✅/❌ 結果 + 發現的問題描述，回傳給主 agent。
+**產出**：逐項 ✅/❌ 結果 + 發現的問題描述，寫入 `.claude-loop/artifacts/P5A-traceability.md` 並回傳給主 agent。
 
 **Part B — 反向分析**（獨立子 agent · 程式碼 → 設計）：
 **獨立性要求**：必須使用 Task 工具啟動獨立子 agent（可與 Part A 並行發送）。
@@ -197,13 +202,21 @@
 - 分析規則：識別所有行為路徑（正常/錯誤/邊界）→ 逐一對應 BC-x/EH-x → 未對應的標記 `[遺漏設計]`（應有 BC-x 但未定義）或 `[多餘程式碼]`（不該存在的行為）
 - 追蹤規則：挑最複雜 2-3 個 BC-x，追蹤 入口→處理→出口 完整路徑，比對設計意圖
 - 輸出格式：未覆蓋路徑清單（每項標 [遺漏設計]/[多餘程式碼] + 檔案:行數 + 行為描述）+ 執行路徑追蹤結果
+- 寫入指令：「將完整反向分析結果寫入 `.claude-loop/artifacts/P5B-reverse-analysis.md`」
 
 **檢查步驟**：
 6. 閱讀 Phase 2 程式碼，找出不被任何 BC-x/EH-x 覆蓋的行為路徑。有 → 判定是遺漏設計還是多餘程式碼
 7. 挑最複雜的 2-3 個 BC-x，沿程式碼追蹤執行路徑，驗證行為與設計意圖一致
-**產出**：未覆蓋路徑清單 + 執行路徑追蹤結果，回傳給主 agent。
+**產出**：未覆蓋路徑清單 + 執行路徑追蹤結果，寫入 `.claude-loop/artifacts/P5B-reverse-analysis.md` 並回傳給主 agent。
 
 **Part C — 整體評估**（主 agent 彙整）：
+**⛔ 委派產出物驗證**（步驟 8 前必做）：用 Glob 確認 `.claude-loop/artifacts/` 下列檔案全部存在：
+- `P1b-design-review.md`（用戶跳過 1b 時除外）
+- `P3-quality-review.md`
+- `P3-security-review.md`
+- `P5A-traceability.md`
+- `P5B-reverse-analysis.md`
+任一缺漏 → 回退到對應 Phase 重做委派，禁止繼續。
 8. 收集 Part A + Part B 結果，確認五份產出物完整（設計規格/設計審查報告/程式碼/檢核報告/測試報告）
 **衝突解決**：Part A 與 Part B 結論矛盾時（如 Part A 標 BC-3 ✅ 但 Part B 發現 BC-3 附近有未覆蓋路徑）→ 以 Part B 為準（反向分析比正向追溯更深入），主 agent 重新審視爭議點後判定。仍無法判定 → 用 AskUserQuestion 呈現兩方結論，由用戶決定。
 9. 跑全專案驗證：`{{VERIFY_SEQUENCE}}`（多模組必做；單模組有範圍外影響風險時做）
@@ -249,6 +262,7 @@
 ## 跨 Session 持久化
 
 **觸發條件**：模組數 ≥ 3 且有跨模組依賴 | 預計多 Session | 用戶說「啟用持久化」
+**委派產出物**：完整閉環必建 `.claude-loop/artifacts/` 目錄（與持久化觸發條件無關），子 agent 將審查產出寫入此目錄，Phase 5 Part C 驗證檔案存在性。
 **輕量持久化**：大型任務的 Phase 1 設計規格（BC-x/EH-x 清單）建議寫入 `.claude-loop/modules/{name}/design-spec.md`，即使未啟用完整持久化，避免 context 壓縮導致設計意圖丟失。
 **機制**：產出物寫入 `.claude-loop/` 目錄，新 Session 從檔案恢復狀態。
 詳細目錄結構與操作規則：[跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md)
@@ -289,7 +303,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.1
+closed-loop v5.2
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄

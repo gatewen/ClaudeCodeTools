@@ -24,6 +24,12 @@
 
 ```
 .claude-loop/
+├── artifacts/                        # 委派產出物（完整閉環必建，與持久化無關）
+│   ├── P1b-design-review.md          # Phase 1b 設計審查報告
+│   ├── P3-quality-review.md          # Phase 3 品質審查報告
+│   ├── P3-security-review.md         # Phase 3 安全審查報告
+│   ├── P5A-traceability.md           # Phase 5 Part A 追溯檢查
+│   └── P5B-reverse-analysis.md       # Phase 5 Part B 反向分析
 ├── project-state.md              # 全局狀態：模組清單、依賴圖、進度
 ├── modules/
 │   ├── user/
@@ -50,6 +56,7 @@
 
 | 檔案 | 用途 | 誰寫入 | 誰讀取 |
 |------|------|--------|--------|
+| `artifacts/*.md` | 委派子 agent 的產出物檔案（完整閉環必建） | 各 Phase 的委派子 agent | Phase 5 Part C 驗證存在性 |
 | `project-state.md` | 全局鳥瞰：所有模組的進度和依賴關係 | 每個模組閉環完成時更新 | 新 Session 開始時第一個讀 |
 | `modules/{name}/status.md` | 單一模組的閉環狀態和歷史 | 每次 Phase 轉換時更新 | 進入該模組閉環時讀取 |
 | `modules/{name}/design-spec.md` | Phase 1 的設計規格 | Phase 1 完成時寫入 | Phase 2-5 引用、依賴模組讀取 |
