@@ -360,10 +360,11 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 1. **建立 hooks 目錄**：
    - 用 Bash 執行 `mkdir -p .claude/hooks`
 
-2. **部署 lint 腳本**（靜態檔案，用 cp 複製）：
+2. **部署 Hook 腳本**（靜態檔案，用 cp 複製）：
    - 用 Bash 執行：
      ```bash
      cp {{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh .claude/hooks/incremental-lint.sh && chmod +x .claude/hooks/incremental-lint.sh
+     cp {{REPO_PATH}}/dev-closed-loop/hooks/delegation-tracker.sh .claude/hooks/delegation-tracker.sh && chmod +x .claude/hooks/delegation-tracker.sh
      ```
 
 3. **配置 hooks（`.claude/settings.json`）**：
@@ -381,6 +382,13 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      # 避免重複：檢查是否已有 incremental-lint
      if not any("incremental-lint" in str(h) for h in post_hooks):
        post_hooks.append(hook_entry)
+     # 委派追蹤 Hook
+     delegation_entry = {
+       "matcher": "Agent",
+       "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-tracker.sh"}]
+     }
+     if not any("delegation-tracker" in str(h) for h in post_hooks):
+       post_hooks.append(delegation_entry)
      json.dump(existing, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
      ```
    - **不存在**：用 Write 建立新的 `.claude/settings.json`：
@@ -396,6 +404,15 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
                  "command": "bash .claude/hooks/incremental-lint.sh"
                }
              ]
+           },
+           {
+             "matcher": "Agent",
+             "hooks": [
+               {
+                 "type": "command",
+                 "command": "bash .claude/hooks/delegation-tracker.sh"
+               }
+             ]
            }
          ]
        }
@@ -407,6 +424,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    ✅ 開發設計閉環已部署完成
    ...
    - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
+- 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
    ```
 
 ### Step 5：驗證
@@ -436,7 +454,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 4. **Hook 部署檢查**：
    - `.claude/hooks/incremental-lint.sh` 存在且可執行
-   - `.claude/settings.json` 包含 `PostToolUse` hook 配置
+   - `.claude/hooks/delegation-tracker.sh` 存在且可執行
+   - `.claude/settings.json` 包含 `PostToolUse` hook 配置（含 incremental-lint 和 delegation-tracker）
    （若任一檢查失敗 → 報錯並嘗試修正）
 
 5. **結果報告**：根據部署模式輸出對應摘要。
@@ -450,6 +469,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - .claudedocs/（10 份核心文檔，給人類閱讀）
 - .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
 - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
+- 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
 
 專案配置：
 - 語言：[語言]

@@ -217,6 +217,7 @@
 - `P5A-traceability.md`
 - `P5B-reverse-analysis.md`
 任一缺漏 → 回退到對應 Phase 重做委派，禁止繼續。
+**⛔ 委派呼叫驗證**（產出物驗證後）：讀取 `.claude-loop/artifacts/.delegation-log`，確認包含 P1b（用戶跳過時除外）、P3-quality、P3-security、P5A、P5B 的記錄。此 log 由 Hook 自動寫入（非 Claude 寫入），缺漏表示 Agent tool 未被實際呼叫。
 8. 收集 Part A + Part B 結果，確認五份產出物完整（設計規格/設計審查報告/程式碼/檢核報告/測試報告）
 **衝突解決**：Part A 與 Part B 結論矛盾時（如 Part A 標 BC-3 ✅ 但 Part B 發現 BC-3 附近有未覆蓋路徑）→ 以 Part B 為準（反向分析比正向追溯更深入），主 agent 重新審視爭議點後判定。仍無法判定 → 用 AskUserQuestion 呈現兩方結論，由用戶決定。
 9. 跑全專案驗證：`{{VERIFY_SEQUENCE}}`（多模組必做；單模組有範圍外影響風險時做）
@@ -303,7 +304,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.2
+closed-loop v5.3
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄

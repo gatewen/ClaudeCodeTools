@@ -179,6 +179,22 @@ else
     echo "⚠️  語言 Skills 不完整（${LANG_COUNT}/${LANG_TOTAL}）— 不影響核心功能"
 fi
 
+# 確認 hooks 完整
+HOOK_FILES=(
+    "hooks/incremental-lint.sh"
+    "hooks/delegation-tracker.sh"
+)
+HOOKS_OK=true
+for f in "${HOOK_FILES[@]}"; do
+    if [ ! -f "$REPO_DIR/dev-closed-loop/$f" ]; then
+        echo "❌ 缺少 Hook：$f"
+        HOOKS_OK=false
+    fi
+done
+if $HOOKS_OK; then
+    echo "✅ Hook 腳本完整（${#HOOK_FILES[@]}/${#HOOK_FILES[@]}）"
+fi
+
 # --------------------------------------------------
 # 完成
 # --------------------------------------------------
