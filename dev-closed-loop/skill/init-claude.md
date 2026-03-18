@@ -3,7 +3,11 @@
 為當前專案部署「開發設計閉環」方法論的 CLAUDE.md 和補充文檔。
 
 **用戶參數**：$ARGUMENTS
-（可傳入專案名稱，例如 `/dev:init-claude my-awesome-project`。若未提供，使用當前目錄名稱。）
+
+**模式**：
+- `/dev:init-claude` 或 `/dev:init-claude [專案名稱]` — 部署/升級（預設）
+- `/dev:init-claude status` — 快速查看版本和健康狀態
+- `/dev:init-claude uninstall` — 移除閉環部署
 
 ---
 
@@ -15,6 +19,18 @@
 語言指南：{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/
 Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 ```
+
+---
+
+## 模式分流
+
+根據 `$ARGUMENTS` 的第一個詞判斷模式：
+
+| 第一個詞 | 模式 | 跳轉 |
+|---------|------|------|
+| `status` | 狀態檢查 | → Status 模式 |
+| `uninstall` | 移除部署 | → Uninstall 模式 |
+| 其他（含空） | 部署/升級 | → 執行步驟 Step 0 |
 
 ---
 
@@ -507,10 +523,169 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 測試指令：[指令]
 - 建置指令：[指令]
 
+版本差異摘要：
+[根據舊版本動態生成，以下為參考]
+- v4.x → v5.0：新增 Phase 1b 獨立設計審查、Phase 3/5 sub-agent 架構
+- v5.0 → v5.1：新增依賴影響分析規則
+- v5.1 → v5.2：委派產出物必須寫入 .claude-loop/artifacts/
+- v5.2 → v5.3：新增委派追蹤 Hook（Agent 呼叫自動記錄）
+
 下一步：
 1. 閉環流程已自動生效，無需額外操作
-2. 建議瀏覽 .claudedocs/concepts/閉環核心理念.md 了解新版變更
+2. 執行 `/dev:init-claude status` 驗證部署健康狀態
+3. 建議瀏覽 .claudedocs/concepts/閉環核心理念.md 了解新版變更
 ```
+
+---
+
+## Status 模式（`/dev:init-claude status`）
+
+快速查看當前專案的閉環部署狀態和健康度。不修改任何檔案。
+
+### 步驟
+
+1. **版本偵測**：
+   - 用 Grep 搜尋 `CLAUDE.md` 中的 `closed-loop v` 字串
+   - 找到 → 提取版本號
+   - 找不到 CLAUDE.md → 輸出「⚠️ 閉環未部署。執行 `/dev:init-claude` 開始部署」並結束
+   - 有 CLAUDE.md 但無版本標記 → 輸出「ℹ️ CLAUDE.md 存在但非閉環部署」並結束
+
+2. **配置提取**：從 CLAUDE.md 提取已部署的專案配置（語言/框架/測試指令/建置指令）
+
+3. **健康檢查**（逐項用 Bash 檢查，每項標 ✅/❌/⚠️）：
+
+   | 檢查項 | 方法 | 判定 |
+   |--------|------|------|
+   | 核心文檔 | `ls .claudedocs/` 數量 | 10 個 = ✅，< 10 = ❌ 列出缺少 |
+   | 語言指南 | `.claudedocs/languages/*.md` 是否存在 | 有 = ✅ [語言]，無 = — 未部署 |
+   | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
+   | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
+   | Hook 配置 | `.claude/settings.json` 含 `incremental-lint` 和 `delegation-tracker` | 2/2 = ✅，否則 ⚠️ 列出缺少 |
+   | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
+   | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
+
+4. **可升級偵測**：
+   - 用 Read 讀取模板版本：`{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md` 末尾的 `closed-loop v`
+   - 模板版本 > 部署版本 → 顯示「🔄 可升級：v{當前} → v{最新}。執行 `/dev:init-claude` 升級」
+   - 模板版本 = 部署版本 → 顯示「✅ 已是最新版本」
+   - 讀取失敗（模板路徑不存在）→ 顯示「⚠️ 模板來源不可達，可能需要重新 `bash setup.sh`」
+
+5. **輸出格式**：
+
+```
+═══ 閉環部署狀態 ═══
+
+版本：v5.3
+專案：[名稱]
+語言：[語言] | 框架：[框架]
+
+健康檢查：
+  ✅ 核心文檔（10/10）
+  ✅ 語言指南：typescript.md
+  ✅ 增量驗證 Hook
+  ✅ 委派追蹤 Hook
+  ✅ Hook 配置（2/2）
+  ✅ 無 Placeholder 殘留
+  — .claude-loop/ 未啟用
+
+升級：✅ 已是最新版本
+
+整體：✅ 健康（7/7 通過）
+```
+
+若有問題：
+```
+整體：⚠️ 有問題（5/7 通過）
+  ❌ 委派追蹤 Hook 缺失 → 執行 /dev:init-claude 升級修復
+  ❌ Hook 配置不完整 → 執行 /dev:init-claude 升級修復
+```
+
+---
+
+## Uninstall 模式（`/dev:init-claude uninstall`）
+
+從當前專案移除閉環部署。
+
+### 步驟
+
+1. **前置檢查**：
+   - 用 Grep 確認 CLAUDE.md 存在且含 `closed-loop v` 標記
+   - 不存在 → 輸出「⚠️ 當前專案未部署閉環」並結束
+
+2. **掃描將移除的檔案**：
+   用 Bash 列出以下項目，計算影響範圍：
+   - `CLAUDE.md`（或閉環追加的部分）
+   - `.claudedocs/` 目錄（含所有子目錄）
+   - `.claude/hooks/incremental-lint.sh`
+   - `.claude/hooks/delegation-tracker.sh`
+   - `.claude/settings.json` 中的 PostToolUse hook 配置
+   - `.claude-loop/` 目錄（若存在）
+
+3. **用戶確認**（AskUserQuestion）：
+   ```
+   ⚠️ 即將移除閉環部署。
+
+   將刪除的檔案：
+   - CLAUDE.md（閉環主檔案）[若為純閉環] / 閉環區段（若為合併檔）
+   - .claudedocs/（N 個檔案）
+   - .claude/hooks/incremental-lint.sh
+   - .claude/hooks/delegation-tracker.sh
+   - .claude/settings.json 中的閉環 hook 配置
+   [若有 .claude-loop/]
+   - .claude-loop/（閉環狀態目錄，含 N 個檔案）
+
+   ⚠️ .claude-loop/ 中可能包含進行中的閉環記錄，刪除後無法恢復。
+
+   請選擇：
+   1. 全部移除
+   2. 保留 .claude-loop/，移除其餘
+   3. 取消
+   ```
+
+4. **執行移除**：
+   - 用 Bash `rm -rf .claudedocs/` 刪除文檔
+   - 用 Bash `rm -f .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh` 刪除 hook 腳本
+   - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
+     ```python
+     import json
+     cfg = json.load(open('.claude/settings.json'))
+     post_hooks = cfg.get("hooks", {}).get("PostToolUse", [])
+     cfg["hooks"]["PostToolUse"] = [
+       h for h in post_hooks
+       if "incremental-lint" not in str(h) and "delegation-tracker" not in str(h)
+     ]
+     # 清理空 PostToolUse
+     if not cfg["hooks"]["PostToolUse"]:
+       del cfg["hooks"]["PostToolUse"]
+     if not cfg["hooks"]:
+       del cfg["hooks"]
+     json.dump(cfg, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
+     ```
+   - **CLAUDE.md 處理**：
+     - 用 Grep 檢查 CLAUDE.md 是否**只有**閉環內容（首行是 `# {{已填充的專案名}}` 且末尾有 `closed-loop v` 註解，中間無非閉環區段）
+     - 純閉環 → 用 Bash `rm CLAUDE.md` 刪除
+     - 合併檔（有非閉環的自訂內容在頂部） → 用 AskUserQuestion 警告：
+       ```
+       CLAUDE.md 包含自訂內容（閉環區段前有 {N} 行）。
+       自動移除可能破壞自訂內容。建議手動編輯。
+       1. 我手動處理 CLAUDE.md（僅移除其餘閉環檔案）
+       2. 全部刪除（包含自訂內容）
+       ```
+   - 若用戶選擇移除 `.claude-loop/` → 用 Bash `rm -rf .claude-loop/`
+
+5. **結果報告**：
+   ```
+   ✅ 閉環已移除
+
+   已刪除：
+   - CLAUDE.md [或「已保留（含自訂內容）」]
+   - .claudedocs/（N 個檔案）
+   - 2 個 Hook 腳本
+   - .claude/settings.json 中的閉環 hook 配置
+   [若移除] - .claude-loop/
+
+   若要重新部署，執行 /dev:init-claude
+   ```
 
 ---
 
