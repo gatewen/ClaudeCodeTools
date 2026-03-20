@@ -369,9 +369,12 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 在末尾追加分隔線 `---` 和閉環模板內容
 - 提醒用戶手動整理合併後的內容
 
-### Step 4b：部署增量驗證 Hook
+### Step 4b：部署 Hook 系統
 
-閉環 Phase 2 增量驗證透過 PostToolUse hook 自動化。每次 Claude 寫入或編輯檔案後，hook 會自動對該檔案執行 per-file lint。
+閉環透過三個 Hook 自動化品質保障：
+- **因果鏈守衛**（PreToolUse）：修改前提醒 AI 做影響分析
+- **增量驗證**（PostToolUse）：修改後自動 per-file lint
+- **委派追蹤**（PostToolUse）：Agent 呼叫自動記錄
 
 1. **建立 hooks 目錄**：
    - 用 Bash 執行 `mkdir -p .claude/hooks`
@@ -379,6 +382,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 2. **部署 Hook 腳本**（靜態檔案，用 cp 複製）：
    - 用 Bash 執行：
      ```bash
+     cp {{REPO_PATH}}/dev-closed-loop/hooks/impact-analysis-guard.sh .claude/hooks/impact-analysis-guard.sh && chmod +x .claude/hooks/impact-analysis-guard.sh
      cp {{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh .claude/hooks/incremental-lint.sh && chmod +x .claude/hooks/incremental-lint.sh
      cp {{REPO_PATH}}/dev-closed-loop/hooks/delegation-tracker.sh .claude/hooks/delegation-tracker.sh && chmod +x .claude/hooks/delegation-tracker.sh
      ```
@@ -389,16 +393,24 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      ```python
      import json, sys
      existing = json.load(open('.claude/settings.json'))
-     hook_entry = {
+     hooks = existing.setdefault("hooks", {})
+     # PreToolUse：因果鏈守衛
+     pre_hooks = hooks.setdefault("PreToolUse", [])
+     guard_entry = {
+       "matcher": "Write|Edit|MultiEdit",
+       "hooks": [{"type": "command", "command": "bash .claude/hooks/impact-analysis-guard.sh"}]
+     }
+     if not any("impact-analysis-guard" in str(h) for h in pre_hooks):
+       pre_hooks.append(guard_entry)
+     # PostToolUse：增量驗證
+     post_hooks = hooks.setdefault("PostToolUse", [])
+     lint_entry = {
        "matcher": "Write|Edit|MultiEdit",
        "hooks": [{"type": "command", "command": "bash .claude/hooks/incremental-lint.sh"}]
      }
-     hooks = existing.setdefault("hooks", {})
-     post_hooks = hooks.setdefault("PostToolUse", [])
-     # 避免重複：檢查是否已有 incremental-lint
      if not any("incremental-lint" in str(h) for h in post_hooks):
-       post_hooks.append(hook_entry)
-     # 委派追蹤 Hook
+       post_hooks.append(lint_entry)
+     # PostToolUse：委派追蹤
      delegation_entry = {
        "matcher": "Agent",
        "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-tracker.sh"}]
@@ -411,6 +423,17 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      ```json
      {
        "hooks": {
+         "PreToolUse": [
+           {
+             "matcher": "Write|Edit|MultiEdit",
+             "hooks": [
+               {
+                 "type": "command",
+                 "command": "bash .claude/hooks/impact-analysis-guard.sh"
+               }
+             ]
+           }
+         ],
          "PostToolUse": [
            {
              "matcher": "Write|Edit|MultiEdit",
@@ -439,7 +462,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    ```
    ✅ 開發設計閉環已部署完成
    ...
-   - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
+   - 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前影響分析提醒）
+- 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 - 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
    ```
 
@@ -469,8 +493,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    （若未部署語言 Skill → 跳過此檢查）
 
 4. **Hook 部署檢查**：
+   - `.claude/hooks/impact-analysis-guard.sh` 存在且可執行
    - `.claude/hooks/incremental-lint.sh` 存在且可執行
    - `.claude/hooks/delegation-tracker.sh` 存在且可執行
+   - `.claude/settings.json` 包含 `PreToolUse` hook 配置（含 impact-analysis-guard）
    - `.claude/settings.json` 包含 `PostToolUse` hook 配置（含 incremental-lint 和 delegation-tracker）
    （若任一檢查失敗 → 報錯並嘗試修正）
 
@@ -484,6 +510,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
 - .claudedocs/（10 份核心文檔，給人類閱讀）
 - .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
+- 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前影響分析提醒）
 - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 - 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
 
@@ -513,6 +540,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - CLAUDE.md（方法論已更新，專案配置已保留）
 - .claudedocs/（10 份核心文檔已更新）
 - .claudedocs/languages/（語言指南已更新）← 有對應 Skill 時顯示
+- 因果鏈守衛 Hook：✅ 已更新（PreToolUse → 修改前影響分析提醒）
 - 增量驗證 Hook：✅ 已更新
 [若有用戶自訂內容]
 - 用戶自訂內容：已保留在 CLAUDE.md 頂部（{N} 行）
@@ -529,6 +557,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - v5.0 → v5.1：新增依賴影響分析規則
 - v5.1 → v5.2：委派產出物必須寫入 .claude-loop/artifacts/
 - v5.2 → v5.3：新增委派追蹤 Hook（Agent 呼叫自動記錄）
+- v5.3 → v5.5：領域偵測、arch-risk 嚴重度、P5 雙向合併、測試分層、配額管理
+- v5.5 → v5.6：新增因果鏈守衛 Hook（PreToolUse → 修改前影響分析提醒）
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作
@@ -558,9 +588,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    |--------|------|------|
    | 核心文檔 | `ls .claudedocs/` 數量 | 10 個 = ✅，< 10 = ❌ 列出缺少 |
    | 語言指南 | `.claudedocs/languages/*.md` 是否存在 | 有 = ✅ [語言]，無 = — 未部署 |
+   | 因果鏈守衛 Hook | `.claude/hooks/impact-analysis-guard.sh` 存在且可執行 | ✅/❌ |
    | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
    | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
-   | Hook 配置 | `.claude/settings.json` 含 `incremental-lint` 和 `delegation-tracker` | 2/2 = ✅，否則 ⚠️ 列出缺少 |
+   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker` | 3/3 = ✅，否則 ⚠️ 列出缺少 |
    | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
 
@@ -582,9 +613,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 健康檢查：
   ✅ 核心文檔（10/10）
   ✅ 語言指南：typescript.md
+  ✅ 因果鏈守衛 Hook
   ✅ 增量驗證 Hook
   ✅ 委派追蹤 Hook
-  ✅ Hook 配置（2/2）
+  ✅ Hook 配置（3/3）
   ✅ 無 Placeholder 殘留
   — .claude-loop/ 未啟用
 
@@ -596,7 +628,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 若有問題：
 ```
 整體：⚠️ 有問題（5/7 通過）
-  ❌ 委派追蹤 Hook 缺失 → 執行 /dev:init-claude 升級修復
+  ❌ 因果鏈守衛 Hook 缺失 → 執行 /dev:init-claude 升級修復
   ❌ Hook 配置不完整 → 執行 /dev:init-claude 升級修復
 ```
 
@@ -616,9 +648,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    用 Bash 列出以下項目，計算影響範圍：
    - `CLAUDE.md`（或閉環追加的部分）
    - `.claudedocs/` 目錄（含所有子目錄）
+   - `.claude/hooks/impact-analysis-guard.sh`
    - `.claude/hooks/incremental-lint.sh`
    - `.claude/hooks/delegation-tracker.sh`
-   - `.claude/settings.json` 中的 PostToolUse hook 配置
+   - `.claude/settings.json` 中的 PreToolUse 和 PostToolUse hook 配置
    - `.claude-loop/` 目錄（若存在）
 
 3. **用戶確認**（AskUserQuestion）：
@@ -628,6 +661,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    將刪除的檔案：
    - CLAUDE.md（閉環主檔案）[若為純閉環] / 閉環區段（若為合併檔）
    - .claudedocs/（N 個檔案）
+   - .claude/hooks/impact-analysis-guard.sh
    - .claude/hooks/incremental-lint.sh
    - .claude/hooks/delegation-tracker.sh
    - .claude/settings.json 中的閉環 hook 配置
@@ -644,17 +678,25 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 4. **執行移除**：
    - 用 Bash `rm -rf .claudedocs/` 刪除文檔
-   - 用 Bash `rm -f .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh` 刪除 hook 腳本
+   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh` 刪除 hook 腳本
    - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
      ```python
      import json
      cfg = json.load(open('.claude/settings.json'))
+     # 移除 PreToolUse 中的閉環 hook
+     pre_hooks = cfg.get("hooks", {}).get("PreToolUse", [])
+     cfg["hooks"]["PreToolUse"] = [
+       h for h in pre_hooks
+       if "impact-analysis-guard" not in str(h)
+     ]
+     if not cfg["hooks"]["PreToolUse"]:
+       del cfg["hooks"]["PreToolUse"]
+     # 移除 PostToolUse 中的閉環 hook
      post_hooks = cfg.get("hooks", {}).get("PostToolUse", [])
      cfg["hooks"]["PostToolUse"] = [
        h for h in post_hooks
        if "incremental-lint" not in str(h) and "delegation-tracker" not in str(h)
      ]
-     # 清理空 PostToolUse
      if not cfg["hooks"]["PostToolUse"]:
        del cfg["hooks"]["PostToolUse"]
      if not cfg["hooks"]:
@@ -680,8 +722,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    已刪除：
    - CLAUDE.md [或「已保留（含自訂內容）」]
    - .claudedocs/（N 個檔案）
-   - 2 個 Hook 腳本
-   - .claude/settings.json 中的閉環 hook 配置
+   - 3 個 Hook 腳本
+   - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse）
    [若移除] - .claude-loop/
 
    若要重新部署，執行 /dev:init-claude
