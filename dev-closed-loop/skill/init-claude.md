@@ -7,6 +7,7 @@
 **模式**：
 - `/dev:init-claude` 或 `/dev:init-claude [專案名稱]` — 部署/升級（預設）
 - `/dev:init-claude status` — 快速查看版本和健康狀態
+- `/dev:init-claude upgrade` — 從 GitHub 下載最新版，更新 Skill 和快取
 - `/dev:init-claude uninstall` — 移除閉環部署
 
 ---
@@ -29,6 +30,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 | 第一個詞 | 模式 | 跳轉 |
 |---------|------|------|
 | `status` | 狀態檢查 | → Status 模式 |
+| `upgrade` | 自我更新 | → Upgrade 模式 |
 | `uninstall` | 移除部署 | → Uninstall 模式 |
 | 其他（含空） | 部署/升級 | → 執行步驟 Step 0 |
 
@@ -84,7 +86,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 **衝突處理**：若已存在 CLAUDE.md，先執行版本偵測再決定流程。
 
 **版本偵測**：用 Grep 搜尋現有 CLAUDE.md 中的 `closed-loop v` 字串（位於檔案末尾的 HTML 註解中）。
-- 找到版本標記（如 `closed-loop v4.0`）→ 這是閉環專案，進入**升級流程**
+- 找到版本標記（如 `closed-loop v5.7.0`）→ 這是閉環專案，進入**升級流程**
 - 找不到版本標記 → 這不是閉環專案，進入**非閉環衝突處理**
 
 **升級流程**（偵測到閉環版本時）：
@@ -553,12 +555,13 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 版本差異摘要：
 [根據舊版本動態生成，以下為參考]
-- v4.x → v5.0：新增 Phase 1b 獨立設計審查、Phase 3/5 sub-agent 架構
-- v5.0 → v5.1：新增依賴影響分析規則
-- v5.1 → v5.2：委派產出物必須寫入 .claude-loop/artifacts/
-- v5.2 → v5.3：新增委派追蹤 Hook（Agent 呼叫自動記錄）
-- v5.3 → v5.5：領域偵測、arch-risk 嚴重度、P5 雙向合併、測試分層、配額管理
-- v5.5 → v5.6：新增因果鏈守衛 Hook（PreToolUse → 修改前影響分析提醒）
+- v4.x → v5.0.0：新增 Phase 1b 獨立設計審查、Phase 3/5 sub-agent 架構
+- v5.0.0 → v5.1.0：新增依賴影響分析規則
+- v5.1.0 → v5.2.0：委派產出物必須寫入 .claude-loop/artifacts/
+- v5.2.0 → v5.3.0：新增委派追蹤 Hook（Agent 呼叫自動記錄）
+- v5.3.0 → v5.5.0：領域偵測、arch-risk 嚴重度、P5 雙向合併、測試分層、配額管理
+- v5.5.0 → v5.6.0：新增因果鏈守衛 Hook（PreToolUse → 修改前影響分析提醒）
+- v5.6.0 → v5.7.0：自動更新系統 + 三位數版本制（curl 安裝、upgrade 模式、GitHub 版本偵測）
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作
@@ -593,20 +596,27 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
    | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker` | 3/3 = ✅，否則 ⚠️ 列出缺少 |
    | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
+   | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
 
-4. **可升級偵測**：
-   - 用 Read 讀取模板版本：`{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md` 末尾的 `closed-loop v`
-   - 模板版本 > 部署版本 → 顯示「🔄 可升級：v{當前} → v{最新}。執行 `/dev:init-claude` 升級」
-   - 模板版本 = 部署版本 → 顯示「✅ 已是最新版本」
-   - 讀取失敗（模板路徑不存在）→ 顯示「⚠️ 模板來源不可達，可能需要重新 `bash setup.sh`」
+4. **可升級偵測**（雙重檢查）：
+   - **本地快取檢查**：用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md` 末尾的 `closed-loop v`
+   - **GitHub 遠端檢查**：用 Bash 執行：
+     ```bash
+     curl -sL --max-time 5 "https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/dev-closed-loop/CLAUDE_TEMPLATE.md" 2>/dev/null | grep -o 'closed-loop v[0-9.]*' | tail -1
+     ```
+   - 以遠端版本為準（最新）；若 curl 失敗則以本地快取為準
+   - 最新版本 > 部署版本 → 顯示「🔄 可升級：v{當前} → v{最新}。執行 `/dev:init-claude upgrade` 升級」
+   - 最新版本 = 部署版本 → 顯示「✅ 已是最新版本」
+   - 兩種檢查都失敗 → 顯示「⚠️ 無法確認最新版本（本地快取不可達 + 網路不可用）」
 
 5. **輸出格式**：
 
 ```
 ═══ 閉環部署狀態 ═══
 
-版本：v5.3
+版本：v5.7.0
+來源：~/.claude/cache/ClaudeCodeTools/  [或本地 repo 路徑]
 專案：[名稱]
 語言：[語言] | 框架：[框架]
 
@@ -621,16 +631,72 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
   — .claude-loop/ 未啟用
 
 升級：✅ 已是最新版本
+  [或] 🔄 可升級：v5.7.0 → v5.8.0。執行 /dev:init-claude upgrade 升級
 
-整體：✅ 健康（7/7 通過）
+整體：✅ 健康（8/8 通過）
 ```
 
 若有問題：
 ```
-整體：⚠️ 有問題（5/7 通過）
-  ❌ 因果鏈守衛 Hook 缺失 → 執行 /dev:init-claude 升級修復
-  ❌ Hook 配置不完整 → 執行 /dev:init-claude 升級修復
+整體：⚠️ 有問題（6/8 通過）
+  ❌ 因果鏈守衛 Hook 缺失 → 執行 /dev:init-claude upgrade 升級修復
+  ❌ Hook 配置不完整 → 執行 /dev:init-claude upgrade 升級修復
 ```
+
+---
+
+## Upgrade 模式（`/dev:init-claude upgrade`）
+
+從 GitHub 下載最新版本到快取，更新 Skill 自身，然後引導用戶完成專案升級。
+
+### 步驟
+
+1. **下載最新版本到快取**：
+   用 Bash 執行：
+   ```bash
+   CACHE_DIR="$HOME/.claude/cache/ClaudeCodeTools"
+   TMP_DIR="$(mktemp -d)"
+   curl -sL "https://github.com/gatewen/ClaudeCodeTools/archive/refs/heads/main.tar.gz" -o "$TMP_DIR/archive.tar.gz" && \
+   tar -xzf "$TMP_DIR/archive.tar.gz" -C "$TMP_DIR" && \
+   rm -rf "$CACHE_DIR" && \
+   mkdir -p "$(dirname "$CACHE_DIR")" && \
+   mv "$TMP_DIR"/ClaudeCodeTools-* "$CACHE_DIR" && \
+   rm -rf "$TMP_DIR" && \
+   echo "OK"
+   ```
+   - 輸出 "OK" → 繼續
+   - 失敗 → 告知「❌ 下載失敗，請確認網路連線」並終止
+
+2. **版本比較**：
+   - 讀取下載版本：用 Bash `grep -o 'closed-loop v[0-9.]*' "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/CLAUDE_TEMPLATE.md" | tail -1`
+   - 讀取當前部署版本：用 Grep 搜尋 CLAUDE.md 中的 `closed-loop v`
+   - 若已是最新 → 告知「✅ 快取已更新，已是最新版本 v{X}」並結束
+   - 若有新版 → 繼續
+
+3. **更新 Skill 自身**：
+   用 Bash 執行：
+   ```bash
+   sed "s|{{REPO_PATH}}|$HOME/.claude/cache/ClaudeCodeTools|g" \
+     "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/skill/init-claude.md" \
+     > "$HOME/.claude/commands/dev/init-claude.md" && \
+   echo "OK"
+   ```
+   告知用戶：「✅ Skill 已更新至 v{新版本}。快取路徑：~/.claude/cache/ClaudeCodeTools」
+
+4. **引導專案升級**：
+   用 AskUserQuestion 告知用戶：
+   ```
+   ✅ 閉環工具已更新：v{舊版本} → v{新版本}
+
+   Skill 檔案和快取已是最新版。
+   ⚠️ 當前對話仍使用舊版 Skill 定義（Claude 已載入的 context 不會即時更新）。
+
+   請選擇：
+   1. 在新對話中執行 /dev:init-claude 完成專案升級 ← 推薦
+   2. 繼續在當前對話中升級（使用舊 Skill 定義，可能缺少新功能）
+   ```
+   - 用戶選 1 → 結束，提示「在目標專案目錄開啟新對話，執行 /dev:init-claude 即可升級」
+   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）
 
 ---
 

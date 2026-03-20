@@ -14,7 +14,7 @@
 |------|------|
 | `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含產出物格式、自証檢查表、Agent 調度規則） |
 | `.claudedocs/` | 補充文檔（10 檔），給人類閱讀 |
-| `.claudedocs/languages/` | 語言 Skills（5 語言），部署時只複製偵測到的語言 |
+| `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
 
 ### 設計歷史（了解這套方法怎麼來的）
@@ -29,12 +29,17 @@
 
 ## 使用方式
 
-1. 複製 `CLAUDE_TEMPLATE.md` + `.claudedocs/` 到專案根目錄
-2. 把 `CLAUDE_TEMPLATE.md` 重新命名為 `CLAUDE.md`
-3. 替換所有 `{{PLACEHOLDER}}` 為專案的實際值
-4. Claude Code 啟動後會自動讀取並遵循閉環流程
+最簡單的方法是裝好 Skill 後直接跑指令：
 
-或先執行 `bash setup.sh`（安裝 Skill），之後在任何專案目錄執行 `/dev:init-claude` 一鍵完成以上步驟。
+```
+/dev:init-claude          ← 部署閉環到專案
+/dev:init-claude status   ← 查看部署狀態
+/dev:init-claude upgrade  ← 從 GitHub 下載最新版
+```
+
+安裝方式見根目錄 README。
+
+手動部署也可以：複製 `CLAUDE_TEMPLATE.md` + `.claudedocs/` 到專案根目錄，改名為 `CLAUDE.md`，替換所有 `{{PLACEHOLDER}}`。
 
 ## .claudedocs 目錄結構
 
@@ -60,7 +65,8 @@
     ├── python.md
     ├── go.md
     ├── rust.md
-    └── csharp.md
+    ├── csharp.md
+    └── bash.md
 ```
 
 ## 閱讀建議
@@ -73,12 +79,12 @@
 
 | 版本 | 重點 |
 |------|------|
-| v5.1 | 新增依賴影響分析規則（修改前必做連動檔案清單 + 三步自檢流程） |
-| v5.0 | 獨立子 agent 架構強制化（P1b/P3/P5）+ PRD 需求分解（PRD#n 追溯）+ 結構安全審查 + 增量驗證 Hook |
-| v4.0 | Gen 3 重寫（601→185 行）+ GameBox 4 輪壓測改進（增量驗證、單檔上限、升級機制、並行審查、斷點 B 分支判定） |
-| v3.5 | 跨 Session 持久化 (v1) + IF-x/CR-x 介面契約 (v2) + claude-mem 語義記憶 |
-| v3.4 | 遷移至獨立 Git repo，setup.sh 一鍵部署，消除路徑依賴 |
-| v3.3 | 前置需求區塊 + Step 0 環境依賴檢查 |
-| v3.2 | `/dev:init-claude` Skill（自動偵測 + 互動確認 + 模板填充） |
-| v3.1 | Phase 2 出口加入 code-simplifier 強制優化 |
-| v3.0 | 產出物格式嵌入 CLAUDE.md + 6 步自証檢查表 + SkillsMP |
+| v5.7.0 | 自動更新系統 + 三位數版本制（curl 安裝、upgrade 模式、GitHub 版本偵測） |
+| v5.6.0 | 因果鏈守衛 Hook（修改前自動提醒做影響分析） |
+| v5.5.0 | 領域偵測、架構風險嚴重度、Phase 5 雙向合併、測試分層 |
+| v5.3.0 | 委派追蹤 Hook（Agent 呼叫自動記錄） |
+| v5.2.0 | 委派產出物強制寫入 .claude-loop/artifacts/ |
+| v5.1.0 | 依賴影響分析規則 |
+| v5.0.0 | 獨立子 agent 架構 + PRD 需求分解 + 增量驗證 Hook |
+| v4.0 | Gen 3 重寫（601→185 行）+ 升級機制 |
+| v3.x | Skill 系統、跨 Session 持久化、介面契約、claude-mem 整合 |

@@ -1,20 +1,101 @@
 #!/bin/bash
 # AI-ClaudeCode 安裝腳本
 # 用途：部署 Skill 到 ~/.claude/commands/ 並檢查依賴
-# 使用：git clone → cd AI-ClaudeCode → bash setup.sh
+# 使用：
+#   遠端安裝：curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh | bash
+#   本地安裝：cd ClaudeCodeTools && bash setup.sh
 
 set -e
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+# main() 包裝：防止 curl | bash 時因下載中斷而執行不完整腳本
+main() {
+
+GITHUB_REPO="gatewen/ClaudeCodeTools"
+TARBALL_URL="https://github.com/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
+CACHE_DIR="$HOME/.claude/cache/ClaudeCodeTools"
 COMMANDS_DIR="$HOME/.claude/commands"
-SKILL_SOURCE="$REPO_DIR/dev-closed-loop/skill/init-claude.md"
 SKILL_TARGET="$COMMANDS_DIR/dev/init-claude.md"
+
+# --------------------------------------------------
+# 0. 模式偵測：本地 or 遠端
+# --------------------------------------------------
+
+detect_source() {
+    local script_dir=""
+
+    # 嘗試取得腳本所在目錄（curl | bash 時 $0 = bash，dirname 無意義）
+    if [ -f "$0" ] && [ "$(basename "$0")" = "setup.sh" ]; then
+        script_dir="$(cd "$(dirname "$0")" && pwd)"
+    fi
+
+    # 本地模式：腳本旁邊有 dev-closed-loop/
+    if [ -n "$script_dir" ] && [ -d "$script_dir/dev-closed-loop" ]; then
+        SOURCE_DIR="$script_dir"
+        INSTALL_MODE="local"
+        return 0
+    fi
+
+    # 遠端模式：從 GitHub 下載
+    INSTALL_MODE="remote"
+    download_to_cache
+    SOURCE_DIR="$CACHE_DIR"
+}
+
+download_to_cache() {
+    echo "📥 從 GitHub 下載最新版本..."
+
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+
+    # 下載 tarball
+    if ! curl -sL "$TARBALL_URL" -o "$tmp_dir/archive.tar.gz"; then
+        rm -rf "$tmp_dir"
+        echo "❌ 下載失敗。請確認網路連線正常。"
+        exit 1
+    fi
+
+    # 解壓縮
+    if ! tar -xzf "$tmp_dir/archive.tar.gz" -C "$tmp_dir"; then
+        rm -rf "$tmp_dir"
+        echo "❌ 解壓縮失敗。"
+        exit 1
+    fi
+
+    # GitHub tarball 會建立 ClaudeCodeTools-main/ 子目錄
+    local extracted_dir
+    extracted_dir="$(find "$tmp_dir" -maxdepth 1 -type d -name 'ClaudeCodeTools-*' | head -1)"
+    if [ -z "$extracted_dir" ]; then
+        rm -rf "$tmp_dir"
+        echo "❌ 解壓縮的目錄結構異常。"
+        exit 1
+    fi
+
+    # 用新下載覆蓋快取
+    rm -rf "$CACHE_DIR"
+    mkdir -p "$(dirname "$CACHE_DIR")"
+    mv "$extracted_dir" "$CACHE_DIR"
+    rm -rf "$tmp_dir"
+
+    echo "✅ 已下載至 ${CACHE_DIR}"
+}
+
+# 執行偵測
+detect_source
+
+SKILL_SOURCE="$SOURCE_DIR/dev-closed-loop/skill/init-claude.md"
+# 遠端模式的 {{REPO_PATH}} 指向快取；本地模式指向 repo 目錄
+REPO_PATH_VALUE="$SOURCE_DIR"
 
 echo "================================================"
 echo "  AI-ClaudeCode 安裝腳本"
 echo "================================================"
 echo ""
-echo "Repo 路徑：$REPO_DIR"
+if [ "$INSTALL_MODE" = "local" ]; then
+    echo "模式：本地安裝（從 repo 目錄）"
+else
+    echo "模式：遠端安裝（從 GitHub 下載）"
+fi
+echo "來源路徑：${SOURCE_DIR}"
 echo ""
 
 # --------------------------------------------------
@@ -23,8 +104,8 @@ echo ""
 
 # 確認 Skill 源碼存在
 if [ ! -f "$SKILL_SOURCE" ]; then
-    echo "❌ 找不到 Skill 源碼：$SKILL_SOURCE"
-    echo "   請確認 repo 檔案完整"
+    echo "❌ 找不到 Skill 源碼：${SKILL_SOURCE}"
+    echo "   請確認檔案完整"
     exit 1
 fi
 
@@ -92,10 +173,10 @@ fi
 
 echo "--- 部署 Skill ---"
 
-# 讀取 Skill 源碼，替換 {{REPO_PATH}} 為實際路徑，寫入目標
-sed "s|{{REPO_PATH}}|$REPO_DIR|g" "$SKILL_SOURCE" > "$SKILL_TARGET"
+# 讀取 Skill 源碼，替換 {{REPO_PATH}} 為來源路徑，寫入目標
+sed "s|{{REPO_PATH}}|${REPO_PATH_VALUE}|g" "$SKILL_SOURCE" > "$SKILL_TARGET"
 
-echo "✅ init-claude.md 已部署到 $SKILL_TARGET"
+echo "✅ init-claude.md 已部署到 ${SKILL_TARGET}"
 
 # --------------------------------------------------
 # 4. 驗證
@@ -113,18 +194,18 @@ else
 fi
 
 # 確認部署的 Skill 包含正確路徑
-if grep -q "$REPO_DIR" "$SKILL_TARGET" 2>/dev/null; then
-    echo "✅ 路徑指向 $REPO_DIR"
+if grep -q "${REPO_PATH_VALUE}" "$SKILL_TARGET" 2>/dev/null; then
+    echo "✅ 路徑指向 ${REPO_PATH_VALUE}"
 else
     echo "❌ 路徑替換異常"
     exit 1
 fi
 
 # 確認模板檔案可達
-if [ -f "$REPO_DIR/dev-closed-loop/CLAUDE_TEMPLATE.md" ]; then
+if [ -f "${SOURCE_DIR}/dev-closed-loop/CLAUDE_TEMPLATE.md" ]; then
     echo "✅ 模板檔案存在"
 else
-    echo "❌ 模板檔案不存在：$REPO_DIR/dev-closed-loop/CLAUDE_TEMPLATE.md"
+    echo "❌ 模板檔案不存在：${SOURCE_DIR}/dev-closed-loop/CLAUDE_TEMPLATE.md"
     exit 1
 fi
 
@@ -141,7 +222,7 @@ EXPECTED_FILES=(
     "standards/產出物格式.md"
     "records/問題追蹤.md"
 )
-DOCS_DIR="$REPO_DIR/dev-closed-loop/.claudedocs"
+DOCS_DIR="${SOURCE_DIR}/dev-closed-loop/.claudedocs"
 DOCS_OK=true
 for f in "${EXPECTED_FILES[@]}"; do
     if [ ! -f "$DOCS_DIR/$f" ]; then
@@ -181,12 +262,13 @@ fi
 
 # 確認 hooks 完整
 HOOK_FILES=(
+    "hooks/impact-analysis-guard.sh"
     "hooks/incremental-lint.sh"
     "hooks/delegation-tracker.sh"
 )
 HOOKS_OK=true
 for f in "${HOOK_FILES[@]}"; do
-    if [ ! -f "$REPO_DIR/dev-closed-loop/$f" ]; then
+    if [ ! -f "${SOURCE_DIR}/dev-closed-loop/$f" ]; then
         echo "❌ 缺少 Hook：$f"
         HOOKS_OK=false
     fi
@@ -210,4 +292,13 @@ if [ -n "$MISSING" ]; then
     echo "⚠️  記得安裝缺少的依賴，否則閉環的部分功能無法使用。"
     echo ""
 fi
-echo "更新流程：修改 repo 內容 → git pull → bash setup.sh"
+if [ "$INSTALL_MODE" = "local" ]; then
+    echo "更新流程：git pull → bash setup.sh"
+else
+    echo "更新流程：執行 /dev:init-claude upgrade（自動從 GitHub 下載最新版）"
+    echo "  或重新執行：curl -sL https://raw.githubusercontent.com/${GITHUB_REPO}/main/setup.sh | bash"
+fi
+
+}
+
+main "$@"

@@ -12,7 +12,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 
 ## 倉庫結構
 
-- `setup.sh` — 安裝腳本。將 Skill 部署到 `~/.claude/commands/dev/init-claude.md`（對應 `/dev:init-claude` 指令），過程中把 `{{REPO_PATH}}` 替換為實際的 clone 路徑。
+- `setup.sh` — 安裝腳本（雙模式）。支援 `curl | bash` 遠端安裝和本地 `bash setup.sh`。遠端模式從 GitHub 下載 tarball 到 `~/.claude/cache/ClaudeCodeTools/`，本地模式直接從 repo 目錄安裝。將 Skill 部署到 `~/.claude/commands/dev/init-claude.md`（對應 `/dev:init-claude` 指令），過程中把 `{{REPO_PATH}}` 替換為來源路徑。
 - `dev-closed-loop/CLAUDE_TEMPLATE.md` — 核心產物。自包含的 CLAUDE.md 模板，含完整五階段閉環方法論。內有 `{{PLACEHOLDER}}` 變數，部署到專案時由 Skill 填入實際值。
 - `dev-closed-loop/skill/init-claude.md` — Skill 源碼。定義 `/dev:init-claude` 指令（專案偵測、互動確認、模板填充部署）。
 - `dev-closed-loop/.claudedocs/` — 10 份核心文檔（concepts/process/standards/records）+ 語言 Skills（languages/），給人類閱讀。部署時會一併複製到目標專案。
@@ -24,9 +24,25 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 
 ## 操作方式
 
-**安裝 / 更新**：`bash setup.sh` — 部署 Skill 並驗證所有必要檔案存在。
+**首次安裝**（二擇一）：
+
+1. **一行指令安裝**（推薦）：
+   ```bash
+   curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh | bash
+   ```
+   自動下載至 `~/.claude/cache/ClaudeCodeTools/`，部署 Skill。
+
+2. **從 git clone 安裝**（開發者）：
+   ```bash
+   git clone https://github.com/gatewen/ClaudeCodeTools.git
+   cd ClaudeCodeTools && bash setup.sh
+   ```
 
 **安裝後使用**：在任何專案目錄執行 `/dev:init-claude`，即可部署閉環 CLAUDE.md + .claudedocs/ 到該專案。
+
+**更新**：
+- 一行指令安裝者：在任何專案中執行 `/dev:init-claude upgrade`（自動從 GitHub 下載最新版）
+- git clone 安裝者：`git pull && bash setup.sh`
 
 **依賴**（setup.sh 會檢查）：
 - SuperClaude（`sc:*` 系列 Skills）：`pipx install superclaude && superclaude install`
