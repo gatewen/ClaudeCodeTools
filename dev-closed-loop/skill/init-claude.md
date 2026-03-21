@@ -102,7 +102,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
    升級內容：
    - 方法論更新（CLAUDE.md 閉環流程）
-   - 核心文檔更新（.claudedocs/ 10 份文檔）
+   - 核心文檔更新（.claudedocs/ 11 份文檔）
    - 語言指南更新（若有部署）
    - Hook 腳本更新
 
@@ -485,6 +485,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - `.claudedocs/standards/Agent使用指南.md`
    - `.claudedocs/standards/Git工作流.md`
    - `.claudedocs/standards/產出物格式.md`
+   - `.claudedocs/standards/委派審查prompt.md`
    - `.claudedocs/records/問題追蹤.md`
    - `.claudedocs/process/跨Session持久化.md`
    - `.claudedocs/process/介面契約與變更管理.md`
@@ -565,6 +566,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - v5.7.0 → v5.8.0：因果鏈分析可見性 + 深度規則（必須在畫面輸出推導過程，穿透呼叫鏈/語意/時序/邊界）
 - v5.8.0 → v5.9.0：合理性審查（Phase 1 自檢 + Phase 3 審查維度 + 非閉環通用規則）
 - v5.9.0 → v5.10.0：架構體質拆解（第一性原理：Phase 1 設計前拆解現有架構假設、Phase 1b 審查架構體質）
+- v5.10.0 → v5.10.1：模板瘦身（子 agent prompt 移至 .claudedocs/standards/委派審查prompt.md，模板 512→448 行）
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作
@@ -592,7 +594,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
    | 檢查項 | 方法 | 判定 |
    |--------|------|------|
-   | 核心文檔 | `ls .claudedocs/` 數量 | 10 個 = ✅，< 10 = ❌ 列出缺少 |
+   | 核心文檔 | `ls .claudedocs/` 數量 | 11 個 = ✅，< 11 = ❌ 列出缺少 |
    | 語言指南 | `.claudedocs/languages/*.md` 是否存在 | 有 = ✅ [語言]，無 = — 未部署 |
    | 因果鏈守衛 Hook | `.claude/hooks/impact-analysis-guard.sh` 存在且可執行 | ✅/❌ |
    | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
@@ -624,7 +626,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 語言：[語言] | 框架：[框架]
 
 健康檢查：
-  ✅ 核心文檔（10/10）
+  ✅ 核心文檔（11/11）
   ✅ 語言指南：typescript.md
   ✅ 因果鏈守衛 Hook
   ✅ 增量驗證 Hook

@@ -75,7 +75,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 ### 靜態規則
 
 - `CLAUDE_TEMPLATE.md` 必須保留所有 `{{PLACEHOLDER}}` 標記——它們在部署時才被替換。
-- `.claudedocs/` 目錄必須維持 10 個檔案的完整結構（setup.sh 會驗證）。
+- `.claudedocs/` 目錄必須維持 11 個檔案的完整結構（setup.sh 會驗證）。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。
