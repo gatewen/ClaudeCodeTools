@@ -604,18 +604,20 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
 
-4. **可升級偵測**（雙重檢查）：
-   - **本地快取檢查**：用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md` 末尾的 `closed-loop v`
-   - **GitHub 遠端檢查**：用 Bash 執行：
+4. **⛔ 可升級偵測（禁止跳過）**：
+   此步驟是 status 模式的核心功能之一，**即使前面的健康檢查全部通過也必須執行**。不執行此步驟就等於沒有完成 status 檢查。
+   - **GitHub 遠端檢查**（優先）：用 Bash 執行：
      ```bash
      curl -sL --max-time 5 "https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/dev-closed-loop/CLAUDE_TEMPLATE.md" 2>/dev/null | grep -o 'closed-loop v[0-9.]*' | tail -1
      ```
+   - **本地快取檢查**（備援）：用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md` 末尾的 `closed-loop v`
    - 以遠端版本為準（最新）；若 curl 失敗則以本地快取為準
    - 最新版本 > 部署版本 → 顯示「🔄 可升級：v{當前} → v{最新}。執行 `/dev:init-claude upgrade` 升級」
    - 最新版本 = 部署版本 → 顯示「✅ 已是最新版本」
    - 兩種檢查都失敗 → 顯示「⚠️ 無法確認最新版本（本地快取不可達 + 網路不可用）」
+   - **⛔ 必須在輸出中包含「升級：」行**，不論結果是什麼。缺少此行 = status 輸出不完整
 
-5. **輸出格式**：
+5. **輸出格式（⛔ 必須包含以下所有區塊，禁止省略任何區塊）**：
 
 ```
 ═══ 閉環部署狀態 ═══
