@@ -90,12 +90,32 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 找不到版本標記 → 這不是閉環專案，進入**非閉環衝突處理**
 
 **升級流程**（偵測到閉環版本時）：
-1. 從模板檔案提取目標版本號（同樣搜尋 `closed-loop v`）
-2. 比較版本：
+1. **⛔ GitHub 遠端版本檢查（禁止跳過）**：
+   用 Bash 執行：
+   ```bash
+   curl -sL --max-time 5 "https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/dev-closed-loop/CLAUDE_TEMPLATE.md" 2>/dev/null | grep -o 'closed-loop v[0-9.]*' | tail -1
+   ```
+   - 取得遠端版本後，跟本地快取版本（`{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md`）比較：
+     - 遠端版本 > 快取版本 → 本地快取已過時，用 AskUserQuestion 提示：
+       ```
+       🔄 偵測到 GitHub 有新版本：v{遠端版本}（本地快取：v{快取版本}）
+
+       請選擇：
+       1. 先更新快取再升級（自動執行 upgrade → 部署）← 推薦
+       2. 使用本地快取版本繼續（v{快取版本}）
+       3. 取消
+       ```
+       - 用戶選 1 → 執行 Upgrade 模式的步驟 1-3（下載 + 更新 Skill），然後用**新快取**繼續本流程
+       - 用戶選 2 → 用現有快取繼續
+       - 用戶選 3 → 終止
+     - 遠端版本 = 快取版本 → 快取已是最新，繼續
+     - curl 失敗 → 輸出「⚠️ 無法連線 GitHub，使用本地快取版本」，繼續
+2. 從模板檔案提取目標版本號（同樣搜尋 `closed-loop v`）
+3. 比較版本：
    - 現有版本 = 模板版本 → 告知「已是最新版 vX.X」，問是否要重新部署（重新偵測配置並覆蓋）
    - 現有版本 < 模板版本 → 顯示升級畫面（見下方）
    - 現有版本 > 模板版本 → 警告「目標版本 vX.X 比現有 vY.Y 舊」，問是否要降級
-3. 升級畫面（用 AskUserQuestion）：
+4. 升級畫面（用 AskUserQuestion）：
    ```
    偵測到現有閉環部署：v{現有版本}
    可升級至：v{模板版本}
