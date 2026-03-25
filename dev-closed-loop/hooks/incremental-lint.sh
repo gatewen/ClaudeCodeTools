@@ -32,10 +32,14 @@ if [[ -z "$FILE_PATH" ]] || [[ ! -f "$FILE_PATH" ]]; then
   exit 0
 fi
 
-# 2. 取得副檔名
+# 2. 橙色提醒
+FILENAME=$(basename "$FILE_PATH")
+echo -e "\033[38;5;208m🟠 收到：${FILENAME} 已修改，執行增量驗證\033[0m"
+
+# 3. 取得副檔名
 EXT="${FILE_PATH##*.}"
 
-# 3. 根據副檔名選擇 linter
+# 4. 根據副檔名選擇 linter
 case "$EXT" in
   ts|tsx|js|jsx)
     if command -v npx &>/dev/null && [[ -f "${CLAUDE_PROJECT_DIR:-.}/node_modules/.bin/eslint" ]]; then

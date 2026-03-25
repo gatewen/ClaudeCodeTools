@@ -387,6 +387,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      cp {{REPO_PATH}}/dev-closed-loop/hooks/impact-analysis-guard.sh .claude/hooks/impact-analysis-guard.sh && chmod +x .claude/hooks/impact-analysis-guard.sh
      cp {{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh .claude/hooks/incremental-lint.sh && chmod +x .claude/hooks/incremental-lint.sh
      cp {{REPO_PATH}}/dev-closed-loop/hooks/delegation-tracker.sh .claude/hooks/delegation-tracker.sh && chmod +x .claude/hooks/delegation-tracker.sh
+     cp {{REPO_PATH}}/dev-closed-loop/hooks/prompt-understanding-guard.sh .claude/hooks/prompt-understanding-guard.sh && chmod +x .claude/hooks/prompt-understanding-guard.sh
      ```
 
 3. **配置 hooks（`.claude/settings.json`）**：
@@ -419,6 +420,13 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      }
      if not any("delegation-tracker" in str(h) for h in post_hooks):
        post_hooks.append(delegation_entry)
+     # UserPromptSubmit：理解確認守衛
+     prompt_hooks = hooks.setdefault("UserPromptSubmit", [])
+     prompt_entry = {
+       "hooks": [{"type": "command", "command": "bash .claude/hooks/prompt-understanding-guard.sh"}]
+     }
+     if not any("prompt-understanding-guard" in str(h) for h in prompt_hooks):
+       prompt_hooks.append(prompt_entry)
      json.dump(existing, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
      ```
    - **不存在**：用 Write 建立新的 `.claude/settings.json`：
@@ -455,6 +463,16 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
                }
              ]
            }
+         ],
+         "UserPromptSubmit": [
+           {
+             "hooks": [
+               {
+                 "type": "command",
+                 "command": "bash .claude/hooks/prompt-understanding-guard.sh"
+               }
+             ]
+           }
          ]
        }
      }
@@ -467,6 +485,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前影響分析提醒）
 - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 - 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
+- 理解確認守衛 Hook：✅ 已部署（UserPromptSubmit → 修改前理解確認）
    ```
 
 ### Step 5：驗證
@@ -499,8 +518,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - `.claude/hooks/impact-analysis-guard.sh` 存在且可執行
    - `.claude/hooks/incremental-lint.sh` 存在且可執行
    - `.claude/hooks/delegation-tracker.sh` 存在且可執行
+   - `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行
    - `.claude/settings.json` 包含 `PreToolUse` hook 配置（含 impact-analysis-guard）
    - `.claude/settings.json` 包含 `PostToolUse` hook 配置（含 incremental-lint 和 delegation-tracker）
+   - `.claude/settings.json` 包含 `UserPromptSubmit` hook 配置（含 prompt-understanding-guard）
    （若任一檢查失敗 → 報錯並嘗試修正）
 
 5. **結果報告**：根據部署模式輸出對應摘要。
@@ -599,7 +620,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    | 因果鏈守衛 Hook | `.claude/hooks/impact-analysis-guard.sh` 存在且可執行 | ✅/❌ |
    | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
    | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
-   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker` | 3/3 = ✅，否則 ⚠️ 列出缺少 |
+   | 理解確認守衛 Hook | `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行 | ✅/❌ |
+   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard` | 4/4 = ✅，否則 ⚠️ 列出缺少 |
    | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
    | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
@@ -633,7 +655,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
   ✅ 因果鏈守衛 Hook
   ✅ 增量驗證 Hook
   ✅ 委派追蹤 Hook
-  ✅ Hook 配置（3/3）
+  ✅ 理解確認守衛 Hook
+  ✅ Hook 配置（4/4）
   ✅ 無 Placeholder 殘留
   — .claude-loop/ 未啟用
 
@@ -724,7 +747,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - `.claude/hooks/impact-analysis-guard.sh`
    - `.claude/hooks/incremental-lint.sh`
    - `.claude/hooks/delegation-tracker.sh`
-   - `.claude/settings.json` 中的 PreToolUse 和 PostToolUse hook 配置
+   - `.claude/hooks/prompt-understanding-guard.sh`
+   - `.claude/settings.json` 中的 PreToolUse、PostToolUse、UserPromptSubmit hook 配置
    - `.claude-loop/` 目錄（若存在）
 
 3. **用戶確認**（AskUserQuestion）：
@@ -737,6 +761,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - .claude/hooks/impact-analysis-guard.sh
    - .claude/hooks/incremental-lint.sh
    - .claude/hooks/delegation-tracker.sh
+   - .claude/hooks/prompt-understanding-guard.sh
    - .claude/settings.json 中的閉環 hook 配置
    [若有 .claude-loop/]
    - .claude-loop/（閉環狀態目錄，含 N 個檔案）
@@ -751,7 +776,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 4. **執行移除**：
    - 用 Bash `rm -rf .claudedocs/` 刪除文檔
-   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh` 刪除 hook 腳本
+   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/prompt-understanding-guard.sh` 刪除 hook 腳本
    - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
      ```python
      import json
@@ -772,6 +797,14 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      ]
      if not cfg["hooks"]["PostToolUse"]:
        del cfg["hooks"]["PostToolUse"]
+     # 移除 UserPromptSubmit 中的閉環 hook
+     prompt_hooks = cfg.get("hooks", {}).get("UserPromptSubmit", [])
+     cfg["hooks"]["UserPromptSubmit"] = [
+       h for h in prompt_hooks
+       if "prompt-understanding-guard" not in str(h)
+     ]
+     if not cfg["hooks"]["UserPromptSubmit"]:
+       del cfg["hooks"]["UserPromptSubmit"]
      if not cfg["hooks"]:
        del cfg["hooks"]
      json.dump(cfg, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
@@ -796,7 +829,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - CLAUDE.md [或「已保留（含自訂內容）」]
    - .claudedocs/（N 個檔案）
    - 3 個 Hook 腳本
-   - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse）
+   - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse + UserPromptSubmit）
    [若移除] - .claude-loop/
 
    若要重新部署，執行 /dev:init-claude

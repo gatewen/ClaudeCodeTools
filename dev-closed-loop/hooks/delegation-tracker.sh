@@ -52,7 +52,8 @@ fi
 # 非閉環委派的 Agent 呼叫 → 靜默放行
 [[ -z "$PHASE" ]] && exit 0
 
-# 3. 寫入委派記錄
+# 3. 橙色提醒 + 寫入委派記錄
+echo -e "\033[38;5;208m🟠 收到：調用子 agent（${PHASE}），啟動委派追蹤\033[0m"
 TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date '+%Y-%m-%dT%H:%M:%SZ')
 echo "$TIMESTAMP DELEGATED $PHASE" >> .claude-loop/artifacts/.delegation-log
 

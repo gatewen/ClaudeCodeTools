@@ -266,6 +266,7 @@ HOOK_FILES=(
     "hooks/impact-analysis-guard.sh"
     "hooks/incremental-lint.sh"
     "hooks/delegation-tracker.sh"
+    "hooks/prompt-understanding-guard.sh"
 )
 HOOKS_OK=true
 for f in "${HOOK_FILES[@]}"; do

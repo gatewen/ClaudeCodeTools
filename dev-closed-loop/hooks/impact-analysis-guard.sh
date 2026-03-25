@@ -35,6 +35,7 @@ FILENAME_NO_EXT="${FILENAME%.*}"
 
 # 2. 新檔案（不存在）→ 輕量提醒
 if [[ ! -f "$FILE_PATH" ]]; then
+  echo -e "\033[38;5;208m🟠 收到：即將新建 ${FILENAME}，先做因果鏈分析\033[0m"
   echo "⚠️ [因果鏈] 新建 ${FILENAME}：確認此檔案在整體架構中的定位和依賴方向"
   exit 0
 fi
@@ -59,14 +60,19 @@ elif command -v grep &>/dev/null; then
     . 2>/dev/null | grep -v "$FILENAME" | head -10) || true
 fi
 
-# 4. 輸出因果鏈提醒
+# 4. 輸出因果鏈提醒（橙色前綴）
+ORANGE='\033[38;5;208m'
+RESET='\033[0m'
+
 if [[ -n "$DEPENDENTS" ]]; then
+  echo -e "${ORANGE}🟠 收到：即將修改 ${FILENAME}，先做因果鏈分析${RESET}"
   echo "⚠️ [因果鏈] ${FILENAME} 被以下檔案引用："
   echo "$DEPENDENTS" | while IFS= read -r dep; do
     echo "  → ${dep}"
   done
   echo "修改前確認：①根因 ②對以上檔案的影響 ③需連動更新的項目"
 else
+  echo -e "${ORANGE}🟠 收到：即將修改 ${FILENAME}，先做因果鏈分析${RESET}"
   echo "⚠️ [因果鏈] 修改 ${FILENAME}：確認 ①根因 ②下游影響 ③連動更新"
 fi
 
