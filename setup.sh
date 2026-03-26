@@ -279,6 +279,22 @@ if $HOOKS_OK; then
     echo "✅ Hook 腳本完整（${#HOOK_FILES[@]}/${#HOOK_FILES[@]}）"
 fi
 
+# 確認部署/版本檢查腳本完整
+UTIL_SCRIPTS=(
+    "deploy-hooks.sh"
+    "check-version.sh"
+)
+UTILS_OK=true
+for f in "${UTIL_SCRIPTS[@]}"; do
+    if [ ! -f "${SOURCE_DIR}/dev-closed-loop/$f" ]; then
+        echo "❌ 缺少工具腳本：$f"
+        UTILS_OK=false
+    fi
+done
+if $UTILS_OK; then
+    echo "✅ 工具腳本完整（${#UTIL_SCRIPTS[@]}/${#UTIL_SCRIPTS[@]}）"
+fi
+
 # --------------------------------------------------
 # 完成
 # --------------------------------------------------

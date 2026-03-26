@@ -96,8 +96,11 @@ ClaudeCodeTools/
     ├── CLAUDE_TEMPLATE.md            ← 閉環模板（核心產物）
     ├── skill/
     │   └── init-claude.md            ← /dev:init-claude 指令的源碼
+    ├── deploy-hooks.sh                ← 一鍵部署 Hook 系統（腳本保證，不靠 AI 自律）
+    ├── check-version.sh              ← 版本檢查工具（快取/部署/遠端一次比完）
     ├── hooks/
-    │   ├── impact-analysis-guard.sh  ← 因果鏈守衛
+    │   ├── impact-analysis-guard.sh  ← 修改前統一守衛（雙閘門阻擋）
+    │   ├── prompt-understanding-guard.sh ← 理解確認旗標
     │   ├── incremental-lint.sh       ← 增量驗證
     │   └── delegation-tracker.sh     ← 委派追蹤
     ├── .claudedocs/                  ← 給人看的技術文檔（10 份）

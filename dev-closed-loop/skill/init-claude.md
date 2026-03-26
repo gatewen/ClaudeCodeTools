@@ -19,6 +19,8 @@
 文檔目錄：{{REPO_PATH}}/dev-closed-loop/.claudedocs/
 語言指南：{{REPO_PATH}}/dev-closed-loop/.claudedocs/languages/
 Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
+部署腳本：{{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh
+版本檢查：{{REPO_PATH}}/dev-closed-loop/check-version.sh
 ```
 
 ---
@@ -90,27 +92,28 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - 找不到版本標記 → 這不是閉環專案，進入**非閉環衝突處理**
 
 **升級流程**（偵測到閉環版本時）：
-1. **⛔ GitHub 遠端版本檢查（禁止跳過）**：
-   用 Bash 執行：
+1. **⛔ 版本檢查（禁止跳過）**：
+   用 Bash 執行版本檢查腳本（一次取得所有版本資訊）：
    ```bash
-   curl -sL --max-time 5 "https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/dev-closed-loop/CLAUDE_TEMPLATE.md" 2>/dev/null | grep -o 'closed-loop v[0-9.]*' | tail -1
+   bash {{REPO_PATH}}/dev-closed-loop/check-version.sh {{REPO_PATH}} --deployed ./CLAUDE.md --check-remote
    ```
-   - 取得遠端版本後，跟本地快取版本（`{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md`）比較：
-     - 遠端版本 > 快取版本 → 本地快取已過時，用 AskUserQuestion 提示：
+   腳本輸出 key=value 格式（CACHE_VERSION、DEPLOYED_VERSION、REMOTE_VERSION、STATUS）。根據 STATUS 判斷：
+   - `cache_outdated`（遠端版本 > 快取版本）→ 用 AskUserQuestion 提示：
        ```
-       🔄 偵測到 GitHub 有新版本：v{遠端版本}（本地快取：v{快取版本}）
+       🔄 偵測到 GitHub 有新版本：v{REMOTE_VERSION}（本地快取：v{CACHE_VERSION}）
 
        請選擇：
        1. 先更新快取再升級（自動執行 upgrade → 部署）← 推薦
-       2. 使用本地快取版本繼續（v{快取版本}）
+       2. 使用本地快取版本繼續（v{CACHE_VERSION}）
        3. 取消
        ```
        - 用戶選 1 → 執行 Upgrade 模式的步驟 1-3（下載 + 更新 Skill），然後用**新快取**繼續本流程
        - 用戶選 2 → 用現有快取繼續
        - 用戶選 3 → 終止
-     - 遠端版本 = 快取版本 → 快取已是最新，繼續
-     - curl 失敗 → 輸出「⚠️ 無法連線 GitHub，使用本地快取版本」，繼續
-2. 從模板檔案提取目標版本號（同樣搜尋 `closed-loop v`）
+   - `upgrade_available`（快取版本 > 部署版本）→ 繼續升級流程
+   - `up_to_date`（快取 = 部署）→ 告知已是最新，問是否重新部署
+   - `REMOTE_CHECK=failed` → 輸出「⚠️ 無法連線 GitHub，使用本地快取版本」，繼續
+2. 從版本檢查結果取得 CACHE_VERSION 作為目標版本號
 3. 比較版本：
    - 現有版本 = 模板版本 → 告知「已是最新版 vX.X」，問是否要重新部署（重新偵測配置並覆蓋）
    - 現有版本 < 模板版本 → 顯示升級畫面（見下方）
@@ -397,108 +400,17 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - **修改前統一守衛**（PreToolUse）：雙閘門阻擋——閘門 A 理解確認 + 閘門 B 因果鏈分析，合併為單次 block
 - **增量驗證**（PostToolUse）：修改後自動 per-file lint
 - **委派追蹤**（PostToolUse）：Agent 呼叫自動記錄
+- **理解確認旗標**（UserPromptSubmit）：偵測修改意圖，設定旗標供修改前守衛檢查
 
-1. **建立 hooks 目錄**：
-   - 用 Bash 執行 `mkdir -p .claude/hooks`
+**⛔ 一鍵部署（禁止跳過，禁止手動替代）**：
+用 Bash 執行部署腳本（腳本內部自動完成複製、配置、驗證）：
+```bash
+bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
+```
 
-2. **部署 Hook 腳本**（靜態檔案，用 cp 複製）：
-   - 用 Bash 執行：
-     ```bash
-     cp {{REPO_PATH}}/dev-closed-loop/hooks/impact-analysis-guard.sh .claude/hooks/impact-analysis-guard.sh && chmod +x .claude/hooks/impact-analysis-guard.sh
-     cp {{REPO_PATH}}/dev-closed-loop/hooks/incremental-lint.sh .claude/hooks/incremental-lint.sh && chmod +x .claude/hooks/incremental-lint.sh
-     cp {{REPO_PATH}}/dev-closed-loop/hooks/delegation-tracker.sh .claude/hooks/delegation-tracker.sh && chmod +x .claude/hooks/delegation-tracker.sh
-     cp {{REPO_PATH}}/dev-closed-loop/hooks/prompt-understanding-guard.sh .claude/hooks/prompt-understanding-guard.sh && chmod +x .claude/hooks/prompt-understanding-guard.sh
-     ```
+腳本輸出會顯示部署結果。若輸出 `✅ Hook 系統部署完成` → 成功；若輸出 `❌` → 在 Step 5 報告中標記問題。
 
-3. **配置 hooks（`.claude/settings.json`）**：
-   - 用 Bash 檢查 `.claude/settings.json` 是否存在
-   - **存在**：用 Read 讀取現有內容，用 python3 合併 hooks 配置（保留既有設定）：
-     ```python
-     import json, sys
-     existing = json.load(open('.claude/settings.json'))
-     hooks = existing.setdefault("hooks", {})
-     # PreToolUse：因果鏈守衛
-     pre_hooks = hooks.setdefault("PreToolUse", [])
-     guard_entry = {
-       "matcher": "Write|Edit|MultiEdit",
-       "hooks": [{"type": "command", "command": "bash .claude/hooks/impact-analysis-guard.sh"}]
-     }
-     if not any("impact-analysis-guard" in str(h) for h in pre_hooks):
-       pre_hooks.append(guard_entry)
-     # PostToolUse：增量驗證
-     post_hooks = hooks.setdefault("PostToolUse", [])
-     lint_entry = {
-       "matcher": "Write|Edit|MultiEdit",
-       "hooks": [{"type": "command", "command": "bash .claude/hooks/incremental-lint.sh"}]
-     }
-     if not any("incremental-lint" in str(h) for h in post_hooks):
-       post_hooks.append(lint_entry)
-     # PostToolUse：委派追蹤
-     delegation_entry = {
-       "matcher": "Agent",
-       "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-tracker.sh"}]
-     }
-     if not any("delegation-tracker" in str(h) for h in post_hooks):
-       post_hooks.append(delegation_entry)
-     # UserPromptSubmit：理解確認守衛
-     prompt_hooks = hooks.setdefault("UserPromptSubmit", [])
-     prompt_entry = {
-       "hooks": [{"type": "command", "command": "bash .claude/hooks/prompt-understanding-guard.sh"}]
-     }
-     if not any("prompt-understanding-guard" in str(h) for h in prompt_hooks):
-       prompt_hooks.append(prompt_entry)
-     json.dump(existing, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
-     ```
-   - **不存在**：用 Write 建立新的 `.claude/settings.json`：
-     ```json
-     {
-       "hooks": {
-         "PreToolUse": [
-           {
-             "matcher": "Write|Edit|MultiEdit",
-             "hooks": [
-               {
-                 "type": "command",
-                 "command": "bash .claude/hooks/impact-analysis-guard.sh"
-               }
-             ]
-           }
-         ],
-         "PostToolUse": [
-           {
-             "matcher": "Write|Edit|MultiEdit",
-             "hooks": [
-               {
-                 "type": "command",
-                 "command": "bash .claude/hooks/incremental-lint.sh"
-               }
-             ]
-           },
-           {
-             "matcher": "Agent",
-             "hooks": [
-               {
-                 "type": "command",
-                 "command": "bash .claude/hooks/delegation-tracker.sh"
-               }
-             ]
-           }
-         ],
-         "UserPromptSubmit": [
-           {
-             "hooks": [
-               {
-                 "type": "command",
-                 "command": "bash .claude/hooks/prompt-understanding-guard.sh"
-               }
-             ]
-           }
-         ]
-       }
-     }
-     ```
-
-4. **確認輸出**：在 Step 5 的最終報告中加上 hook 狀態：
+**確認輸出**：在 Step 5 的最終報告中加上 hook 狀態：
    ```
    ✅ 開發設計閉環已部署完成
    ...
