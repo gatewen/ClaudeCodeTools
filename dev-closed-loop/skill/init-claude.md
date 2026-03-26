@@ -394,7 +394,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 ### Step 4b：部署 Hook 系統
 
 閉環透過三個 Hook 自動化品質保障：
-- **因果鏈守衛**（PreToolUse）：修改前提醒 AI 做影響分析
+- **因果鏈守衛**（PreToolUse）：修改前阻擋操作，強制 AI 先做影響分析再重試
 - **增量驗證**（PostToolUse）：修改後自動 per-file lint
 - **委派追蹤**（PostToolUse）：Agent 呼叫自動記錄
 
@@ -502,10 +502,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    ```
    ✅ 開發設計閉環已部署完成
    ...
-   - 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前影響分析提醒）
+   - 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前阻擋，強制因果鏈分析後重試）
 - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 - 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
-- 理解確認守衛 Hook：✅ 已部署（UserPromptSubmit → 修改前理解確認）
+- 理解確認守衛 Hook：✅ 已部署（UserPromptSubmit → 修改前理解確認提醒）
    ```
 
 ### Step 5：驗證
@@ -554,7 +554,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
 - .claudedocs/（10 份核心文檔，給人類閱讀）
 - .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
-- 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前影響分析提醒）
+- 因果鏈守衛 Hook：✅ 已部署（PreToolUse → 修改前阻擋，強制因果鏈分析後重試）
 - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 - 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
 
@@ -584,7 +584,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - CLAUDE.md（方法論已更新，專案配置已保留）
 - .claudedocs/（10 份核心文檔已更新）
 - .claudedocs/languages/（語言指南已更新）← 有對應 Skill 時顯示
-- 因果鏈守衛 Hook：✅ 已更新（PreToolUse → 修改前影響分析提醒）
+- 因果鏈守衛 Hook：✅ 已更新（PreToolUse → 修改前阻擋，強制因果鏈分析後重試）
 - 增量驗證 Hook：✅ 已更新
 [若有用戶自訂內容]
 - 用戶自訂內容：已保留在 CLAUDE.md 頂部（{N} 行）
@@ -608,6 +608,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 - v5.8.0 → v5.9.0：合理性審查（Phase 1 自檢 + Phase 3 審查維度 + 非閉環通用規則）
 - v5.9.0 → v5.10.0：架構體質拆解（第一性原理：Phase 1 設計前拆解現有架構假設、Phase 1b 審查架構體質）
 - v5.10.0 → v5.10.1：模板瘦身（子 agent prompt 移至 .claudedocs/standards/委派審查prompt.md，模板 512→448 行）
+- v5.12.0 → v5.13.0：因果鏈守衛升級為阻擋式（exit 2 block → 強制分析 → 重試放行），理解確認守衛加強提醒語氣
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作

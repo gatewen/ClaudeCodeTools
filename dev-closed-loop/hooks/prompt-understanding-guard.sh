@@ -4,6 +4,7 @@
 # 輸入：stdin JSON { prompt: "..." }
 # 輸出：stdout 橙色提醒（exit 0 放行 + 提醒）
 # 用途：用戶提交指令時，提醒 AI 先確認理解再動手。防止不對頻就直接修改。
+# 注意：此 Hook 為提醒機制，非阻擋機制。AI 遵循度靠 CLAUDE.md 規則約束。
 
 set -euo pipefail
 
@@ -58,14 +59,17 @@ if ! $HAS_ACTION && [[ $PROMPT_LEN -lt 20 ]]; then
   exit 0
 fi
 
-# 3. 輸出橙色理解確認提醒
+# 3. 輸出橙色理解確認提醒（加強語氣版）
 ORANGE='\033[38;5;208m'
 RESET='\033[0m'
 
-echo -e "${ORANGE}🟠 收到：用戶提交了新指令${RESET}"
-echo -e "${ORANGE}   ⛔ 執行任何修改前，必須先在畫面輸出：${RESET}"
-echo -e "${ORANGE}   　 🟠 收到：[一句話摘要用戶的意圖]${RESET}"
-echo -e "${ORANGE}   　 🟠 打算：[一句話說明要做什麼]${RESET}"
-echo -e "${ORANGE}   用戶確認方向正確後，才開始執行。${RESET}"
+echo -e "${ORANGE}🟠 ⚠️ 理解確認守衛：用戶提交了新指令${RESET}"
+echo -e "${ORANGE}   ┌──────────────────────────────────────────┐${RESET}"
+echo -e "${ORANGE}   │ 執行任何修改前，必須先輸出理解確認：     │${RESET}"
+echo -e "${ORANGE}   │   🟠 收到：[一句話摘要用戶的意圖]       │${RESET}"
+echo -e "${ORANGE}   │   🟠 打算：[一句話說明要做什麼]         │${RESET}"
+echo -e "${ORANGE}   │ 用戶沒有否定後，才開始執行。             │${RESET}"
+echo -e "${ORANGE}   │ ⛔ 跳過此步驟直接修改 = 違反閉環規則    │${RESET}"
+echo -e "${ORANGE}   └──────────────────────────────────────────┘${RESET}"
 
 exit 0
