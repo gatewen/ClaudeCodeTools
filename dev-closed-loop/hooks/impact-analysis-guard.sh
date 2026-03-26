@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# impact-analysis-guard.sh — 因果鏈分析守衛 Hook
+# impact-analysis-guard.sh — 修改前統一守衛 Hook
 # 觸發：PreToolUse (Write | Edit | MultiEdit)
 # 輸入：stdin JSON { tool_name: "...", tool_input: { file_path: "..." } }
-# 輸出：
-#   首次修改某檔案 → stdout 依賴清單 + exit 2 阻擋（強制 AI 先做因果鏈分析）
-#   同檔案重試      → exit 0 放行
-# 用途：修改檔案前自動掃描依賴，阻擋第一次修改嘗試，強制 AI 輸出因果鏈分析後重試。
-#       不再是「提醒」，而是真正的門鎖——沒做分析就不讓改。
+# 職責：兩道阻擋式閘門，合併為單次 block
+#   閘門 A — 理解確認：偵測 UserPromptSubmit 設的旗標，確保 AI 先對頻
+#   閘門 B — 因果鏈分析：首次修改某檔案時強制做影響分析
+#   兩道閘門同時觸發時合併為一次阻擋，避免重複 block。
 
 set -euo pipefail
 
@@ -35,66 +34,109 @@ fi
 FILENAME=$(basename "$FILE_PATH")
 FILENAME_NO_EXT="${FILENAME%.*}"
 
-# 2. 檢查是否已分析過（block → 分析 → 重試 → 放行）
-GUARD_DIR="/tmp/claude-causal-chain"
-mkdir -p "$GUARD_DIR"
-
-# 用檔案路徑產生 marker 名稱（把 / 換成 _）
-MARKER_NAME=$(echo "$FILE_PATH" | tr '/' '_' | tr ' ' '_')
-
-if [[ -f "$GUARD_DIR/$MARKER_NAME" ]]; then
-  # 已分析過，放行
-  ORANGE='\033[38;5;208m'
-  RESET='\033[0m'
-  echo -e "${ORANGE}🟠 因果鏈已分析，放行修改 ${FILENAME}${RESET}"
-  exit 0
-fi
-
-# 3. 首次修改此檔案 → 建立 marker
-touch "$GUARD_DIR/$MARKER_NAME"
-
-# 4. 掃描引用此檔案的其他檔案
-DEPENDENTS=""
-
-if [[ -f "$FILE_PATH" ]]; then
-  # 既有檔案：掃描引用者
-  if command -v rg &>/dev/null; then
-    DEPENDENTS=$(rg -l --no-messages "$FILENAME_NO_EXT" \
-      --glob '!node_modules' --glob '!.git' --glob '!*.lock' \
-      --glob '!target' --glob '!dist' --glob '!build' \
-      --glob '!.claude-loop' --glob '!.claudedocs' \
-      . 2>/dev/null | grep -v "$FILENAME" | head -10) || true
-  elif command -v grep &>/dev/null; then
-    DEPENDENTS=$(grep -rl "$FILENAME_NO_EXT" \
-      --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
-      --include='*.py' --include='*.rs' --include='*.go' --include='*.cs' \
-      --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=target \
-      --exclude-dir=dist --exclude-dir=build \
-      . 2>/dev/null | grep -v "$FILENAME" | head -10) || true
-  fi
-fi
-
-# 5. 輸出依賴資訊到 stdout（供 AI 參考）
 ORANGE='\033[38;5;208m'
 RESET='\033[0m'
 
-echo -e "${ORANGE}🟠 ⛔ 修改被擋住：${FILENAME} — 請先完成因果鏈分析${RESET}"
+# ═══════════════════════════════════════════
+# 閘門 A：理解確認（檢查 UserPromptSubmit 旗標）
+# ═══════════════════════════════════════════
+UNDERSTANDING_GATE="/tmp/claude-understanding-gate/pending"
+NEED_UNDERSTANDING=false
 
-if [[ ! -f "$FILE_PATH" ]]; then
-  echo "📋 新建檔案 ${FILENAME}：確認此檔案在整體架構中的定位和依賴方向"
-elif [[ -n "$DEPENDENTS" ]]; then
-  echo "📋 ${FILENAME} 被以下檔案引用："
-  echo "$DEPENDENTS" | while IFS= read -r dep; do
-    echo "  → ${dep}"
-  done
-else
-  echo "📋 ${FILENAME} 未找到直接引用者（仍需檢查語意影響和間接依賴）"
+if [[ -f "$UNDERSTANDING_GATE" ]]; then
+  NEED_UNDERSTANDING=true
+  # 清除旗標（本次 block 後不再重複要求）
+  rm -f "$UNDERSTANDING_GATE"
+fi
+
+# ═══════════════════════════════════════════
+# 閘門 B：因果鏈分析（首次修改檔案檢查）
+# ═══════════════════════════════════════════
+GUARD_DIR="/tmp/claude-causal-chain"
+mkdir -p "$GUARD_DIR"
+
+MARKER_NAME=$(echo "$FILE_PATH" | tr '/' '_' | tr ' ' '_')
+NEED_CAUSAL=false
+
+if [[ ! -f "$GUARD_DIR/$MARKER_NAME" ]]; then
+  NEED_CAUSAL=true
+  # 建立 marker（重試時放行）
+  touch "$GUARD_DIR/$MARKER_NAME"
+fi
+
+# ═══════════════════════════════════════════
+# 判定：兩道閘門都通過 → 放行
+# ═══════════════════════════════════════════
+if ! $NEED_UNDERSTANDING && ! $NEED_CAUSAL; then
+  echo -e "${ORANGE}🟠 閘門已通過，放行修改 ${FILENAME}${RESET}"
+  exit 0
+fi
+
+# ═══════════════════════════════════════════
+# 至少一道閘門未通過 → 阻擋 + 合併訊息
+# ═══════════════════════════════════════════
+echo -e "${ORANGE}🟠 ⛔ 修改被擋住：${FILENAME}${RESET}"
+echo ""
+
+# 閘門 A 訊息
+if $NEED_UNDERSTANDING; then
+  echo "┌─ 閘門 A：理解確認 ─────────────────────┐"
+  echo "│ 請先在畫面輸出：                         │"
+  echo "│   🟠 收到：[一句話摘要用戶的意圖]       │"
+  echo "│   🟠 打算：[一句話說明要做什麼]         │"
+  echo "└──────────────────────────────────────────┘"
+  echo ""
+fi
+
+# 閘門 B 訊息
+if $NEED_CAUSAL; then
+  echo "┌─ 閘門 B：因果鏈分析 ───────────────────┐"
+
+  # 掃描引用此檔案的其他檔案
+  DEPENDENTS=""
+  if [[ -f "$FILE_PATH" ]]; then
+    if command -v rg &>/dev/null; then
+      DEPENDENTS=$(rg -l --no-messages "$FILENAME_NO_EXT" \
+        --glob '!node_modules' --glob '!.git' --glob '!*.lock' \
+        --glob '!target' --glob '!dist' --glob '!build' \
+        --glob '!.claude-loop' --glob '!.claudedocs' \
+        . 2>/dev/null | grep -v "$FILENAME" | head -10) || true
+    elif command -v grep &>/dev/null; then
+      DEPENDENTS=$(grep -rl "$FILENAME_NO_EXT" \
+        --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+        --include='*.py' --include='*.rs' --include='*.go' --include='*.cs' \
+        --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=target \
+        --exclude-dir=dist --exclude-dir=build \
+        . 2>/dev/null | grep -v "$FILENAME" | head -10) || true
+    fi
+  fi
+
+  if [[ ! -f "$FILE_PATH" ]]; then
+    echo "│ 新建檔案：確認架構定位和依賴方向       │"
+  elif [[ -n "$DEPENDENTS" ]]; then
+    echo "│ ${FILENAME} 被以下檔案引用："
+    echo "$DEPENDENTS" | while IFS= read -r dep; do
+      echo "│   → ${dep}"
+    done
+  else
+    echo "│ 未找到直接引用者（仍需檢查語意影響）   │"
+  fi
+
+  echo "│ 請輸出因果鏈分析：                       │"
+  echo "│   ①根因 ②直接影響 ③間接影響            │"
+  echo "│   ④隱性風險 ⑤決策                       │"
+  echo "└──────────────────────────────────────────┘"
 fi
 
 echo ""
-echo "請在畫面輸出因果鏈分析後，重試修改："
-echo "  ①根因 ②直接影響 ③間接影響 ④隱性風險 ⑤決策"
+echo "完成以上分析後，重試修改即可通過。"
 
-# 6. 阻擋修改（exit 2 = block）
-echo "⛔ 因果鏈分析未完成，修改被擋住。完成分析後重試即可通過。" >&2
+# 阻擋（exit 2 = block）
+if $NEED_UNDERSTANDING && $NEED_CAUSAL; then
+  echo "⛔ 理解確認 + 因果鏈分析未完成，修改被擋住。" >&2
+elif $NEED_UNDERSTANDING; then
+  echo "⛔ 理解確認未完成，修改被擋住。" >&2
+else
+  echo "⛔ 因果鏈分析未完成，修改被擋住。" >&2
+fi
 exit 2

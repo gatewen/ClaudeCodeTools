@@ -2,9 +2,10 @@
 # prompt-understanding-guard.sh — 理解確認守衛 Hook
 # 觸發：UserPromptSubmit
 # 輸入：stdin JSON { prompt: "..." }
-# 輸出：stdout 橙色提醒（exit 0 放行 + 提醒）
-# 用途：用戶提交指令時，提醒 AI 先確認理解再動手。防止不對頻就直接修改。
-# 注意：此 Hook 為提醒機制，非阻擋機制。AI 遵循度靠 CLAUDE.md 規則約束。
+# 輸出：stdout 橙色提醒（exit 0 放行）
+# 用途：用戶提交含修改意圖的指令時，建立理解確認旗標。
+#       PreToolUse Hook（impact-analysis-guard.sh）偵測到旗標後會阻擋修改，
+#       強制 AI 先輸出理解確認。兩個 Hook 協作實現阻擋式理解確認。
 
 set -euo pipefail
 
@@ -59,17 +60,18 @@ if ! $HAS_ACTION && [[ $PROMPT_LEN -lt 20 ]]; then
   exit 0
 fi
 
-# 3. 輸出橙色理解確認提醒（加強語氣版）
+# 3. 建立理解確認旗標（供 PreToolUse Hook 檢查）
+GATE_DIR="/tmp/claude-understanding-gate"
+mkdir -p "$GATE_DIR"
+echo "$PROMPT" > "$GATE_DIR/pending"
+
+# 4. 輸出橙色提醒
 ORANGE='\033[38;5;208m'
 RESET='\033[0m'
 
-echo -e "${ORANGE}🟠 ⚠️ 理解確認守衛：用戶提交了新指令${RESET}"
-echo -e "${ORANGE}   ┌──────────────────────────────────────────┐${RESET}"
-echo -e "${ORANGE}   │ 執行任何修改前，必須先輸出理解確認：     │${RESET}"
-echo -e "${ORANGE}   │   🟠 收到：[一句話摘要用戶的意圖]       │${RESET}"
-echo -e "${ORANGE}   │   🟠 打算：[一句話說明要做什麼]         │${RESET}"
-echo -e "${ORANGE}   │ 用戶沒有否定後，才開始執行。             │${RESET}"
-echo -e "${ORANGE}   │ ⛔ 跳過此步驟直接修改 = 違反閉環規則    │${RESET}"
-echo -e "${ORANGE}   └──────────────────────────────────────────┘${RESET}"
+echo -e "${ORANGE}🟠 ⚠️ 理解確認守衛：偵測到修改意圖，已設定理解確認閘門${RESET}"
+echo -e "${ORANGE}   首次修改操作將被擋住，直到輸出理解確認：${RESET}"
+echo -e "${ORANGE}     🟠 收到：[一句話摘要用戶的意圖]${RESET}"
+echo -e "${ORANGE}     🟠 打算：[一句話說明要做什麼]${RESET}"
 
 exit 0
