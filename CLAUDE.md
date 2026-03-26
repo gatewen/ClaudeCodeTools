@@ -65,6 +65,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 | CLAUDE_TEMPLATE.md — 結構變更（section / placeholder 增刪） | `dev-closed-loop/skill/init-claude.md` |
 | CLAUDE_TEMPLATE.md — 語言指南引用方式 | `.claudedocs/languages/*.md` |
 | `.claudedocs/` — 檔案增刪 | `setup.sh`（驗證清單）· `.claudedocs/README.md` |
+| Hook 腳本增刪或行為變更 | `deploy-hooks.sh`（部署邏輯）· `init-claude.md`（Step 4b） |
 | 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 |
 
 **流程**：

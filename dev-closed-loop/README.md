@@ -16,6 +16,8 @@
 | `.claudedocs/` | 補充文檔（10 檔），給人類閱讀 |
 | `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
+| `deploy-hooks.sh` | 一鍵部署 Hook 系統（複製腳本 + 合併 settings.json + 驗證） |
+| `check-version.sh` | 版本檢查工具（快取/部署/遠端一次比完，輸出 key=value） |
 
 ### 設計歷史（了解這套方法怎麼來的）
 

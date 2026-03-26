@@ -563,15 +563,15 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 
 4. **⛔ 可升級偵測（禁止跳過）**：
    此步驟是 status 模式的核心功能之一，**即使前面的健康檢查全部通過也必須執行**。不執行此步驟就等於沒有完成 status 檢查。
-   - **GitHub 遠端檢查**（優先）：用 Bash 執行：
-     ```bash
-     curl -sL --max-time 5 "https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/dev-closed-loop/CLAUDE_TEMPLATE.md" 2>/dev/null | grep -o 'closed-loop v[0-9.]*' | tail -1
-     ```
-   - **本地快取檢查**（備援）：用 Read 讀取 `{{REPO_PATH}}/dev-closed-loop/CLAUDE_TEMPLATE.md` 末尾的 `closed-loop v`
-   - 以遠端版本為準（最新）；若 curl 失敗則以本地快取為準
-   - 最新版本 > 部署版本 → 顯示「🔄 可升級：v{當前} → v{最新}。執行 `/dev:init-claude upgrade` 升級」
-   - 最新版本 = 部署版本 → 顯示「✅ 已是最新版本」
-   - 兩種檢查都失敗 → 顯示「⚠️ 無法確認最新版本（本地快取不可達 + 網路不可用）」
+   用 Bash 執行版本檢查腳本：
+   ```bash
+   bash {{REPO_PATH}}/dev-closed-loop/check-version.sh {{REPO_PATH}} --deployed ./CLAUDE.md --check-remote
+   ```
+   根據輸出的 STATUS 值判斷：
+   - `upgrade_available` 或 `cache_outdated` → 顯示「🔄 可升級：v{DEPLOYED_VERSION} → v{CACHE_VERSION 或 REMOTE_VERSION}。執行 `/dev:init-claude upgrade` 升級」
+   - `up_to_date` → 顯示「✅ 已是最新版本」
+   - `REMOTE_CHECK=failed` 且 `STATUS=up_to_date` → 顯示「✅ 與快取版本一致（⚠️ 無法連線 GitHub 確認遠端版本）」
+   - `STATUS=error` → 顯示「⚠️ 無法確認版本」
    - **⛔ 必須在輸出中包含「升級：」行**，不論結果是什麼。缺少此行 = status 輸出不完整
 
 5. **輸出格式（⛔ 必須包含以下所有區塊，禁止省略任何區塊）**：
@@ -633,10 +633,14 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    - 失敗 → 告知「❌ 下載失敗，請確認網路連線」並終止
 
 2. **版本比較**：
-   - 讀取下載版本：用 Bash `grep -o 'closed-loop v[0-9.]*' "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/CLAUDE_TEMPLATE.md" | tail -1`
-   - 讀取當前部署版本：用 Grep 搜尋 CLAUDE.md 中的 `closed-loop v`
-   - 若已是最新 → 告知「✅ 快取已更新，已是最新版本 v{X}」並結束
-   - 若有新版 → 繼續
+   用 Bash 執行版本檢查腳本：
+   ```bash
+   bash "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/check-version.sh" "$HOME/.claude/cache/ClaudeCodeTools" --deployed ./CLAUDE.md
+   ```
+   根據輸出的 STATUS 值判斷：
+   - `up_to_date` → 告知「✅ 快取已更新，已是最新版本 v{CACHE_VERSION}」並結束
+   - `upgrade_available` → 繼續
+   - `not_deployed` → 繼續（首次部署）
 
 3. **更新 Skill 自身**：
    用 Bash 執行：
