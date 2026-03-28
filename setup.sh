@@ -235,6 +235,32 @@ if $DOCS_OK; then
     echo "✅ .claudedocs 完整（11/11）"
 fi
 
+# 確認 agents 目錄完整
+AGENT_FILES=(
+    "agents/README.md"
+    "agents/requirements-analyst.md"
+    "agents/architect.md"
+    "agents/design-reviewer.md"
+    "agents/implementer.md"
+    "agents/code-reviewer.md"
+    "agents/security-reviewer.md"
+    "agents/tester.md"
+    "agents/verifier.md"
+)
+AGENT_OK=true
+AGENT_COUNT=0
+for f in "${AGENT_FILES[@]}"; do
+    if [ -f "$DOCS_DIR/$f" ]; then
+        AGENT_COUNT=$((AGENT_COUNT + 1))
+    else
+        echo "❌ 缺少 Agent：.claudedocs/$f"
+        AGENT_OK=false
+    fi
+done
+if $AGENT_OK; then
+    echo "✅ Agent 專家庫完整（${AGENT_COUNT}/${#AGENT_FILES[@]}）"
+fi
+
 # 確認 languages 目錄完整
 LANG_FILES=(
     "languages/README.md"

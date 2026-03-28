@@ -6,6 +6,16 @@
 
 ```
 .claudedocs/
+├── agents/                ← 🆕 Agent 專家庫（8 個專家 prompt）
+│   ├── README.md
+│   ├── requirements-analyst.md  ← Section 1b 需求探索
+│   ├── architect.md             ← Phase 1 設計
+│   ├── design-reviewer.md       ← Phase 1b 設計審查
+│   ├── implementer.md           ← Phase 2 實作
+│   ├── code-reviewer.md         ← Phase 3 品質審查
+│   ├── security-reviewer.md     ← Phase 3 安全審查
+│   ├── tester.md                ← Phase 4 測試
+│   └── verifier.md              ← Phase 5 雙向追溯
 ├── concepts/              ← 先搞懂「為什麼」
 │   └── 閉環核心理念.md
 ├── process/               ← 再學「怎麼做」
@@ -57,8 +67,8 @@
 
 | 工具 | 用途 | 安裝方式 |
 |------|------|---------|
-| **SuperClaude** | `sc:*` 系列 Skills | `pipx install superclaude && superclaude install` |
-| **Superpowers** | `superpowers:*` 系列 Skills | Claude Code 插件：`superpowers@claude-plugins-official` |
+| **SuperClaude** _(可選)_ | `sc:*` 系列 Skills，作為 Agent 專家庫的增強 | `pipx install superclaude && superclaude install` |
+| **Superpowers** _(可選)_ | `superpowers:*` 系列 Skills，作為 Agent 專家庫的增強 | Claude Code 插件：`superpowers@claude-plugins-official` |
 | **claude-mem** _(可選)_ | 跨時間語義記憶 | Claude Code 插件：`claude-mem` |
 
-> Task agent（`code-simplifier`、`security-engineer` 等）是 Claude Code 內建功能，無需額外安裝。
+> **v5.14.0 起**：Agent 專家庫（`.claudedocs/agents/`）提供所有 Phase 的基線 agent prompt，SC/SP 不再是必要依賴。Task agent（`code-simplifier` 等）是 Claude Code 內建功能，無需額外安裝。

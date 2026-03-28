@@ -10,20 +10,35 @@ CLAUDE.md 裡已經寫了每個 Phase 該調用哪個 Agent 和約束條件。
 
 ---
 
-## 三類 Agent 的差異
+## Agent 專家庫（v5.14.0 新增）
 
-在開始之前，先搞清楚三類 Agent 的差異：
+`.claudedocs/agents/` 目錄包含 8 個專家 agent prompt，覆蓋 Phase 1-5 全流程。每個 prompt 基於 **prompt-engineer-agentic v4.1** 三層架構設計（Foundation → Structure → Execution），是閉環方法論的**基線能力**，無需任何外部依賴。
 
-| 類別 | 執行方式 | 上下文 | 適合什麼 |
-|------|---------|--------|---------|
-| **sc: Skill** | 在當前對話裡執行 | 能看到整個對話歷史 | 需要完整上下文的工作（設計、實作、自証） |
-| **superpowers: Skill** | 在當前對話裡執行 | 能看到整個對話歷史 | 有明確流程的專門化工作（TDD、code review） |
-| **Task agent** | 開一個獨立子程序 | 只看到你傳給它的 prompt | 可以獨立完成的子任務（安全掃描、品質分析） |
+| Agent | Phase | 類型 | 用途 |
+|-------|-------|------|------|
+| requirements-analyst | Section 1b | inline | 需求探索（多角度分析+選項生成） |
+| architect | Phase 1 | inline | 設計規格產出（BC-x/EH-x/IF-x） |
+| design-reviewer | Phase 1b | task | 設計審查（挑戰式+架構體質+分層） |
+| implementer | Phase 2 | inline | 按設計規格實作+增量驗證 |
+| code-reviewer | Phase 3 | task | 品質審查（設計一致性+結構安全） |
+| security-reviewer | Phase 3 | task | 安全審查（輸入驗證/注入/認證/暴露） |
+| tester | Phase 4 | inline | BC-x/EH-x 覆蓋測試+實際執行 |
+| verifier | Phase 5 | task | 雙向追溯+交叉比對+arch-risk 追蹤 |
 
-**關鍵差異**：sc/superpowers Skill 看得到前面 Phase 的產出物（因為都在同一個對話裡），Task agent 看不到（你要手動把資料傳給它）。
+**使用方式**：見 `.claudedocs/agents/README.md`。
 
-所以 CLAUDE.md 裡的優先順序是：sc: > superpowers: > Task agent。
-只有在「這個工作可以獨立做、不需要前後文」的時候才用 Task agent。
+---
+
+## 四類 Agent 的差異
+
+| 類別 | 執行方式 | 上下文 | 適合什麼 | 依賴 |
+|------|---------|--------|---------|------|
+| **Agent 專家庫（inline）** | 主 agent 讀取後按指引執行 | 保留完整對話歷史 | Phase 1/2/4 需要對話上下文的工作 | 無 |
+| **Agent 專家庫（task）** | Agent tool 啟動獨立子 agent | 只看到 prompt 和資料包 | Phase 1b/3/5 獨立審查工作 | 無 |
+| **sc: Skill** _(可選增強)_ | 在當前對話裡執行 | 能看到整個對話歷史 | 需要完整上下文的工作（設計、實作、自証） | SuperClaude |
+| **superpowers: Skill** _(可選增強)_ | 在當前對話裡執行 | 能看到整個對話歷史 | 有明確流程的專門化工作（TDD、code review） | Superpowers |
+
+**優先順序**：Agent 專家庫是基線。SC/SP 可用時作為增強選項——CLAUDE.md 中每個 Phase 的 Agent 行都標明了兩種選項。
 
 **Task agent 名稱說明**：本文件中提到的 Task agent 名稱（如 `system-architect`、`backend-architect`、`frontend-architect`、`python-expert`、`quality-engineer`）是角色描述而非固定 ID。調用時在 Task prompt 中描述對應角色的專長即可，Claude Code 會自動匹配合適的 agent 行為。
 
