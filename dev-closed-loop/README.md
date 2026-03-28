@@ -12,10 +12,12 @@
 
 | 文件 | 說明 |
 |------|------|
-| `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含產出物格式、自証檢查表、Agent 調度規則） |
-| `.claudedocs/` | 補充文檔（10 檔），給人類閱讀 |
+| `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含 Agent 調度規則、閘門、學習日誌） |
+| `.claudedocs/` | 技術文檔（10 核心 + 9 agent prompt），給人類閱讀 |
+| `.claudedocs/agents/` | Agent 專家庫（8 個專家 prompt），Phase 觸發時按需載入 |
 | `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
+| `hooks/` | 5 個 Hook 腳本（修改守衛、理解確認、增量 lint、委派追蹤、學習日誌提醒） |
 | `deploy-hooks.sh` | 一鍵部署 Hook 系統（複製腳本 + 合併 settings.json + 驗證） |
 | `check-version.sh` | 版本檢查工具（快取/部署/遠端一次比完，輸出 key=value） |
 
@@ -48,6 +50,16 @@
 ```
 .claudedocs/
 ├── README.md               ← 閱讀順序指南
+├── agents/                 ← Agent 專家庫（8 個專家 prompt）
+│   ├── README.md
+│   ├── requirements-analyst.md  ← 需求探索
+│   ├── architect.md             ← Phase 1 設計
+│   ├── design-reviewer.md       ← Phase 1b 設計審查
+│   ├── implementer.md           ← Phase 2 實作
+│   ├── code-reviewer.md         ← Phase 3 品質審查
+│   ├── security-reviewer.md     ← Phase 3 安全審查
+│   ├── tester.md                ← Phase 4 測試
+│   └── verifier.md              ← Phase 5 雙向追溯
 ├── concepts/
 │   └── 閉環核心理念.md      ← 這套方法在幹嘛、為什麼有用
 ├── process/
@@ -81,6 +93,9 @@
 
 | 版本 | 重點 |
 |------|------|
+| v5.16.0 | 回顧式學習自動化——失敗驅動學習日誌 + 模式分析 + PostToolUse Hook 檢查 |
+| v5.15.0 | 精簡閉環迷你追溯（步驟 4.5）+ CLAUDE_TEMPLATE 認知負荷降低（-37%） |
+| v5.14.0 | Agent 專家庫（8 個自包含 agent prompt），方法論自包含無外部依賴 |
 | v5.13.0 | 全 Hook 阻擋式升級：因果鏈守衛 + 理解確認守衛均為 block 機制（雙閘門合併阻擋） |
 | v5.12.0 | 理解確認守衛 Hook + 全 Hook 橙色可見性（防不對頻，用戶輸入即觸發理解確認） |
 | v5.11.0 | 同類掃描（修改時橫向掃描同類項目，避免只修冰山一角） |

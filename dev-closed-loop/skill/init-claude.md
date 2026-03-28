@@ -371,10 +371,11 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 ### Step 4b：部署 Hook 系統
 
-閉環透過四個 Hook 自動化品質保障：
+閉環透過五個 Hook 自動化品質保障：
 - **修改前統一守衛**（PreToolUse）：雙閘門阻擋——閘門 A 理解確認 + 閘門 B 因果鏈分析，合併為單次 block
 - **增量驗證**（PostToolUse）：修改後自動 per-file lint
 - **委派追蹤**（PostToolUse）：Agent 呼叫自動記錄
+- **學習日誌提醒**（PostToolUse）：git commit 後檢查 learning-log.md 是否在 commit 中
 - **理解確認旗標**（UserPromptSubmit）：偵測修改意圖，設定旗標供修改前守衛檢查
 
 **⛔ 一鍵部署（禁止跳過，禁止手動替代）**：

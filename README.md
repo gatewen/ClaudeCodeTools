@@ -20,15 +20,13 @@ curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh
 
 ### 前置依賴
 
-安裝腳本會自動幫你檢查，缺少的話會提示你怎麼裝：
+閉環自帶 Agent 專家庫（8 個專家 prompt），**不依賴外部工具**即可完整運作。Task agent（`code-simplifier` 等）是 Claude Code 內建功能。
+
+以下是可選的增強工具，有的話體驗更好，沒有也不影響閉環流程：
 
 | 工具 | 做什麼用的 | 怎麼裝 |
 |------|-----------|--------|
-| **SuperClaude** | 提供 `sc:*` 系列進階指令 | `pipx install superclaude && superclaude install` |
-| **Superpowers** | 提供 `superpowers:*` 系列品質工具 | Claude Code 插件：`superpowers@claude-plugins-official` |
-| **claude-mem** _(選裝)_ | 跨對話的長期記憶 | Claude Code 插件：`claude-mem` |
-
-> Task agent（`code-simplifier`、`security-engineer` 等）是 Claude Code 內建的，不用另外裝。
+| **claude-mem** _(可選)_ | 跨對話的語義記憶（Phase 前查歷史決策、Phase 後保存教訓） | Claude Code 插件：`claude-mem` |
 
 ## 使用
 
@@ -76,7 +74,7 @@ Phase 5 是這套方法的特色——它用編號系統（BC-x / EH-x / R-x）�
 
 ### 自動化 Hook
 
-部署時會一起裝四個 Hook，在背景自動幫你做品質把關：
+部署時會一起裝五個 Hook，在背景自動幫你做品質把關：
 
 | Hook | 什麼時候觸發 | 做什麼 |
 |------|------------|--------|
@@ -84,6 +82,7 @@ Phase 5 是這套方法的特色——它用編號系統（BC-x / EH-x / R-x）�
 | **理解確認旗標** | 用戶提交指令時 | 偵測修改意圖，設定旗標供修改前守衛檢查 |
 | **增量驗證** | 修改檔案之後 | 自動對改過的檔案跑 lint |
 | **委派追蹤** | 呼叫 Agent 時 | 自動記錄 Agent 的任務和結果 |
+| **學習日誌提醒** | git commit 之後 | 檢查 learning-log.md 是否在 commit 中，未包含則提醒 |
 
 ## 目錄結構
 
@@ -102,8 +101,10 @@ ClaudeCodeTools/
     │   ├── impact-analysis-guard.sh  ← 修改前統一守衛（雙閘門阻擋）
     │   ├── prompt-understanding-guard.sh ← 理解確認旗標
     │   ├── incremental-lint.sh       ← 增量驗證
-    │   └── delegation-tracker.sh     ← 委派追蹤
-    ├── .claudedocs/                  ← 給人看的技術文檔（10 份）
+    │   ├── delegation-tracker.sh     ← 委派追蹤
+    │   └── learning-log-checker.sh   ← 學習日誌提醒
+    ├── .claudedocs/                  ← 給人看的技術文檔
+    │   ├── agents/                   ← Agent 專家庫（8 個專家 prompt）
     │   ├── concepts/                 ← 核心理念
     │   ├── process/                  ← 流程說明
     │   ├── standards/                ← 工具和格式規範
@@ -131,6 +132,9 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| v5.16.0 | 回顧式學習自動化——失敗驅動學習日誌（即時捕獲 + commit 前寫入 + Hook 檢查）+ 模式分析 |
+| v5.15.0 | 精簡閉環迷你追溯（步驟 4.5 正向覆蓋表）+ CLAUDE_TEMPLATE 認知負荷降低（606→383 行，-37%） |
+| v5.14.0 | Agent 專家庫（8 個自包含 agent prompt），方法論自包含無外部依賴 |
 | v5.13.0 | 全 Hook 阻擋式升級：因果鏈守衛 + 理解確認守衛均為 block 機制（雙閘門合併阻擋） |
 | v5.12.0 | 理解確認守衛 Hook + 全 Hook 橙色可見性（防不對頻，用戶輸入即觸發理解確認） |
 | v5.11.0 | 同類掃描（修改時橫向掃描同類項目，避免只修冰山一角） |
