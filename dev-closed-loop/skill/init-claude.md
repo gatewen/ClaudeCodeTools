@@ -42,38 +42,24 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 ### Step 0：環境依賴檢查
 
-閉環需要 SuperClaude 和 Superpowers 才能正常運作。在其他步驟前先檢查。
+v5.14.0 起，閉環的核心功能（Agent 專家庫）不依賴外部工具。SC/SP 為可選增強。
 
-1. **檢查 SuperClaude**：用 Bash 執行 `ls ~/.claude/commands/sc/ 2>/dev/null | head -1`
+1. **檢查 SuperClaude**（可選增強）：用 Bash 執行 `ls ~/.claude/commands/sc/ 2>/dev/null | head -1`
    - 有輸出 → SuperClaude 已安裝 ✅
-   - 無輸出 → SuperClaude 未安裝 ❌
+   - 無輸出 → SuperClaude 未安裝 ℹ️（可選，Agent 專家庫已提供基線能力）
 
-2. **檢查 Superpowers**：用 Bash 執行 `grep -q "superpowers@claude-plugins-official" ~/.claude/plugins/installed_plugins.json 2>/dev/null && echo "installed"`
+2. **檢查 Superpowers**（可選增強）：用 Bash 執行 `grep -q "superpowers@claude-plugins-official" ~/.claude/plugins/installed_plugins.json 2>/dev/null && echo "installed"`
    - 輸出 "installed" → Superpowers 已安裝 ✅
-   - 無輸出 → Superpowers 未安裝 ❌
+   - 無輸出 → Superpowers 未安裝 ℹ️（可選，Agent 專家庫已提供基線能力）
 
 3. **檢查 claude-mem**（可選）：用 Bash 執行 `grep -rq "claude-mem" ~/.claude/plugins/ 2>/dev/null && echo "installed" || grep -q "claude-mem" ~/.claude/.mcp.json 2>/dev/null && echo "installed"`
    - 輸出 "installed" → claude-mem 已安裝 ✅
-   - 無輸出 → claude-mem 未安裝（可選功能，不影響閉環運作）
+   - 無輸出 → claude-mem 未安裝 ℹ️（可選功能，不影響閉環運作）
 
 4. **結果處理**：
-   - claude-mem 的缺少**不觸發** AskUserQuestion、不加入缺少項目列表，僅獨立顯示狀態（✅ 已安裝 或 ℹ️ 未安裝）
-   - SuperClaude 和 Superpowers 都已安裝 → 繼續 Step 1
-   - SuperClaude 或 Superpowers 有缺少的 → 用 AskUserQuestion 告知用戶：
-     ```
-     ⚠️ 閉環需要以下工具，但偵測到缺少：
-
-     [僅列出缺少的項目]
-     - SuperClaude：pipx install superclaude && superclaude install
-       https://github.com/SuperClaude-Org/SuperClaude_Framework
-     - Superpowers：在 Claude Code 中安裝插件 superpowers@claude-plugins-official
-
-     請選擇：
-     1. 我已了解，先繼續部署（之後再安裝）
-     2. 取消，我先去安裝
-     ```
-   - 用戶選繼續 → 在最終報告（Step 5）加上缺少工具的警告
-   - 用戶選取消 → 終止執行
+   - 三者都是可選工具，缺少不阻擋部署
+   - 輸出依賴狀態摘要（✅ 已安裝 / ℹ️ 未安裝），繼續 Step 1
+   - 在最終報告（Step 5）中列出可選工具狀態，未安裝的附上安裝指引
 
 ### Step 1：前置檢查
 
@@ -441,12 +427,24 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    - `.claudedocs/process/跨Session持久化.md`
    - `.claudedocs/process/介面契約與變更管理.md`
 
-3. **語言 Skill 完整性檢查**（若部署了語言 Skill）：
+3. **Agent 專家庫完整性檢查**：
+   - `.claudedocs/agents/README.md`
+   - `.claudedocs/agents/requirements-analyst.md`
+   - `.claudedocs/agents/architect.md`
+   - `.claudedocs/agents/design-reviewer.md`
+   - `.claudedocs/agents/implementer.md`
+   - `.claudedocs/agents/code-reviewer.md`
+   - `.claudedocs/agents/security-reviewer.md`
+   - `.claudedocs/agents/tester.md`
+   - `.claudedocs/agents/verifier.md`
+   （9 檔全部存在 → ✅；缺失 → 報告缺失項目）
+
+4. **語言 Skill 完整性檢查**（若部署了語言 Skill）：
    - `.claudedocs/languages/README.md`
    - `.claudedocs/languages/{語言}.md`
    （若未部署語言 Skill → 跳過此檢查）
 
-4. **Hook 部署檢查**：
+5. **Hook 部署檢查**：
    - `.claude/hooks/impact-analysis-guard.sh` 存在且可執行
    - `.claude/hooks/incremental-lint.sh` 存在且可執行
    - `.claude/hooks/delegation-tracker.sh` 存在且可執行
@@ -456,7 +454,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    - `.claude/settings.json` 包含 `UserPromptSubmit` hook 配置（含 prompt-understanding-guard）
    （若任一檢查失敗 → 報錯並嘗試修正）
 
-5. **結果報告**：根據部署模式輸出對應摘要。
+6. **結果報告**：根據部署模式輸出對應摘要。
 
 **全新部署 / 覆蓋模式**：
 ```
@@ -465,6 +463,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 生成的檔案：
 - CLAUDE.md（閉環主檔案，Claude Code 啟動時自動讀取）
 - .claudedocs/（10 份核心文檔，給人類閱讀）
+- .claudedocs/agents/（8 個專家 Agent prompt，無需外部依賴）
 - .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
 - 修改前統一守衛 Hook：✅ 已部署（PreToolUse → 雙閘門阻擋：理解確認 + 因果鏈分析）
 - 理解確認旗標 Hook：✅ 已部署（UserPromptSubmit → 設定理解確認閘門旗標）
@@ -484,9 +483,9 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 4. 若專案有 ≥ 3 個模組，建議建立 .claude-loop/ 持久化目錄
    詳見 .claudedocs/process/跨Session持久化.md
 
-[若 claude-mem 未安裝]
-💡 進階功能：安裝 claude-mem 插件可啟用跨時間語義記憶
-   （Phase 前自動查詢歷史決策、Phase 後自動保存經驗教訓）
+可選增強：
+[若 SC/SP 未安裝] 💡 安裝 SuperClaude / Superpowers 可獲得增強的 Agent 能力
+[若 claude-mem 未安裝] 💡 安裝 claude-mem 插件可啟用跨時間語義記憶
 ```
 
 **升級模式**：
@@ -496,6 +495,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 更新的檔案：
 - CLAUDE.md（方法論已更新，專案配置已保留）
 - .claudedocs/（10 份核心文檔已更新）
+- .claudedocs/agents/（8 個專家 Agent prompt 已更新）
 - .claudedocs/languages/（語言指南已更新）← 有對應 Skill 時顯示
 - 修改前統一守衛 Hook：✅ 已更新（PreToolUse → 雙閘門阻擋：理解確認 + 因果鏈分析）
 - 理解確認旗標 Hook：✅ 已更新（UserPromptSubmit → 設定理解確認閘門旗標）
@@ -523,6 +523,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - v5.9.0 → v5.10.0：架構體質拆解（第一性原理：Phase 1 設計前拆解現有架構假設、Phase 1b 審查架構體質）
 - v5.10.0 → v5.10.1：模板瘦身（子 agent prompt 移至 .claudedocs/standards/委派審查prompt.md，模板 512→448 行）
 - v5.12.0 → v5.13.0：全 Hook 阻擋式升級——因果鏈守衛 + 理解確認守衛均為 exit 2 block 機制（雙閘門合併阻擋，一次 block 同時要求理解確認 + 因果鏈分析）
+- v5.13.0 → v5.14.0：Agent 專家庫（.claudedocs/agents/ 8 個專家 prompt），SC/SP 降為可選增強
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作
