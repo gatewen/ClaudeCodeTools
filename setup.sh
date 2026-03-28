@@ -220,7 +220,6 @@ EXPECTED_FILES=(
     "standards/Agent使用指南.md"
     "standards/Git工作流.md"
     "standards/產出物格式.md"
-    "standards/委派審查prompt.md"
     "records/問題追蹤.md"
 )
 DOCS_DIR="${SOURCE_DIR}/dev-closed-loop/.claudedocs"
@@ -232,7 +231,7 @@ for f in "${EXPECTED_FILES[@]}"; do
     fi
 done
 if $DOCS_OK; then
-    echo "✅ .claudedocs 完整（11/11）"
+    echo "✅ .claudedocs 完整（10/10）"
 fi
 
 # 確認 agents 目錄完整

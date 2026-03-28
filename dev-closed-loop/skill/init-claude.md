@@ -100,7 +100,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
    升級內容：
    - 方法論更新（CLAUDE.md 閉環流程）
-   - 核心文檔更新（.claudedocs/ 11 份文檔）
+   - 核心文檔更新（.claudedocs/ 10 份文檔）
    - 語言指南更新（若有部署）
    - Hook 腳本更新
 
@@ -411,7 +411,6 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    - `.claudedocs/standards/Agent使用指南.md`
    - `.claudedocs/standards/Git工作流.md`
    - `.claudedocs/standards/產出物格式.md`
-   - `.claudedocs/standards/委派審查prompt.md`
    - `.claudedocs/records/問題追蹤.md`
    - `.claudedocs/process/跨Session持久化.md`
    - `.claudedocs/process/介面契約與變更管理.md`
@@ -575,7 +574,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 語言：[語言] | 框架：[框架]
 
 健康檢查：
-  ✅ 核心文檔（11/11）
+  ✅ 核心文檔（10/10）
   ✅ 語言指南：typescript.md
   ✅ 修改前統一守衛 Hook（雙閘門阻擋）
   ✅ 理解確認旗標 Hook
