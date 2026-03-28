@@ -512,6 +512,8 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - v5.10.0 → v5.10.1：模板瘦身（子 agent prompt 移至 .claudedocs/standards/委派審查prompt.md，模板 512→448 行）
 - v5.12.0 → v5.13.0：全 Hook 阻擋式升級——因果鏈守衛 + 理解確認守衛均為 exit 2 block 機制（雙閘門合併阻擋，一次 block 同時要求理解確認 + 因果鏈分析）
 - v5.13.0 → v5.14.0：Agent 專家庫（.claudedocs/agents/ 8 個專家 prompt），方法論自包含無外部依賴
+- v5.14.0 → v5.15.0：精簡閉環迷你追溯（步驟 4.5 正向覆蓋表）+ CLAUDE_TEMPLATE 認知負荷降低（606→361 行，-40%）
+- v5.15.0 → v5.16.0：回顧式學習自動化——學習日誌（失敗事件立即捕獲 + commit 前追加 + PostToolUse Hook 檢查）+ 模式分析
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作
@@ -545,7 +547,8 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
    | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
    | 理解確認旗標 Hook | `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行 | ✅/❌ |
-   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard` | 4/4 = ✅，否則 ⚠️ 列出缺少 |
+   | 學習日誌提醒 Hook | `.claude/hooks/learning-log-checker.sh` 存在且可執行 | ✅/❌ |
+   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard`、`learning-log-checker` | 5/5 = ✅，否則 ⚠️ 列出缺少 |
    | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
    | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
@@ -580,7 +583,8 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
   ✅ 理解確認旗標 Hook
   ✅ 增量驗證 Hook
   ✅ 委派追蹤 Hook
-  ✅ Hook 配置（4/4）
+  ✅ 學習日誌提醒 Hook
+  ✅ Hook 配置（5/5）
   ✅ 無 Placeholder 殘留
   — .claude-loop/ 未啟用
 
@@ -704,7 +708,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 
 4. **執行移除**：
    - 用 Bash `rm -rf .claudedocs/` 刪除文檔
-   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/prompt-understanding-guard.sh` 刪除 hook 腳本
+   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/prompt-understanding-guard.sh .claude/hooks/learning-log-checker.sh` 刪除 hook 腳本
    - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
      ```python
      import json
@@ -756,7 +760,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    已刪除：
    - CLAUDE.md [或「已保留（含自訂內容）」]
    - .claudedocs/（N 個檔案）
-   - 3 個 Hook 腳本
+   - 5 個 Hook 腳本
    - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse + UserPromptSubmit）
    [若移除] - .claude-loop/
 

@@ -292,6 +292,7 @@ HOOK_FILES=(
     "hooks/incremental-lint.sh"
     "hooks/delegation-tracker.sh"
     "hooks/prompt-understanding-guard.sh"
+    "hooks/learning-log-checker.sh"
 )
 HOOKS_OK=true
 for f in "${HOOK_FILES[@]}"; do

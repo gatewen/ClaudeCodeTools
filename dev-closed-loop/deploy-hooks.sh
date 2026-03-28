@@ -5,7 +5,7 @@
 # 範例：bash /path/to/ClaudeCodeTools/dev-closed-loop/deploy-hooks.sh /path/to/ClaudeCodeTools
 #
 # 執行內容：
-#   1. 複製 4 個 Hook 腳本到 .claude/hooks/
+#   1. 複製 5 個 Hook 腳本到 .claude/hooks/
 #   2. 合併 Hook 配置到 .claude/settings.json（保留既有設定）
 #   3. 驗證部署結果
 
@@ -38,6 +38,7 @@ HOOK_FILES=(
   "incremental-lint.sh"
   "delegation-tracker.sh"
   "prompt-understanding-guard.sh"
+  "learning-log-checker.sh"
 )
 
 COPY_COUNT=0
@@ -99,6 +100,14 @@ delegation_entry = {
 if not any("delegation-tracker" in str(h) for h in post_hooks):
     post_hooks.append(delegation_entry)
 
+# PostToolUse：學習日誌提醒（git commit 後檢查 learning-log）
+learning_entry = {
+    "matcher": "Bash",
+    "hooks": [{"type": "command", "command": "bash .claude/hooks/learning-log-checker.sh"}]
+}
+if not any("learning-log-checker" in str(h) for h in post_hooks):
+    post_hooks.append(learning_entry)
+
 # UserPromptSubmit：理解確認旗標
 prompt_hooks = hooks.setdefault("UserPromptSubmit", [])
 prompt_entry = {
@@ -145,7 +154,7 @@ for f in "${HOOK_FILES[@]}"; do
 done
 
 if [[ -f "$SETTINGS_FILE" ]]; then
-  for keyword in "impact-analysis-guard" "incremental-lint" "delegation-tracker" "prompt-understanding-guard"; do
+  for keyword in "impact-analysis-guard" "incremental-lint" "delegation-tracker" "prompt-understanding-guard" "learning-log-checker"; do
     if ! grep -q "$keyword" "$SETTINGS_FILE" 2>/dev/null; then
       echo "❌ 驗證失敗：settings.json 缺少 $keyword 配置"
       VERIFY_OK=false
@@ -157,7 +166,7 @@ else
 fi
 
 if $VERIFY_OK; then
-  echo "✅ Hook 系統部署完成（4 腳本 + settings.json 配置）"
+  echo "✅ Hook 系統部署完成（5 腳本 + settings.json 配置）"
 else
   echo "⚠️  Hook 系統部署有問題，請檢查上方錯誤訊息"
   exit 1

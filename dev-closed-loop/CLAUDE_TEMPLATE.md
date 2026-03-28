@@ -101,6 +101,20 @@
 - 有可複用功能層 → Phase 1 設計規格標注「複用 [模組名] 功能層」，只設計新增功能或 UI 層
 - 無可複用 → 正常設計，但在分層聲明中考慮未來複用性
 
+### 6c. 學習日誌查詢（Phase 1 前 · 條件式）
+
+`.claude-loop/learning-log.md` 存在時讀取，不存在則跳過。
+掃描歷次閉環的教訓記錄，找出與當前需求相關的失敗根因和誤判模式。在畫面輸出：
+
+```
+📚 [學習日誌] {N} 筆記錄
+├─ 相關教訓：{與當前需求相關的歷史失敗根因}
+└─ 高頻問題：{出現 ≥ 3 次的問題類型}
+```
+
+- 有相關教訓 → Phase 1 設計時主動考慮（例如：歷史上 resource cleanup 常遺漏 → 本次設計 EH-x 時特別標注 cleanup）
+- 條目 ≥ 5 且未做過模式分析 → 提示用戶，同意後執行（格式見產出物格式.md）
+
 ### 7. 子 agent 失敗處理（全域規則）
 
 子 agent（Phase 1b/3/5 的 Task 委派）超時、輸出為空、或明顯不完整時：
@@ -110,7 +124,7 @@
 
 ### 8. 斷點熔斷（全域規則）
 
-同一 Phase 的斷點累計觸發 **3 次** → 暫停流程，用 AskUserQuestion 報告情況，由用戶決定：
+同一 Phase 的斷點累計觸發 **3 次** → 暫停流程，**先追加學習日誌**（記錄累積的失敗模式），再用 AskUserQuestion 報告情況，由用戶決定：
 - 繼續嘗試修正
 - 降級為精簡閉環完成剩餘工作
 - 重新設計（回 Phase 1 重新開始）
@@ -215,6 +229,7 @@
 **安全審查**：按領域預設（見 Section 6）。領域預設為「可跳過」時，以下條件**全部**滿足可跳過：無網路連線 · 無敏感資料處理 · 無檔案系統寫入 · 無 unsafe/eval · 無第三方認證。不跳過時讀取 `.claudedocs/agents/security-reviewer.md` 作為 Task prompt。
 **R-x 嚴重度**：high（邏輯/安全/設計不符→斷點 A）| arch-risk（架構風險→記錄不阻擋）| medium（品質→建議修）| low（風格→合併摘要）。`by-design` 不計入斷點。
 **⛔ 斷點 A**：有 high → 回 Phase 2 修正後重跑 Phase 3（差分審查：只審修改檔案 + 依賴檔案 + 原 high 確認修復。安全審查不重跑）。
+**學習日誌**（斷點觸發時立即追加）：將觸發斷點的 R-x high 根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。格式見產出物格式.md。
 
 ### Phase 4：測試師 🧪
 
@@ -222,6 +237,7 @@
 **測試分層**：`[testable]` 必須自動化測試 | `[visual-only]` 免除自動化，code review 驗證 | `[framework-dependent]` 建議拆分純邏輯部分。
 **執行**：用 Bash 依序 `{{TEST_COMMAND}}` + `{{BUILD_COMMAND}}`。
 **⛔ 斷點 B**：失敗 → 程式碼 bug 回 Phase 2（重跑 3+4）| 測試設計問題回 Phase 4 修正。
+**學習日誌**（斷點觸發時立即追加）：將失敗根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。
 
 ### Phase 5：自証師 ✅
 
@@ -232,7 +248,10 @@
 - **⛔ 委派呼叫驗證**：讀取 `.delegation-log` 確認記錄。缺失但產出物存在 → 以產出物為準
 - 收集 Part AB 結果 → 跑 `{{VERIFY_SEQUENCE}}`（多模組必做）→ 全 ✅ 通過 / 有 ❌ 不通過 + 回退建議
 **回退規則**：設計-實作不一致 → P2（嚴重→P1）| 測試不足 → P4 | 檢核未修 → P2 | DR-x high 未修 → P1 | 產出物缺漏 → 對應 Phase
-**通過後**：commit（message 帶自証摘要）。模組登記（中型以上或用戶要求）→ 格式見產出物格式.md。
+**通過後**：
+1. 學習日誌 → 追加本次閉環完整條目到 `.claude-loop/learning-log.md`（首次時建立檔案），格式見產出物格式.md
+2. commit（message 帶自証摘要，learning-log 變更包含在內）
+3. 模組登記（中型以上或用戶要求）→ 格式見產出物格式.md
 
 ---
 
@@ -247,7 +266,7 @@
 
 **步驟 2 — 實作**：按設計實作。若已部署語言指南，遵循 Phase 2 段落的編碼慣例。每完成一個檔案立即執行 `{{LINT_COMMAND}}` 驗證，發現錯誤當場修正。單檔上限按領域預設（含內聚性豁免）。全部完成後調用 Task `code-simplifier` 優化。設計文件同步規則同完整閉環。
 
-**步驟 3 — 品質審查**：讀取 `.claudedocs/agents/code-reviewer.md` 作為 Task prompt，啟動獨立子 agent 執行品質審查（不含安全審查）。有 R-x high → 回步驟 2 修正 → 重跑步驟 3（使用差分審查：只審修改檔案 + 依賴檔案 + 原 high 確認修復）。無 high → 進步驟 4。
+**步驟 3 — 品質審查**：讀取 `.claudedocs/agents/code-reviewer.md` 作為 Task prompt，啟動獨立子 agent 執行品質審查（不含安全審查）。有 R-x high → **先追加學習日誌（問題→原因→教訓）** → 回步驟 2 修正 → 重跑步驟 3（差分審查）。無 high → 進步驟 4。
 
 **步驟 4 — 測試驗證**：
 - 確認每個 `[testable]` BC-x/EH-x 有對應測試；`[visual-only]`/`[framework-dependent]` 項在報告中列出驗證方式
@@ -260,7 +279,10 @@
 核心：每個 BC-x/EH-x 附 ✅/❌ + 檔案:行號（實作）+ 測試名稱。R-x medium 用 AskUserQuestion 問用戶決策。
 **⛔ 閘門**：正向覆蓋有 ❌ → 禁止 commit | R-x medium → 必須經用戶決策 | 全 ✅ 且 medium 已決策 → commit
 
-**模組登記**（迷你追溯通過後 · 條件式）：用戶要求時執行（精簡閉環預設為中型任務，符合登記條件）。將模組資訊寫入 `.claude-loop/module-registry.md`（首次時建立檔案）。模組已在 registry 中 → 更新條目。格式見「模組登記格式」section。
+**迷你追溯通過後**：
+1. 學習日誌 → 追加本次閉環完整條目到 `.claude-loop/learning-log.md`，格式見產出物格式.md
+2. commit（learning-log 變更包含在內）
+3. 模組登記（用戶要求時）→ 格式見「模組登記格式」section
 
 ---
 
@@ -338,7 +360,7 @@
 
 | 文檔 | 觸發條件（僅此條件下讀取） |
 |------|--------------------------|
-| [產出物格式](.claudedocs/standards/產出物格式.md) | 進入 Phase 1/3/4/5 或精簡閉環步驟 4.5，需要產出模板時 |
+| [產出物格式](.claudedocs/standards/產出物格式.md) | 進入 Phase 1/3/4/5、精簡閉環步驟 4.5、或需要學習日誌/模式分析模板時 |
 | [Agent 專家庫](.claudedocs/agents/) | 進入 Phase 1b/3/5 委派子 agent，或 Phase 1/2/4 需要行為指引時 |
 | [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | ⛔ 用戶明確詢問 Agent 配合方式時才讀 |
 | [五階段流程](.claudedocs/process/五階段閉環流程.md) | ⛔ CLAUDE.md 已含完整 Phase 描述，僅用戶要求更多細節時才讀 |
@@ -350,7 +372,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）、Agent 專家庫（9 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.15.0
+closed-loop v5.16.0
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄
