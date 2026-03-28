@@ -30,6 +30,7 @@
 │   ├── P3-security-review.md         # Phase 3 安全審查報告
 │   ├── P5A-traceability.md           # Phase 5 Part A 追溯檢查
 │   └── P5B-reverse-analysis.md       # Phase 5 Part B 反向分析
+├── module-registry.md            # 模組索引：分層/API/複用資訊（閉環通過後登記）
 ├── project-state.md              # 全局狀態：模組清單、依賴圖、進度
 ├── modules/
 │   ├── user/
@@ -57,6 +58,7 @@
 | 檔案 | 用途 | 誰寫入 | 誰讀取 |
 |------|------|--------|--------|
 | `artifacts/*.md` | 委派子 agent 的產出物檔案（完整閉環必建） | 各 Phase 的委派子 agent | Phase 5 Part C 驗證存在性 |
+| `module-registry.md` | 模組索引：分層、API、複用資訊 | 閉環通過後登記（中型以上或用戶要求） | Phase 1 前查詢可複用功能層 |
 | `project-state.md` | 全局鳥瞰：所有模組的進度和依賴關係 | 每個模組閉環完成時更新 | 新 Session 開始時第一個讀 |
 | `modules/{name}/status.md` | 單一模組的閉環狀態和歷史 | 每次 Phase 轉換時更新 | 進入該模組閉環時讀取 |
 | `modules/{name}/design-spec.md` | Phase 1 的設計規格 | Phase 1 完成時寫入 | Phase 2-5 引用、依賴模組讀取 |
@@ -133,12 +135,14 @@
 | Phase 5 完成 | 將自証結果寫入 `modules/{name}/self-verify.md` |
 | 任何 Phase 轉換 | 更新 `modules/{name}/status.md`（追加歷史記錄） |
 | 模組閉環完成（自証通過） | 更新 `project-state.md`（修改該模組的進度行） |
+| 閉環通過（中型以上或用戶要求） | 將模組資訊登記/更新到 `module-registry.md` |
 
 ### 讀取時機
 
 | 事件 | 動作 |
 |------|------|
 | 新 Session 開始 | 先讀 `project-state.md` 了解全局狀態 |
+| Phase 1 前（模組資產查詢） | 讀取 `module-registry.md` 查詢可複用功能層（檔案存在時） |
 | 進入模組閉環 | 讀取該模組的 `status.md` 恢復斷點；讀取依賴模組的 `design-spec.md` 和 `self-verify.md` |
 | Phase 5 自証 | 從 `design-spec.md` 讀取設計規格做比對（不依賴對話記憶） |
 
