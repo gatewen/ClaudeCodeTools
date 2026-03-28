@@ -250,7 +250,7 @@
 
 ### Phase 1：架構師 📐
 
-**Agent**：讀取 `.claudedocs/agents/architect.md` 按指引執行。需求模糊 → 先讀 `.claudedocs/agents/requirements-analyst.md` 做需求探索。SC/SP 可用時亦可用 `sc:design` / `sc:brainstorm`。
+**Agent**：讀取 `.claudedocs/agents/architect.md` 按指引執行。需求模糊 → 先讀 `.claudedocs/agents/requirements-analyst.md` 做需求探索。
 **語言指南**：若已部署語言指南，先讀取 Phase 1 段落（型別系統指南、BC-x/EH-x 慣用模式）。
 **常見缺陷預防**：首次使用閉環或不熟悉的領域時，讀取 `.claudedocs/process/五階段閉環流程.md` 末尾的「常見設計缺陷預防清單」。
 **架構體質拆解**（設計前必做，涉及現有模組時）：
@@ -310,7 +310,7 @@
 **獨立性要求**：必須使用 Task 工具啟動獨立子 agent。子 agent **不繼承**主對話 context，只接收下方定義的審查包。目的：切斷認知偏見傳遞鏈，讓審查者以全新視角評估設計。
 **目錄準備**：主 agent 在發送第一個委派 Task 前，執行 `mkdir -p .claude-loop/artifacts`。
 **跳過條件**：用戶說「跳過設計審查」→ 直接進 Phase 2。Phase 5 步驟 4c 標記「用戶跳過」，不視為缺失。
-**委派 prompt**：讀取 `.claudedocs/agents/design-reviewer.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的審查包並發送 Task。（備選：`.claudedocs/standards/委派審查prompt.md` Phase 1b 段落）
+**委派 prompt**：讀取 `.claudedocs/agents/design-reviewer.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的審查包並發送 Task。
 **分層審查**（功能+UI 分層的模組）：功能層的公開 API 是否足夠抽象？依賴方向是否正確（功能層不依賴 UI 框架）？功能層是否有複用潛力？
 **產出**：DR-x 審查報告，寫入 `.claude-loop/artifacts/P1b-design-review.md`。
 - **high**：邏輯缺陷、遺漏關鍵邊界情境、或存在明顯更優的替代方案 → 觸發閘門回退
@@ -331,7 +331,7 @@
 
 ### Phase 2：程序設計師 💻
 
-**Agent**：讀取 `.claudedocs/agents/implementer.md` 按指引執行。SC/SP 可用時亦可用 `sc:implement` / `superpowers:executing-plans`。
+**Agent**：讀取 `.claudedocs/agents/implementer.md` 按指引執行。
 **語言指南**：若已部署語言指南，先讀取 Phase 2 段落（編碼慣例、專案結構）。
 **約束**：嚴格按 Phase 1 規格實作。每個 BC-x、EH-x 都要有對應程式碼。覺得設計有問題就回報，不自己改設計。
 **增量驗證**：每完成一個檔案後，立即執行 `{{LINT_COMMAND}}`。目的：及早捕獲型別錯誤、未使用 imports、框架 lint 規則違規，避免錯誤累積到 Phase 4 才集中爆發。發現錯誤立即修正再繼續下一個檔案。
@@ -347,7 +347,7 @@
 ### Phase 3：檢核師 🔍
 
 **獨立性要求**：品質審查使用 Task 啟動獨立子 agent。安全審查按領域預設決定是否執行。
-**品質審查委派 prompt**：讀取 `.claudedocs/agents/code-reviewer.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的輸入。（備選：`.claudedocs/standards/委派審查prompt.md` Phase 3 品質審查段落）
+**品質審查委派 prompt**：讀取 `.claudedocs/agents/code-reviewer.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的輸入。
 
 **安全審查**：按領域預設（見 Section 6）。領域預設為「可跳過」時，以下條件**全部**滿足可跳過並在品質審查報告末尾標記「安全審查：by-design 跳過（[原因]）」：
 - 無網路連線（含 WebSocket/fetch/API 呼叫）
@@ -357,7 +357,7 @@
 - 無第三方認證/授權流程
 不滿足任一條件 → 安全審查照常執行。
 
-**安全審查委派 prompt**（不跳過時）：讀取 `.claudedocs/agents/security-reviewer.md` 作為完整 Task prompt。（備選：`.claudedocs/standards/委派審查prompt.md` Phase 3 安全審查段落）
+**安全審查委派 prompt**（不跳過時）：讀取 `.claudedocs/agents/security-reviewer.md` 作為完整 Task prompt。
 
 **約束**：問題標 R-x + 嚴重度。`by-design` 用於刻意的設計取捨，不計入斷點判定。**R-x 報告策略**：high/arch-risk/medium 逐一列出；low 級合併為一句摘要。
 **嚴重度定義**：
@@ -377,7 +377,7 @@
 
 ### Phase 4：測試師 🧪
 
-**Agent**：讀取 `.claudedocs/agents/tester.md` 按指引執行。SC/SP 可用時亦可用 `sc:test` / `superpowers:test-driven-development`。
+**Agent**：讀取 `.claudedocs/agents/tester.md` 按指引執行。
 **語言指南**：若已部署語言指南，先讀取 Phase 4 段落（測試框架、測試模式）。
 
 **測試分層定義**：
@@ -406,7 +406,7 @@
 **Part AB — 雙向追溯**（單一獨立子 agent · 正向追溯 + 反向分析）：
 **獨立性要求**：必須使用 Task 工具啟動獨立子 agent，切斷主對話的推理 context。
 **合併理由**：單一 agent 同時做正向（設計→程式碼→測試）和反向（程式碼→設計）追溯，可即時交叉比對，品質優於分開做再調和。
-**委派 prompt**：讀取 `.claudedocs/agents/verifier.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的驗證包並發送 Task。（備選：`.claudedocs/standards/委派審查prompt.md` Phase 5 Part AB 段落）
+**委派 prompt**：讀取 `.claudedocs/agents/verifier.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的驗證包並發送 Task。
 **產出**：雙向追溯結果，寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md` 並回傳給主 agent。
 
 **Part C — 整體評估**（主 agent 彙整）：
@@ -554,7 +554,6 @@
 |------|--------------------------|
 | [產出物格式](.claudedocs/standards/產出物格式.md) | 進入 Phase 1/3/4/5，需要產出模板時 |
 | [Agent 專家庫](.claudedocs/agents/) | 進入 Phase 1b/3/5 委派子 agent，或 Phase 1/2/4 需要行為指引時 |
-| [委派審查 prompt](.claudedocs/standards/委派審查prompt.md) | Agent 專家庫不可用時的備選委派 prompt |
 | [Agent 使用指南](.claudedocs/standards/Agent使用指南.md) | ⛔ 用戶明確詢問 Agent 配合方式時才讀 |
 | [五階段流程](.claudedocs/process/五階段閉環流程.md) | ⛔ CLAUDE.md 已含完整 Phase 描述，僅用戶要求更多細節時才讀 |
 | [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 模組 ≥ 3 且啟用持久化時 |

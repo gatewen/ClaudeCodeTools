@@ -42,24 +42,13 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 ### Step 0：環境依賴檢查
 
-v5.14.0 起，閉環的核心功能（Agent 專家庫）不依賴外部工具。SC/SP 為可選增強。
+閉環自帶 Agent 專家庫，不依賴外部工具。此步驟僅檢查可選插件。
 
-1. **檢查 SuperClaude**（可選增強）：用 Bash 執行 `ls ~/.claude/commands/sc/ 2>/dev/null | head -1`
-   - 有輸出 → SuperClaude 已安裝 ✅
-   - 無輸出 → SuperClaude 未安裝 ℹ️（可選，Agent 專家庫已提供基線能力）
-
-2. **檢查 Superpowers**（可選增強）：用 Bash 執行 `grep -q "superpowers@claude-plugins-official" ~/.claude/plugins/installed_plugins.json 2>/dev/null && echo "installed"`
-   - 輸出 "installed" → Superpowers 已安裝 ✅
-   - 無輸出 → Superpowers 未安裝 ℹ️（可選，Agent 專家庫已提供基線能力）
-
-3. **檢查 claude-mem**（可選）：用 Bash 執行 `grep -rq "claude-mem" ~/.claude/plugins/ 2>/dev/null && echo "installed" || grep -q "claude-mem" ~/.claude/.mcp.json 2>/dev/null && echo "installed"`
+1. **檢查 claude-mem**（可選）：用 Bash 執行 `grep -rq "claude-mem" ~/.claude/plugins/ 2>/dev/null && echo "installed" || grep -q "claude-mem" ~/.claude/.mcp.json 2>/dev/null && echo "installed"`
    - 輸出 "installed" → claude-mem 已安裝 ✅
-   - 無輸出 → claude-mem 未安裝 ℹ️（可選功能，不影響閉環運作）
+   - 無輸出 → claude-mem 未安裝 ℹ️（可選，不影響閉環運作）
 
-4. **結果處理**：
-   - 三者都是可選工具，缺少不阻擋部署
-   - 輸出依賴狀態摘要（✅ 已安裝 / ℹ️ 未安裝），繼續 Step 1
-   - 在最終報告（Step 5）中列出可選工具狀態，未安裝的附上安裝指引
+2. **結果處理**：直接繼續 Step 1。在最終報告（Step 5）中列出 claude-mem 狀態。
 
 ### Step 1：前置檢查
 
@@ -483,9 +472,9 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 4. 若專案有 ≥ 3 個模組，建議建立 .claude-loop/ 持久化目錄
    詳見 .claudedocs/process/跨Session持久化.md
 
-可選增強：
-[若 SC/SP 未安裝] 💡 安裝 SuperClaude / Superpowers 可獲得增強的 Agent 能力
-[若 claude-mem 未安裝] 💡 安裝 claude-mem 插件可啟用跨時間語義記憶
+[若 claude-mem 未安裝]
+💡 安裝 claude-mem 插件可啟用跨時間語義記憶
+   （Phase 前自動查詢歷史決策、Phase 後自動保存經驗教訓）
 ```
 
 **升級模式**：
@@ -523,7 +512,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - v5.9.0 → v5.10.0：架構體質拆解（第一性原理：Phase 1 設計前拆解現有架構假設、Phase 1b 審查架構體質）
 - v5.10.0 → v5.10.1：模板瘦身（子 agent prompt 移至 .claudedocs/standards/委派審查prompt.md，模板 512→448 行）
 - v5.12.0 → v5.13.0：全 Hook 阻擋式升級——因果鏈守衛 + 理解確認守衛均為 exit 2 block 機制（雙閘門合併阻擋，一次 block 同時要求理解確認 + 因果鏈分析）
-- v5.13.0 → v5.14.0：Agent 專家庫（.claudedocs/agents/ 8 個專家 prompt），SC/SP 降為可選增強
+- v5.13.0 → v5.14.0：Agent 專家庫（.claudedocs/agents/ 8 個專家 prompt），方法論自包含無外部依賴
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作

@@ -12,7 +12,7 @@ CLAUDE.md 裡已經寫了每個 Phase 該調用哪個 Agent 和約束條件。
 
 ## Agent 專家庫（v5.14.0 新增）
 
-`.claudedocs/agents/` 目錄包含 8 個專家 agent prompt，覆蓋 Phase 1-5 全流程。每個 prompt 基於 **prompt-engineer-agentic v4.1** 三層架構設計（Foundation → Structure → Execution），是閉環方法論的**基線能力**，無需任何外部依賴。
+`.claudedocs/agents/` 目錄包含 8 個專家 agent prompt，覆蓋 Phase 1-5 全流程。每個 prompt 基於 **prompt-engineer-agentic v4.1** 三層架構設計（Foundation → Structure → Execution），是閉環方法論的完整能力，無需任何外部依賴。
 
 | Agent | Phase | 類型 | 用途 |
 |-------|-------|------|------|
@@ -29,154 +29,81 @@ CLAUDE.md 裡已經寫了每個 Phase 該調用哪個 Agent 和約束條件。
 
 ---
 
-## 四類 Agent 的差異
+## 兩類 Agent 的差異
 
-| 類別 | 執行方式 | 上下文 | 適合什麼 | 依賴 |
-|------|---------|--------|---------|------|
-| **Agent 專家庫（inline）** | 主 agent 讀取後按指引執行 | 保留完整對話歷史 | Phase 1/2/4 需要對話上下文的工作 | 無 |
-| **Agent 專家庫（task）** | Agent tool 啟動獨立子 agent | 只看到 prompt 和資料包 | Phase 1b/3/5 獨立審查工作 | 無 |
-| **sc: Skill** _(可選增強)_ | 在當前對話裡執行 | 能看到整個對話歷史 | 需要完整上下文的工作（設計、實作、自証） | SuperClaude |
-| **superpowers: Skill** _(可選增強)_ | 在當前對話裡執行 | 能看到整個對話歷史 | 有明確流程的專門化工作（TDD、code review） | Superpowers |
+| 類別 | 執行方式 | 上下文 | 適合什麼 |
+|------|---------|--------|---------|
+| **Agent 專家庫（inline）** | 主 agent 讀取後按指引執行 | 保留完整對話歷史 | Phase 1/2/4 需要對話上下文的工作 |
+| **Agent 專家庫（task）** | Agent tool 啟動獨立子 agent | 只看到 prompt 和資料包 | Phase 1b/3/5 獨立審查工作 |
 
-**優先順序**：Agent 專家庫是基線。SC/SP 可用時作為增強選項——CLAUDE.md 中每個 Phase 的 Agent 行都標明了兩種選項。
+**關鍵差異**：inline agent 看得到前面 Phase 的產出物（在同一對話裡），task agent 看不到（主 agent 要把資料包傳給它）。
 
-**Task agent 名稱說明**：本文件中提到的 Task agent 名稱（如 `system-architect`、`backend-architect`、`frontend-architect`、`python-expert`、`quality-engineer`）是角色描述而非固定 ID。調用時在 Task prompt 中描述對應角色的專長即可，Claude Code 會自動匹配合適的 agent 行為。
+**Task agent 名稱說明**：本文件中提到的 Task agent 名稱（如 `code-simplifier`、`quality-engineer`）是角色描述而非固定 ID。調用時在 Task prompt 中描述對應角色的專長即可，Claude Code 會自動匹配合適的 agent 行為。
 
 ---
 
-## 各 Phase 的選擇邏輯
+## 各 Phase 的 Agent 說明
 
-### Phase 1：架構師 📐
+### Phase 1：架構師 📐（`architect.md` · inline）
 
-**為什麼 `sc:design` 是首選？**
-它會做結構化的技術設計，產出符合閉環需要的設計文件。而且在當前對話中執行，能看到用戶的原始需求。
+主 agent 讀取 `architect.md` 後按 `<instructions>` 的 8 個步驟執行。產出物是 BC-x/EH-x/IF-x 設計規格，含分層結構聲明和驗證層級標注。
 
-**什麼時候換別的？**
+需求模糊時，先讀 `requirements-analyst.md` 做多角度需求探索，收斂後再進入架構設計。
 
-| 情境 | 改用 | 原因 |
-|------|------|------|
-| 用戶只有模糊想法 | `sc:brainstorm` → 再 `sc:design` | 先釐清需求再設計，不然設計方向會錯 |
-| 要設計整個系統架構 | Task agent `system-architect` | 系統級設計可以獨立思考，不需要對話上下文 |
-| 只需要函式級設計 | 不用調 agent，直接做 | 簡單到不值得調 agent |
+**要注意**：architect agent 已內建 BC-x/EH-x 編號和閘門檢查，不需要額外提醒。
 
-**要注意的事**：
-不管用哪個 agent，都要確保產出物有 BC-x 和 EH-x 編號。這些 agent 預設不會加編號，所以調用時要在 prompt 裡明確要求。
+### Phase 2：程序設計師 💻（`implementer.md` · inline）
 
-### Phase 2：程序設計師 💻
-
-**為什麼 `sc:implement` 是首選？**
-它專門做功能實作，而且在當前對話裡能直接看到 Phase 1 的設計規格。
-
-**什麼時候換別的？**
-
-| 情境 | 改用 | 原因 |
-|------|------|------|
-| Phase 1 已經產出完整計畫 | `superpowers:executing-plans` | 專門為「有計畫就執行」設計的 |
-| 後端 API 實作 | 搭配 Task agent `backend-architect` | 後端專家有更好的 API 設計直覺 |
-| 前端元件實作 | 搭配 Task agent `frontend-architect` + Magic MCP | 前端專家 + UI 生成器 |
-| Python 專案 | 搭配 Task agent `python-expert` | Python 的慣用寫法和最佳實踐 |
-
-**最重要的約束**：
-Agent 的實作必須嚴格對照 Phase 1 的設計規格。`sc:implement` 預設會自己判斷怎麼做最好，但在閉環裡它不能自作主張。CLAUDE.md 裡的約束會覆蓋它的預設行為。
+主 agent 讀取 `implementer.md` 後按指引逐檔實作。核心約束：嚴格按設計規格、增量 lint 驗證、完成後觸發 Task `code-simplifier`。
 
 ### Phase 2 → 3 之間：code-simplifier 強制優化 🔧
 
-**為什麼加這一步？**
-
-AI 產生程式碼時有個常見問題：**照搬舊碼**。它會把現有程式碼原樣複製過來，不管有沒有更好的寫法。甚至有時候會產出冗長、不一致的程式碼，只因為「能動就好」。
-
-`code-simplifier` 是一個 Task agent，專門做三件事：
+AI 產生程式碼時有個常見問題：**照搬舊碼**。`code-simplifier` 是 Task agent，專門做三件事：
 1. **清晰度（Clarity）**：讓程式碼一看就懂
 2. **一致性（Consistency）**：跟專案風格對齊
 3. **可維護性（Maintainability）**：去除不必要的複雜度
 
-**為什麼是 Task agent 而不是 Skill？**
-code-simplifier 的工作是純程式碼層面的，不需要看閉環的上下文。給它程式碼檔案路徑就能獨立做。用 Task agent 還有一個好處：它的優化結果是獨立的判斷，不會被前面對話中「自己寫的程式碼」所影響（避免自己審自己的偏見）。
-
-**嚴格規則（CLAUDE.md 裡有寫，這裡補充說明）**：
+**為什麼是 Task agent？**
+純程式碼層面的工作，不需要看閉環上下文。獨立判斷避免「自己審自己」的偏見。
 
 | 規則 | 為什麼 | 違反的後果 |
 |------|--------|-----------|
 | 禁止照搬舊碼 | AI 容易偷懶複製貼上，但舊碼可能有技術債 | Phase 3 的檢核師會標 R-x 要求返工 |
-| 三面向必須審查 | 只看「能不能跑」不夠，要看「好不好維護」 | 長期技術債累積，後續修改成本高 |
-| 不能改設計行為 | 簡化的是「實作方式」不是「功能規格」 | 改了設計就破壞跟 Phase 1 的一致性 |
+| 三面向必須審查 | 只看「能不能跑」不夠，要看「好不好維護」 | 長期技術債累積 |
+| 不能改設計行為 | 簡化的是「實作方式」不是「功能規格」 | 破壞跟 Phase 1 的一致性 |
 | 用戶說保留就保留 | 有時候舊碼有特殊原因要保留 | — |
 
-**什麼時候可以跳過？**
-- 用戶明確說「保留原始碼」「不要優化」「照搬就好」
-- 除此之外，沒有例外
+跳過條件：用戶明確說「保留原始碼」「不要優化」。除此之外，沒有例外。
 
-**調用方式**：
-```
-Task agent `code-simplifier`
-prompt 帶上：
-- 新增/修改的檔案路徑
-- 專案的程式碼風格慣例（如果有的話）
-- 明確指示：「優化程式碼的清晰度、一致性和可維護性，但不改變功能行為」
-```
+### Phase 3：檢核師 🔍（`code-reviewer.md` + `security-reviewer.md` · task）
 
-### Phase 3：檢核師 🔍
-
-**為什麼建議用 Task agent？**
-Code review 是可以獨立完成的工作——給它程式碼和設計規格，它就能做。而且用 Task agent 可以**平行**跑多個檢核（品質 + 安全同時進行）。
-
-**推薦的組合**：
+兩個 Task agent 可**平行**啟動：
 
 ```
 Phase 3 同時啟動：
-├── Task agent `superpowers:code-reviewer` — 檢查程式碼品質和設計一致性
-└── Task agent `security-engineer` — 檢查安全問題
-
-兩個結果合併成一份檢核報告
+├── code-reviewer.md — 品質審查（設計一致性 + 結構安全 + 依賴方向 + 合理性）
+└── security-reviewer.md — 安全審查（輸入驗證 / 注入 / 認證 / 暴露 / 依賴）
 ```
 
-**什麼時候不用 Task agent？**
+每個 agent 的 `<input_contract>` 已定義需要什麼輸入。code-reviewer 需要設計規格 + 程式碼路徑；security-reviewer 只需要程式碼路徑。
 
-| 情境 | 改用 | 原因 |
-|------|------|------|
-| 程式碼很短（< 50 行） | `sc:analyze --focus quality` | 不值得開 agent，直接分析 |
-| 需要看對話中的討論脈絡 | `sc:analyze` | Skill 能看到為什麼這樣設計 |
+### Phase 4：測試師 🧪（`tester.md` · inline）
 
-**傳給 Task agent 的 prompt 要帶什麼**：
-必須帶上 Phase 1 的設計規格（含 BC-x、EH-x 編號）和 Phase 2 的程式碼檔案路徑。不帶設計規格的話，agent 只會做一般的 code review，不會檢查設計一致性。
+主 agent 讀取 `tester.md` 按指引執行。核心：每個 `[testable]` BC-x/EH-x 有對應測試、實際用 Bash 跑測試和建置指令。
 
-### Phase 4：測試師 🧪
+**絕對不能省**：用 Bash 實際執行測試。「寫了測試」跟「測試通過」是兩回事。
 
-**為什麼 `sc:test` 是首選？**
-它能寫測試、跑測試、報告結果，而且看得到前面的設計規格可以做覆蓋率比對。
+### Phase 5：自証師 ✅（`verifier.md` · task + 主 agent 彙整）
 
-**什麼時候換別的？**
+分兩段：
+- **Part AB**：讀取 `verifier.md` 啟動 Task agent，執行 9 步驟雙向追溯（正向+反向+交叉比對+arch-risk 追蹤）
+- **Part C**：主 agent 彙整 Part AB 結果 + 委派產出物驗證 + 全專案回歸測試
 
-| 情境 | 改用 | 原因 |
-|------|------|------|
-| 想用 TDD 流程 | `superpowers:test-driven-development` | 先寫測試再實作的完整 TDD 流程 |
-| 需要完整測試策略 | Task agent `quality-engineer` | 包含測試策略規劃、覆蓋率分析 |
-| 前端需要 E2E 測試 | Playwright MCP | 真實瀏覽器測試 |
+**為什麼 Part AB 用 Task agent？**
+切斷主對話的推理 context，確保獨立性。verifier agent 的 `<input_contract>` 已定義完整的驗證包內容。
 
-**絕對不能省的步驟**：
-用 Bash 實際跑 CLAUDE.md「專案配置」中定義的測試指令。不管用哪個 agent，最後一定要實際執行測試。「寫了測試」跟「測試通過」是兩回事。
-
-### Phase 5：自証師 ✅
-
-**為什麼改成三步走？（v2 更新）**
-
-v1 只有調用兩個 Skill。v2 在前面加了一步：先執行 CLAUDE.md 裡的「自証檢查表」。
-
-原因：`sc:reflect` 和 `superpowers:verification-before-completion` 的預設行為分別是「任務反思」和「跑測試確認完成」，都不是「跨產出物一致性比對」。光靠 CLAUDE.md 的約束文字不一定能覆蓋它們的預設行為。
-
-所以現在的流程是：
-1. **自証檢查表**（CLAUDE.md 裡的 6 步具體指令）← 這是核心，確保比對真的做了
-2. **`sc:reflect --type completion`** ← 補充評估完成度
-3. **`superpowers:verification-before-completion`** ← 最終驗證
-
-**為什麼不用 Task agent？**
-自証師需要看到 Phase 1-4 的所有產出物，這些都在當前對話裡。用 Task agent 的話，你得把所有產出物都塞進 prompt，很容易漏東西。
-
-**自証檢查表的設計邏輯**：
-CLAUDE.md 裡的 6 步檢查表不是「建議」，是「指令」。每一步都要求明確的輸出（✅/❌ 標記），讓 Claude 不能跳過或敷衍。這比純文字的約束（「你必須做 XX」）更可靠，因為：
-- 步驟 1 要求列出所有 ID → 建立了比對的基準
-- 步驟 2-4 要求逐一標注 ✅/❌ → 不能籠統地說「都做了」
-- 步驟 6 要求用固定格式輸出 → 結果可追溯
+**為什麼 Part C 不用 Task agent？**
+Part C 需要看到 Phase 1-4 的所有產出物做最終彙整，這些在當前對話裡。
 
 ---
 
@@ -186,13 +113,11 @@ Phase 之間的產出物怎麼傳？
 
 | 傳遞方式 | 適用場景 | 做法 |
 |---------|---------|------|
-| 對話內傳遞 | sc/superpowers Skill | 自動看得到，不用特別處理 |
-| Prompt 傳遞 | Task agent | 在 Task 的 prompt 裡明確附上前面 Phase 的產出物 |
-| 檔案傳遞 | 跨 session | 把產出物寫到 `.claudedocs/records/` 裡，下次讀取 |
+| 對話內傳遞 | inline agent（Phase 1/2/4） | 自動看得到，不用特別處理 |
+| Prompt 傳遞 | task agent（Phase 1b/3/5） | 按 `<input_contract>` 準備資料包 |
+| 檔案傳遞 | 跨 session | 把產出物寫到 `.claude-loop/` 裡，下次讀取 |
 
-大部分情況用「對話內傳遞」就好。需要在 prompt 裡手動傳遞的情境：
-- Phase 2→3 之間的 `code-simplifier`：帶上修改的檔案路徑和專案風格慣例
-- Phase 3 用 Task agent 做平行 code review：帶上設計規格和程式碼路徑
+inline agent 在對話中執行，自動看到前面 Phase 的產出物。task agent 需要主 agent 按 `<input_contract>` 準備資料包——每個 agent 的 contract 已明確定義需要什麼。
 
 ### claude-mem 語義記憶（可選）
 
@@ -217,12 +142,12 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 
 | 錯誤 | 為什麼是錯的 | 正確做法 |
 |------|------------|---------|
-| Phase 1 就用 `sc:implement` | implement 是寫程式碼的，不是做設計的 | 用 `sc:design` |
+| Phase 1 讀了 `implementer.md` | implementer 是寫程式碼的，不是做設計的 | 讀 `architect.md` |
 | Phase 2 完成後跳過 code-simplifier | AI 產生的程式碼可能照搬舊碼或冗長不一致 | 強制調用 code-simplifier 再進 Phase 3 |
 | code-simplifier 改了功能行為 | 它只能簡化實作方式，不能改設計規格 | prompt 明確寫「不改變功能行為」 |
-| Phase 3 的 code-reviewer 沒給設計規格 | 它會做一般 review 但不會檢查設計一致性 | prompt 裡帶上設計規格 |
+| Phase 3 的 code-reviewer 沒給設計規格 | 它會做一般 review 但不會檢查設計一致性 | 按 `<input_contract>` 帶上設計規格 |
 | Phase 4 只寫測試沒跑 | 沒有實際執行的測試報告是假的 | 一定要用 Bash 跑 |
-| Phase 5 用 Task agent | 會漏看對話裡的產出物上下文 | 用 Skill 在對話中執行 |
+| Phase 5 Part C 用 Task agent | 會漏看對話裡的產出物上下文 | Part C 由主 agent 在對話中執行 |
 | 每個 Phase 都開 `--ultrathink` | Phase 2 寫程式碼不需要深度推理 | Phase 1 和 5 才需要 |
 
 ---
@@ -235,7 +160,7 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 
 ### 為什麼要用外部 Skills
 
-閉環系統的內建 Agent（sc: / superpowers: / Task agent）已經能覆蓋大部分需求。但在某些場景下，社群 Skills 可以提供更專門化的能力：
+閉環的 Agent 專家庫已覆蓋全流程。但在某些場景下，社群 Skills 可以提供更專門化的能力：
 
 - Phase 1：更好的架構決策記錄工具
 - Phase 3：語言專屬的 code review 規則
@@ -309,4 +234,4 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 
 ---
 
-最後修訂：2026-02-12
+最後修訂：2026-03-28（v5.14.0 Agent 專家庫重寫）

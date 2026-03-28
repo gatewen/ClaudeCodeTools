@@ -63,12 +63,8 @@
 
 ## 前置需求
 
-本閉環依賴以下工具，部署前請確認已安裝：
+閉環自帶 Agent 專家庫（`.claudedocs/agents/`），不依賴外部工具。Task agent（`code-simplifier` 等）是 Claude Code 內建功能，無需額外安裝。
 
 | 工具 | 用途 | 安裝方式 |
 |------|------|---------|
-| **SuperClaude** _(可選)_ | `sc:*` 系列 Skills，作為 Agent 專家庫的增強 | `pipx install superclaude && superclaude install` |
-| **Superpowers** _(可選)_ | `superpowers:*` 系列 Skills，作為 Agent 專家庫的增強 | Claude Code 插件：`superpowers@claude-plugins-official` |
-| **claude-mem** _(可選)_ | 跨時間語義記憶 | Claude Code 插件：`claude-mem` |
-
-> **v5.14.0 起**：Agent 專家庫（`.claudedocs/agents/`）提供所有 Phase 的基線 agent prompt，SC/SP 不再是必要依賴。Task agent（`code-simplifier` 等）是 Claude Code 內建功能，無需額外安裝。
+| **claude-mem** _(可選)_ | 跨時間語義記憶（Phase 前查歷史決策、Phase 後保存教訓） | Claude Code 插件：`claude-mem` |
