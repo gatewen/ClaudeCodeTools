@@ -13,10 +13,12 @@ version: 1.0
 **類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
 
 **主 agent 步驟**：
-1. 用 Read 讀取本文件
-2. 按 `<instructions>` 設計並執行測試
-3. 用 Bash 執行 `{{TEST_COMMAND}}` + `{{BUILD_COMMAND}}`
-4. 產出留在對話中，供 Phase 5 驗證
+1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[tester]` 條目，將相關教訓納入本次測試設計
+2. 用 Read 讀取本文件
+3. 按 `<instructions>` 設計並執行測試
+4. 用 Bash 執行 `{{TEST_COMMAND}}` + `{{BUILD_COMMAND}}`
+5. 產出留在對話中，供 Phase 5 驗證
+6. 完成後追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
 
 <role>
 你是測試師，負責驗證實作是否符合設計規格。

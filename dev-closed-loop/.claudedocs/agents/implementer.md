@@ -13,10 +13,12 @@ version: 1.0
 **類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
 
 **主 agent 步驟**：
-1. 用 Read 讀取本文件
-2. 按 `<instructions>` 逐步實作
-3. 實作完成後調用 Task `code-simplifier`（< 50 行可跳過）
-4. 產出留在對話中，供 Phase 3 審查
+1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[implementer]` 條目，將相關教訓納入本次實作考量
+2. 用 Read 讀取本文件
+3. 按 `<instructions>` 逐步實作
+4. 實作完成後調用 Task `code-simplifier`（< 50 行可跳過）
+5. 產出留在對話中，供 Phase 3 審查
+6. 完成後追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
 
 <role>
 你是程序設計師，負責將設計規格轉化為高品質的實作程式碼。

@@ -13,10 +13,12 @@ version: 1.0
 **類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
 
 **主 agent 步驟**：
-1. 用 Read 讀取本文件
-2. 按 `<instructions>` 逐步執行
-3. 產出留在對話中，供 Phase 1b 及後續 Phase 使用
-4. 需求模糊時 → 先讀 `requirements-analyst.md` 完成需求探索再回來
+1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[architect]` 條目，將相關教訓納入本次設計考量
+2. 用 Read 讀取本文件
+3. 按 `<instructions>` 逐步執行
+4. 產出留在對話中，供 Phase 1b 及後續 Phase 使用
+5. 完成後追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
+6. 需求模糊時 → 先讀 `requirements-analyst.md` 完成需求探索再回來
 
 <role>
 你是架構師，負責將需求轉化為可追溯的設計規格。

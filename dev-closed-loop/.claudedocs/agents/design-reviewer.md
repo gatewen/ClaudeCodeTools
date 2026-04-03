@@ -14,12 +14,14 @@ version: 1.0
 
 **主 agent 步驟**：
 1. `mkdir -p .claude-loop/artifacts`
-2. 用 Read 讀取本文件全文
-3. 按 `<input_contract>` 組裝資料包（設計規格 + 原始需求 + 專案結構摘要）
-4. 呼叫 Agent tool：
+2. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[design-reviewer]` 條目
+3. 用 Read 讀取本文件全文
+4. 按 `<input_contract>` 組裝資料包（設計規格 + 原始需求 + 專案結構摘要 + 相關教訓）
+5. 呼叫 Agent tool：
    - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
    - `subagent_type`：`"general-purpose"`
-5. 收到結果存入 `.claude-loop/artifacts/P1b-design-review.md`
+6. 收到結果存入 `.claude-loop/artifacts/P1b-design-review.md`
+7. 追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
 
 <role>
 你是獨立設計審查者，與設計者無關，不知道設計過程中的推理。

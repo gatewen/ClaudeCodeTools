@@ -67,6 +67,8 @@
 - **TaskCreate**：觸發閉環時立即建立任務鏈（大型 6 個 / 中型 6 個），讓用戶看到進度
 - **Phase 標記**：進入/離開每個 Phase 時輸出 `═══ 📐 Phase 1：架構師 | 開始 ═══` 格式標記
 - **Agent 宣告**：調用 Agent 時輸出 `→ 調用 ...`，完成時輸出 `← ... 完成：[摘要]`
+- **Agent 活動日誌**：每次 agent 調用完成後，追加一條記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）。記錄：時間、agent 名稱、Phase、輸入摘要、產出摘要、狀況
+- **Agent 學習查詢**：調用 agent 前，若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[{agent-name}]` 標籤的條目，將相關教訓傳給 agent（inline 直接參考，task 附加到資料包）
 
 ### 6. 領域偵測與規則預設（Phase 1 前自動判定）
 
@@ -124,7 +126,7 @@
 
 ### 8. 斷點熔斷（全域規則）
 
-同一 Phase 的斷點累計觸發 **3 次** → 暫停流程，**先追加學習日誌**（記錄累積的失敗模式），再用 AskUserQuestion 報告情況，由用戶決定：
+同一 Phase 的斷點累計觸發 **3 次** → 暫停流程，**先追加學習日誌**（標記 `[circuit-breaker]`，記錄累積的失敗模式），再用 AskUserQuestion 報告情況，由用戶決定：
 - 繼續嘗試修正
 - 降級為精簡閉環完成剩餘工作
 - 重新設計（回 Phase 1 重新開始）
@@ -206,13 +208,13 @@
 **安全審查**：按領域預設（見 Section 6）。跳過條件：無網路 · 無敏感資料 · 無檔案寫入 · 無 unsafe/eval · 無第三方認證全滿足。不跳過時讀取 `security-reviewer.md` 按其「調用方式」啟動。
 **R-x 嚴重度**：high→斷點 A | arch-risk→記錄不阻擋 | medium→建議修 | low→合併摘要。`by-design` 不計入。
 **⛔ 斷點 A**：有 high → 回 Phase 2 修正後重跑 Phase 3（差分審查，安全審查不重跑）。
-**學習日誌**（斷點觸發時）：R-x high 根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。
+**學習日誌**（斷點觸發時）：R-x high 根因記錄到 `.claude-loop/learning-log.md`，標題標記 `[code-reviewer]` 或 `[security-reviewer]`（問題→原因→教訓）。
 
 ### Phase 4：測試師 🧪
 
 **Agent**：讀取 `.claudedocs/agents/tester.md`，按其「調用方式」和 `<instructions>` 執行。語言指南若有則讀 Phase 4 段落。
 **⛔ 斷點 B**：失敗 → 程式碼 bug 回 Phase 2（重跑 3+4）| 測試設計問題回 Phase 4 修正。
-**學習日誌**（斷點觸發時）：失敗根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。
+**學習日誌**（斷點觸發時）：失敗根因記錄到 `.claude-loop/learning-log.md`，標題標記 `[tester]`（問題→原因→教訓）。
 
 ### Phase 5：自証師 ✅
 
@@ -241,13 +243,13 @@
 
 **步驟 2 — 實作**：同 Phase 2 規則。每完成一個檔案立即 `{{LINT_COMMAND}}`。全部完成後調用 Task `code-simplifier`。設計文件同步規則同完整閉環。
 
-**步驟 3 — 品質審查**：讀取 `code-reviewer.md`，按其「調用方式」啟動子 agent（不含安全審查）。有 R-x high → 追加學習日誌 → 回步驟 2 修正 → 重跑步驟 3（差分審查）。無 high → 進步驟 4。
+**步驟 3 — 品質審查**：讀取 `code-reviewer.md`，按其「調用方式」啟動子 agent（不含安全審查）。有 R-x high → 追加學習日誌（標記 `[code-reviewer]`）→ 回步驟 2 修正 → 重跑步驟 3（差分審查）。無 high → 進步驟 4。
 
 **步驟 4 — 測試驗證**：
 - 確認每個 `[testable]` BC-x/EH-x 有對應測試；`[visual-only]`/`[framework-dependent]` 項在報告中列出驗證方式
 - 若已部署語言指南，抽查 Phase 3 審查清單的 high 項目（≤ 3 項快速檢查）
 - 用 Bash 執行 `{{VERIFY_SEQUENCE}}`
-- 全通過 → 進步驟 4.5；失敗 → **先追加學習日誌（問題→原因→教訓）** → 回步驟 2 修正
+- 全通過 → 進步驟 4.5；失敗 → **先追加學習日誌（標記 `[tester]`，問題→原因→教訓）** → 回步驟 2 修正
 
 **步驟 4.5 — 迷你追溯**（主 agent 執行，不委派）：
 測試通過後、commit 前，主 agent 逐項確認設計-實作-測試的覆蓋鏈。格式見 `.claudedocs/standards/產出物格式.md` 迷你追溯 section。
