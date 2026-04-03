@@ -767,6 +767,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - v5.13.0 → v5.14.0：Agent 專家庫（.claudedocs/agents/ 8 個專家 prompt），方法論自包含無外部依賴
 - v5.14.0 → v5.15.0：精簡閉環迷你追溯（步驟 4.5 正向覆蓋表）+ CLAUDE_TEMPLATE 認知負荷降低（606→361 行，-40%）
 - v5.15.0 → v5.16.0：回顧式學習自動化——學習日誌（失敗事件立即捕獲 + commit 前追加 + PostToolUse Hook 檢查）+ 模式分析
+- v5.16.0 → v5.17.0：Agent 調用精確化（自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm 即時可見性 + 斷點狀態回退）
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作

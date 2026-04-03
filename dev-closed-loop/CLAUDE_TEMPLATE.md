@@ -60,6 +60,8 @@
 - 按順序，一次只做一個步驟
 - 每完成一步，用 TaskUpdate 標記 completed
 - blockedBy 未解除前，禁止將該任務設為 in_progress
+- **activeForm 即時更新**：調用 agent 前，用 TaskUpdate 更新當前任務的 `activeForm` 為 agent 名稱（例如 `"🔍 code-reviewer 品質審查中..."`），讓用戶在 spinner 即時看到哪個 agent 在執行
+- **斷點狀態回退**：斷點觸發回退時，用 TaskUpdate 將回退目標任務設回 `in_progress`（activeForm 標注修正原因），並將當前任務設回 `pending`（description 標注等待原因）
 - **升級機制**：實作過程中若發現實際規模超出當前等級（精簡閉環的檔案數 ≥ 3 或行數 ≥ 300），暫停當前流程，升級為完整閉環（已完成的設計保留為 Phase 1 基礎，從 Phase 2 繼續）
 
 ### 5. 可見性（必做）
@@ -207,13 +209,13 @@
 **品質審查**：讀取 `.claudedocs/agents/code-reviewer.md`，按其「調用方式」啟動獨立子 agent。
 **安全審查**：按領域預設（見 Section 6）。跳過條件：無網路 · 無敏感資料 · 無檔案寫入 · 無 unsafe/eval · 無第三方認證全滿足。不跳過時讀取 `security-reviewer.md` 按其「調用方式」啟動。
 **R-x 嚴重度**：high→斷點 A | arch-risk→記錄不阻擋 | medium→建議修 | low→合併摘要。`by-design` 不計入。
-**⛔ 斷點 A**：有 high → 回 Phase 2 修正後重跑 Phase 3（差分審查，安全審查不重跑）。
+**⛔ 斷點 A**：有 high → TaskUpdate P2 回 `in_progress`（activeForm: `"修正 R-x high..."`）+ P3 回 `pending` → 修正後重跑 Phase 3（差分審查，安全審查不重跑）。
 **學習日誌**（斷點觸發時）：R-x high 根因記錄到 `.claude-loop/learning-log.md`，標題標記 `[code-reviewer]` 或 `[security-reviewer]`（問題→原因→教訓）。
 
 ### Phase 4：測試師 🧪
 
 **Agent**：讀取 `.claudedocs/agents/tester.md`，按其「調用方式」和 `<instructions>` 執行。語言指南若有則讀 Phase 4 段落。
-**⛔ 斷點 B**：失敗 → 程式碼 bug 回 Phase 2（重跑 3+4）| 測試設計問題回 Phase 4 修正。
+**⛔ 斷點 B**：失敗 → 程式碼 bug：TaskUpdate P2 回 `in_progress`（activeForm: `"修正測試失敗..."`）+ P3/P4 回 `pending`（重跑 3+4）| 測試設計問題：P4 原地修正。
 **學習日誌**（斷點觸發時）：失敗根因記錄到 `.claude-loop/learning-log.md`，標題標記 `[tester]`（問題→原因→教訓）。
 
 ### Phase 5：自証師 ✅
@@ -331,7 +333,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）、Agent 專家庫（9 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.16.0
+closed-loop v5.17.0
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄
