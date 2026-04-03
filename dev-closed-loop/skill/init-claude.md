@@ -25,20 +25,272 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 ---
 
-## 模式分流
+## ⛔ 模式分流（最優先，在執行任何步驟前必須完成）
 
-根據 `$ARGUMENTS` 的第一個詞判斷模式：
+**Claude 必須在載入此 Skill 後立即執行以下判斷，禁止跳過。**
 
-| 第一個詞 | 模式 | 跳轉 |
-|---------|------|------|
-| `status` | 狀態檢查 | → Status 模式 |
-| `upgrade` | 自我更新 | → Upgrade 模式 |
-| `uninstall` | 移除部署 | → Uninstall 模式 |
-| 其他（含空） | 部署/升級 | → 執行步驟 Step 0 |
+解析 `$ARGUMENTS` 的第一個詞，根據下表跳轉到對應模式的 section：
+
+| 第一個詞 | 模式 | 跳轉目標 |
+|---------|------|---------|
+| `status` | 狀態檢查 | → 下方「Status 模式」 |
+| `upgrade` | 自我更新 | → 下方「Upgrade 模式」 |
+| `uninstall` | 移除部署 | → 下方「Uninstall 模式」 |
+| 其他（含空） | 部署/升級 | → 下方「部署/升級流程 Step 0」 |
+
+⛔ **若匹配到 status / upgrade / uninstall，直接跳轉到對應 section，禁止執行「部署/升級流程」的任何步驟。**
 
 ---
 
-## 執行步驟（嚴格按順序）
+## Status 模式（`/dev:init-claude status`）
+
+快速查看當前專案的閉環部署狀態和健康度。不修改任何檔案。
+
+### 步驟
+
+1. **版本偵測**：
+   - 用 Grep 搜尋 `CLAUDE.md` 中的 `closed-loop v` 字串
+   - 找到 → 提取版本號
+   - 找不到 CLAUDE.md → 輸出「⚠️ 閉環未部署。執行 `/dev:init-claude` 開始部署」並結束
+   - 有 CLAUDE.md 但無版本標記 → 輸出「ℹ️ CLAUDE.md 存在但非閉環部署」並結束
+
+2. **配置提取**：從 CLAUDE.md 提取已部署的專案配置（語言/框架/測試指令/建置指令）
+
+3. **健康檢查**（逐項用 Bash 檢查，每項標 ✅/❌/⚠️）：
+
+   | 檢查項 | 方法 | 判定 |
+   |--------|------|------|
+   | 核心文檔 | `ls .claudedocs/` 數量 | 11 個 = ✅，< 11 = ❌ 列出缺少 |
+   | 語言指南 | `.claudedocs/languages/*.md` 是否存在 | 有 = ✅ [語言]，無 = — 未部署 |
+   | 修改前統一守衛 Hook | `.claude/hooks/impact-analysis-guard.sh` 存在且可執行 | ✅/❌ |
+   | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
+   | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
+   | 理解確認旗標 Hook | `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行 | ✅/❌ |
+   | 學習日誌提醒 Hook | `.claude/hooks/learning-log-checker.sh` 存在且可執行 | ✅/❌ |
+   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard`、`learning-log-checker` | 5/5 = ✅，否則 ⚠️ 列出缺少 |
+   | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
+   | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
+   | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
+
+4. **⛔ 可升級偵測（禁止跳過）**：
+   此步驟是 status 模式的核心功能之一，**即使前面的健康檢查全部通過也必須執行**。不執行此步驟就等於沒有完成 status 檢查。
+   用 Bash 執行版本檢查腳本：
+   ```bash
+   bash {{REPO_PATH}}/dev-closed-loop/check-version.sh {{REPO_PATH}} --deployed ./CLAUDE.md --check-remote
+   ```
+   根據輸出的 STATUS 值判斷：
+   - `upgrade_available` 或 `cache_outdated` → 顯示「🔄 可升級：v{DEPLOYED_VERSION} → v{CACHE_VERSION 或 REMOTE_VERSION}。執行 `/dev:init-claude upgrade` 升級」
+   - `up_to_date` → 顯示「✅ 已是最新版本」
+   - `REMOTE_CHECK=failed` 且 `STATUS=up_to_date` → 顯示「✅ 與快取版本一致（⚠️ 無法連線 GitHub 確認遠端版本）」
+   - `STATUS=error` → 顯示「⚠️ 無法確認版本」
+   - **⛔ 必須在輸出中包含「升級：」行**，不論結果是什麼。缺少此行 = status 輸出不完整
+
+5. **輸出格式（⛔ 必須包含以下所有區塊，禁止省略任何區塊）**：
+
+```
+═══ 閉環部署狀態 ═══
+
+版本：v5.7.0
+來源：~/.claude/cache/ClaudeCodeTools/  [或本地 repo 路徑]
+專案：[名稱]
+語言：[語言] | 框架：[框架]
+
+健康檢查：
+  ✅ 核心文檔（10/10）
+  ✅ 語言指南：typescript.md
+  ✅ 修改前統一守衛 Hook（雙閘門阻擋）
+  ✅ 理解確認旗標 Hook
+  ✅ 增量驗證 Hook
+  ✅ 委派追蹤 Hook
+  ✅ 學習日誌提醒 Hook
+  ✅ Hook 配置（5/5）
+  ✅ 無 Placeholder 殘留
+  — .claude-loop/ 未啟用
+
+升級：✅ 已是最新版本
+  [或] 🔄 可升級：v5.7.0 → v5.8.0。執行 /dev:init-claude upgrade 升級
+
+整體：✅ 健康（8/8 通過）
+```
+
+若有問題：
+```
+整體：⚠️ 有問題（6/8 通過）
+  ❌ 修改前統一守衛 Hook 缺失 → 執行 /dev:init-claude upgrade 升級修復
+  ❌ Hook 配置不完整 → 執行 /dev:init-claude upgrade 升級修復
+```
+
+---
+
+## Upgrade 模式（`/dev:init-claude upgrade`）
+
+從 GitHub 下載最新版本到快取，更新 Skill 自身，然後引導用戶完成專案升級。
+
+### 步驟
+
+1. **下載最新版本到快取**：
+   用 Bash 執行：
+   ```bash
+   CACHE_DIR="$HOME/.claude/cache/ClaudeCodeTools"
+   TMP_DIR="$(mktemp -d)"
+   curl -sL "https://github.com/gatewen/ClaudeCodeTools/archive/refs/heads/main.tar.gz" -o "$TMP_DIR/archive.tar.gz" && \
+   tar -xzf "$TMP_DIR/archive.tar.gz" -C "$TMP_DIR" && \
+   rm -rf "$CACHE_DIR" && \
+   mkdir -p "$(dirname "$CACHE_DIR")" && \
+   mv "$TMP_DIR"/ClaudeCodeTools-* "$CACHE_DIR" && \
+   rm -rf "$TMP_DIR" && \
+   echo "OK"
+   ```
+   - 輸出 "OK" → 繼續
+   - 失敗 → 告知「❌ 下載失敗，請確認網路連線」並終止
+
+2. **版本比較**：
+   用 Bash 執行版本檢查腳本：
+   ```bash
+   bash "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/check-version.sh" "$HOME/.claude/cache/ClaudeCodeTools" --deployed ./CLAUDE.md
+   ```
+   根據輸出的 STATUS 值判斷：
+   - `up_to_date` → 告知「✅ 快取已更新，已是最新版本 v{CACHE_VERSION}」並結束
+   - `upgrade_available` → 繼續
+   - `not_deployed` → 繼續（首次部署）
+
+3. **更新 Skill 自身**：
+   用 Bash 執行：
+   ```bash
+   sed "s|{{REPO_PATH}}|$HOME/.claude/cache/ClaudeCodeTools|g" \
+     "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/skill/init-claude.md" \
+     > "$HOME/.claude/commands/dev/init-claude.md" && \
+   echo "OK"
+   ```
+   告知用戶：「✅ Skill 已更新至 v{新版本}。快取路徑：~/.claude/cache/ClaudeCodeTools」
+
+4. **引導專案升級**：
+   用 AskUserQuestion 告知用戶：
+   ```
+   ✅ 閉環工具已更新：v{舊版本} → v{新版本}
+
+   Skill 檔案和快取已是最新版。
+   ⚠️ 當前對話仍使用舊版 Skill 定義（Claude 已載入的 context 不會即時更新）。
+
+   請選擇：
+   1. 在新對話中執行 /dev:init-claude 完成專案升級 ← 推薦
+   2. 繼續在當前對話中升級（使用舊 Skill 定義，可能缺少新功能）
+   ```
+   - 用戶選 1 → 結束，提示「在目標專案目錄開啟新對話，執行 /dev:init-claude 即可升級」
+   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）
+
+---
+
+## Uninstall 模式（`/dev:init-claude uninstall`）
+
+從當前專案移除閉環部署。
+
+### 步驟
+
+1. **前置檢查**：
+   - 用 Grep 確認 CLAUDE.md 存在且含 `closed-loop v` 標記
+   - 不存在 → 輸出「⚠️ 當前專案未部署閉環」並結束
+
+2. **掃描將移除的檔案**：
+   用 Bash 列出以下項目，計算影響範圍：
+   - `CLAUDE.md`（或閉環追加的部分）
+   - `.claudedocs/` 目錄（含所有子目錄）
+   - `.claude/hooks/impact-analysis-guard.sh`
+   - `.claude/hooks/incremental-lint.sh`
+   - `.claude/hooks/delegation-tracker.sh`
+   - `.claude/hooks/prompt-understanding-guard.sh`
+   - `.claude/settings.json` 中的 PreToolUse、PostToolUse、UserPromptSubmit hook 配置
+   - `.claude-loop/` 目錄（若存在）
+
+3. **用戶確認**（AskUserQuestion）：
+   ```
+   ⚠️ 即將移除閉環部署。
+
+   將刪除的檔案：
+   - CLAUDE.md（閉環主檔案）[若為純閉環] / 閉環區段（若為合併檔）
+   - .claudedocs/（N 個檔案）
+   - .claude/hooks/impact-analysis-guard.sh
+   - .claude/hooks/incremental-lint.sh
+   - .claude/hooks/delegation-tracker.sh
+   - .claude/hooks/prompt-understanding-guard.sh
+   - .claude/settings.json 中的閉環 hook 配置
+   [若有 .claude-loop/]
+   - .claude-loop/（閉環狀態目錄，含 N 個檔案）
+
+   ⚠️ .claude-loop/ 中可能包含進行中的閉環記錄，刪除後無法恢復。
+
+   請選擇：
+   1. 全部移除
+   2. 保留 .claude-loop/，移除其餘
+   3. 取消
+   ```
+
+4. **執行移除**：
+   - 用 Bash `rm -rf .claudedocs/` 刪除文檔
+   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/prompt-understanding-guard.sh .claude/hooks/learning-log-checker.sh` 刪除 hook 腳本
+   - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
+     ```python
+     import json
+     cfg = json.load(open('.claude/settings.json'))
+     # 移除 PreToolUse 中的閉環 hook
+     pre_hooks = cfg.get("hooks", {}).get("PreToolUse", [])
+     cfg["hooks"]["PreToolUse"] = [
+       h for h in pre_hooks
+       if "impact-analysis-guard" not in str(h)
+     ]
+     if not cfg["hooks"]["PreToolUse"]:
+       del cfg["hooks"]["PreToolUse"]
+     # 移除 PostToolUse 中的閉環 hook
+     post_hooks = cfg.get("hooks", {}).get("PostToolUse", [])
+     cfg["hooks"]["PostToolUse"] = [
+       h for h in post_hooks
+       if "incremental-lint" not in str(h) and "delegation-tracker" not in str(h)
+     ]
+     if not cfg["hooks"]["PostToolUse"]:
+       del cfg["hooks"]["PostToolUse"]
+     # 移除 UserPromptSubmit 中的閉環 hook
+     prompt_hooks = cfg.get("hooks", {}).get("UserPromptSubmit", [])
+     cfg["hooks"]["UserPromptSubmit"] = [
+       h for h in prompt_hooks
+       if "prompt-understanding-guard" not in str(h)
+     ]
+     if not cfg["hooks"]["UserPromptSubmit"]:
+       del cfg["hooks"]["UserPromptSubmit"]
+     if not cfg["hooks"]:
+       del cfg["hooks"]
+     json.dump(cfg, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
+     ```
+   - **CLAUDE.md 處理**：
+     - 用 Grep 檢查 CLAUDE.md 是否**只有**閉環內容（首行是 `# {{已填充的專案名}}` 且末尾有 `closed-loop v` 註解，中間無非閉環區段）
+     - 純閉環 → 用 Bash `rm CLAUDE.md` 刪除
+     - 合併檔（有非閉環的自訂內容在頂部） → 用 AskUserQuestion 警告：
+       ```
+       CLAUDE.md 包含自訂內容（閉環區段前有 {N} 行）。
+       自動移除可能破壞自訂內容。建議手動編輯。
+       1. 我手動處理 CLAUDE.md（僅移除其餘閉環檔案）
+       2. 全部刪除（包含自訂內容）
+       ```
+   - 若用戶選擇移除 `.claude-loop/` → 用 Bash `rm -rf .claude-loop/`
+
+5. **結果報告**：
+   ```
+   ✅ 閉環已移除
+
+   已刪除：
+   - CLAUDE.md [或「已保留（含自訂內容）」]
+   - .claudedocs/（N 個檔案）
+   - 5 個 Hook 腳本
+   - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse + UserPromptSubmit）
+   [若移除] - .claude-loop/
+
+   若要重新部署，執行 /dev:init-claude
+   ```
+
+---
+
+## 部署/升級流程（預設模式）
+
+⛔ 僅當 `$ARGUMENTS` 的第一個詞**不是** status / upgrade / uninstall 時才執行此流程。
 
 ### Step 0：環境依賴檢查
 
@@ -521,252 +773,6 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 2. 執行 `/dev:init-claude status` 驗證部署健康狀態
 3. 建議瀏覽 .claudedocs/concepts/閉環核心理念.md 了解新版變更
 ```
-
----
-
-## Status 模式（`/dev:init-claude status`）
-
-快速查看當前專案的閉環部署狀態和健康度。不修改任何檔案。
-
-### 步驟
-
-1. **版本偵測**：
-   - 用 Grep 搜尋 `CLAUDE.md` 中的 `closed-loop v` 字串
-   - 找到 → 提取版本號
-   - 找不到 CLAUDE.md → 輸出「⚠️ 閉環未部署。執行 `/dev:init-claude` 開始部署」並結束
-   - 有 CLAUDE.md 但無版本標記 → 輸出「ℹ️ CLAUDE.md 存在但非閉環部署」並結束
-
-2. **配置提取**：從 CLAUDE.md 提取已部署的專案配置（語言/框架/測試指令/建置指令）
-
-3. **健康檢查**（逐項用 Bash 檢查，每項標 ✅/❌/⚠️）：
-
-   | 檢查項 | 方法 | 判定 |
-   |--------|------|------|
-   | 核心文檔 | `ls .claudedocs/` 數量 | 11 個 = ✅，< 11 = ❌ 列出缺少 |
-   | 語言指南 | `.claudedocs/languages/*.md` 是否存在 | 有 = ✅ [語言]，無 = — 未部署 |
-   | 修改前統一守衛 Hook | `.claude/hooks/impact-analysis-guard.sh` 存在且可執行 | ✅/❌ |
-   | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
-   | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
-   | 理解確認旗標 Hook | `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行 | ✅/❌ |
-   | 學習日誌提醒 Hook | `.claude/hooks/learning-log-checker.sh` 存在且可執行 | ✅/❌ |
-   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard`、`learning-log-checker` | 5/5 = ✅，否則 ⚠️ 列出缺少 |
-   | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
-   | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
-   | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
-
-4. **⛔ 可升級偵測（禁止跳過）**：
-   此步驟是 status 模式的核心功能之一，**即使前面的健康檢查全部通過也必須執行**。不執行此步驟就等於沒有完成 status 檢查。
-   用 Bash 執行版本檢查腳本：
-   ```bash
-   bash {{REPO_PATH}}/dev-closed-loop/check-version.sh {{REPO_PATH}} --deployed ./CLAUDE.md --check-remote
-   ```
-   根據輸出的 STATUS 值判斷：
-   - `upgrade_available` 或 `cache_outdated` → 顯示「🔄 可升級：v{DEPLOYED_VERSION} → v{CACHE_VERSION 或 REMOTE_VERSION}。執行 `/dev:init-claude upgrade` 升級」
-   - `up_to_date` → 顯示「✅ 已是最新版本」
-   - `REMOTE_CHECK=failed` 且 `STATUS=up_to_date` → 顯示「✅ 與快取版本一致（⚠️ 無法連線 GitHub 確認遠端版本）」
-   - `STATUS=error` → 顯示「⚠️ 無法確認版本」
-   - **⛔ 必須在輸出中包含「升級：」行**，不論結果是什麼。缺少此行 = status 輸出不完整
-
-5. **輸出格式（⛔ 必須包含以下所有區塊，禁止省略任何區塊）**：
-
-```
-═══ 閉環部署狀態 ═══
-
-版本：v5.7.0
-來源：~/.claude/cache/ClaudeCodeTools/  [或本地 repo 路徑]
-專案：[名稱]
-語言：[語言] | 框架：[框架]
-
-健康檢查：
-  ✅ 核心文檔（10/10）
-  ✅ 語言指南：typescript.md
-  ✅ 修改前統一守衛 Hook（雙閘門阻擋）
-  ✅ 理解確認旗標 Hook
-  ✅ 增量驗證 Hook
-  ✅ 委派追蹤 Hook
-  ✅ 學習日誌提醒 Hook
-  ✅ Hook 配置（5/5）
-  ✅ 無 Placeholder 殘留
-  — .claude-loop/ 未啟用
-
-升級：✅ 已是最新版本
-  [或] 🔄 可升級：v5.7.0 → v5.8.0。執行 /dev:init-claude upgrade 升級
-
-整體：✅ 健康（8/8 通過）
-```
-
-若有問題：
-```
-整體：⚠️ 有問題（6/8 通過）
-  ❌ 修改前統一守衛 Hook 缺失 → 執行 /dev:init-claude upgrade 升級修復
-  ❌ Hook 配置不完整 → 執行 /dev:init-claude upgrade 升級修復
-```
-
----
-
-## Upgrade 模式（`/dev:init-claude upgrade`）
-
-從 GitHub 下載最新版本到快取，更新 Skill 自身，然後引導用戶完成專案升級。
-
-### 步驟
-
-1. **下載最新版本到快取**：
-   用 Bash 執行：
-   ```bash
-   CACHE_DIR="$HOME/.claude/cache/ClaudeCodeTools"
-   TMP_DIR="$(mktemp -d)"
-   curl -sL "https://github.com/gatewen/ClaudeCodeTools/archive/refs/heads/main.tar.gz" -o "$TMP_DIR/archive.tar.gz" && \
-   tar -xzf "$TMP_DIR/archive.tar.gz" -C "$TMP_DIR" && \
-   rm -rf "$CACHE_DIR" && \
-   mkdir -p "$(dirname "$CACHE_DIR")" && \
-   mv "$TMP_DIR"/ClaudeCodeTools-* "$CACHE_DIR" && \
-   rm -rf "$TMP_DIR" && \
-   echo "OK"
-   ```
-   - 輸出 "OK" → 繼續
-   - 失敗 → 告知「❌ 下載失敗，請確認網路連線」並終止
-
-2. **版本比較**：
-   用 Bash 執行版本檢查腳本：
-   ```bash
-   bash "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/check-version.sh" "$HOME/.claude/cache/ClaudeCodeTools" --deployed ./CLAUDE.md
-   ```
-   根據輸出的 STATUS 值判斷：
-   - `up_to_date` → 告知「✅ 快取已更新，已是最新版本 v{CACHE_VERSION}」並結束
-   - `upgrade_available` → 繼續
-   - `not_deployed` → 繼續（首次部署）
-
-3. **更新 Skill 自身**：
-   用 Bash 執行：
-   ```bash
-   sed "s|{{REPO_PATH}}|$HOME/.claude/cache/ClaudeCodeTools|g" \
-     "$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/skill/init-claude.md" \
-     > "$HOME/.claude/commands/dev/init-claude.md" && \
-   echo "OK"
-   ```
-   告知用戶：「✅ Skill 已更新至 v{新版本}。快取路徑：~/.claude/cache/ClaudeCodeTools」
-
-4. **引導專案升級**：
-   用 AskUserQuestion 告知用戶：
-   ```
-   ✅ 閉環工具已更新：v{舊版本} → v{新版本}
-
-   Skill 檔案和快取已是最新版。
-   ⚠️ 當前對話仍使用舊版 Skill 定義（Claude 已載入的 context 不會即時更新）。
-
-   請選擇：
-   1. 在新對話中執行 /dev:init-claude 完成專案升級 ← 推薦
-   2. 繼續在當前對話中升級（使用舊 Skill 定義，可能缺少新功能）
-   ```
-   - 用戶選 1 → 結束，提示「在目標專案目錄開啟新對話，執行 /dev:init-claude 即可升級」
-   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）
-
----
-
-## Uninstall 模式（`/dev:init-claude uninstall`）
-
-從當前專案移除閉環部署。
-
-### 步驟
-
-1. **前置檢查**：
-   - 用 Grep 確認 CLAUDE.md 存在且含 `closed-loop v` 標記
-   - 不存在 → 輸出「⚠️ 當前專案未部署閉環」並結束
-
-2. **掃描將移除的檔案**：
-   用 Bash 列出以下項目，計算影響範圍：
-   - `CLAUDE.md`（或閉環追加的部分）
-   - `.claudedocs/` 目錄（含所有子目錄）
-   - `.claude/hooks/impact-analysis-guard.sh`
-   - `.claude/hooks/incremental-lint.sh`
-   - `.claude/hooks/delegation-tracker.sh`
-   - `.claude/hooks/prompt-understanding-guard.sh`
-   - `.claude/settings.json` 中的 PreToolUse、PostToolUse、UserPromptSubmit hook 配置
-   - `.claude-loop/` 目錄（若存在）
-
-3. **用戶確認**（AskUserQuestion）：
-   ```
-   ⚠️ 即將移除閉環部署。
-
-   將刪除的檔案：
-   - CLAUDE.md（閉環主檔案）[若為純閉環] / 閉環區段（若為合併檔）
-   - .claudedocs/（N 個檔案）
-   - .claude/hooks/impact-analysis-guard.sh
-   - .claude/hooks/incremental-lint.sh
-   - .claude/hooks/delegation-tracker.sh
-   - .claude/hooks/prompt-understanding-guard.sh
-   - .claude/settings.json 中的閉環 hook 配置
-   [若有 .claude-loop/]
-   - .claude-loop/（閉環狀態目錄，含 N 個檔案）
-
-   ⚠️ .claude-loop/ 中可能包含進行中的閉環記錄，刪除後無法恢復。
-
-   請選擇：
-   1. 全部移除
-   2. 保留 .claude-loop/，移除其餘
-   3. 取消
-   ```
-
-4. **執行移除**：
-   - 用 Bash `rm -rf .claudedocs/` 刪除文檔
-   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/prompt-understanding-guard.sh .claude/hooks/learning-log-checker.sh` 刪除 hook 腳本
-   - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
-     ```python
-     import json
-     cfg = json.load(open('.claude/settings.json'))
-     # 移除 PreToolUse 中的閉環 hook
-     pre_hooks = cfg.get("hooks", {}).get("PreToolUse", [])
-     cfg["hooks"]["PreToolUse"] = [
-       h for h in pre_hooks
-       if "impact-analysis-guard" not in str(h)
-     ]
-     if not cfg["hooks"]["PreToolUse"]:
-       del cfg["hooks"]["PreToolUse"]
-     # 移除 PostToolUse 中的閉環 hook
-     post_hooks = cfg.get("hooks", {}).get("PostToolUse", [])
-     cfg["hooks"]["PostToolUse"] = [
-       h for h in post_hooks
-       if "incremental-lint" not in str(h) and "delegation-tracker" not in str(h)
-     ]
-     if not cfg["hooks"]["PostToolUse"]:
-       del cfg["hooks"]["PostToolUse"]
-     # 移除 UserPromptSubmit 中的閉環 hook
-     prompt_hooks = cfg.get("hooks", {}).get("UserPromptSubmit", [])
-     cfg["hooks"]["UserPromptSubmit"] = [
-       h for h in prompt_hooks
-       if "prompt-understanding-guard" not in str(h)
-     ]
-     if not cfg["hooks"]["UserPromptSubmit"]:
-       del cfg["hooks"]["UserPromptSubmit"]
-     if not cfg["hooks"]:
-       del cfg["hooks"]
-     json.dump(cfg, open('.claude/settings.json', 'w'), indent=2, ensure_ascii=False)
-     ```
-   - **CLAUDE.md 處理**：
-     - 用 Grep 檢查 CLAUDE.md 是否**只有**閉環內容（首行是 `# {{已填充的專案名}}` 且末尾有 `closed-loop v` 註解，中間無非閉環區段）
-     - 純閉環 → 用 Bash `rm CLAUDE.md` 刪除
-     - 合併檔（有非閉環的自訂內容在頂部） → 用 AskUserQuestion 警告：
-       ```
-       CLAUDE.md 包含自訂內容（閉環區段前有 {N} 行）。
-       自動移除可能破壞自訂內容。建議手動編輯。
-       1. 我手動處理 CLAUDE.md（僅移除其餘閉環檔案）
-       2. 全部刪除（包含自訂內容）
-       ```
-   - 若用戶選擇移除 `.claude-loop/` → 用 Bash `rm -rf .claude-loop/`
-
-5. **結果報告**：
-   ```
-   ✅ 閉環已移除
-
-   已刪除：
-   - CLAUDE.md [或「已保留（含自訂內容）」]
-   - .claudedocs/（N 個檔案）
-   - 5 個 Hook 腳本
-   - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse + UserPromptSubmit）
-   [若移除] - .claude-loop/
-
-   若要重新部署，執行 /dev:init-claude
-   ```
 
 ---
 
