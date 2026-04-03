@@ -81,6 +81,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    根據輸出的 STATUS 值判斷：
    - `upgrade_available` 或 `cache_outdated` → 顯示「🔄 可升級：v{DEPLOYED_VERSION} → v{CACHE_VERSION 或 REMOTE_VERSION}。執行 `/dev:init-claude upgrade` 升級」
    - `up_to_date` → 顯示「✅ 已是最新版本」
+   - `up_to_date` 且 `SHA_MISMATCH=true` → 顯示「✅ 版本相同，但有未發版的改動（本地 SHA: {前7碼} ≠ 遠端 SHA: {前7碼}）。執行 `/dev:init-claude upgrade` 取得最新」
    - `REMOTE_CHECK=failed` 且 `STATUS=up_to_date` → 顯示「✅ 與快取版本一致（⚠️ 無法連線 GitHub 確認遠端版本）」
    - `STATUS=error` → 顯示「⚠️ 無法確認版本」
    - **⛔ 必須在輸出中包含「升級：」行**，不論結果是什麼。缺少此行 = status 輸出不完整
@@ -90,7 +91,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 ```
 ═══ 閉環部署狀態 ═══
 
-版本：v5.7.0
+版本：v5.7.0（SHA: abc1234）
 來源：~/.claude/cache/ClaudeCodeTools/  [或本地 repo 路徑]
 專案：[名稱]
 語言：[語言] | 框架：[框架]
@@ -143,6 +144,11 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    ```
    - 輸出 "OK" → 繼續
    - 失敗 → 告知「❌ 下載失敗，請確認網路連線」並終止
+
+   **記錄 commit SHA**（下載成功後立即執行）：
+   ```bash
+   curl -sL --max-time 5 "https://api.github.com/repos/gatewen/ClaudeCodeTools/commits/main" 2>/dev/null | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//' > "$HOME/.claude/cache/ClaudeCodeTools/.commit-sha"
+   ```
 
 2. **版本比較**：
    用 Bash 執行版本檢查腳本：
@@ -768,6 +774,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - v5.14.0 → v5.15.0：精簡閉環迷你追溯（步驟 4.5 正向覆蓋表）+ CLAUDE_TEMPLATE 認知負荷降低（606→361 行，-40%）
 - v5.15.0 → v5.16.0：回顧式學習自動化——學習日誌（失敗事件立即捕獲 + commit 前追加 + PostToolUse Hook 檢查）+ 模式分析
 - v5.16.0 → v5.17.0：Agent 調用精確化（自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm 即時可見性 + 斷點狀態回退）
+- v5.17.0 → v5.17.1：升級系統 SHA 追蹤（下載時記錄 commit SHA + 版本同但 SHA 異時警告 + status 顯示 SHA）
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作

@@ -72,6 +72,14 @@ fi
 
 echo "CACHE_VERSION=${CACHE_VERSION}"
 
+# 1b. 本地快取 SHA（由 upgrade 模式下載時記錄）
+CACHE_SHA_FILE="${CACHE_DIR}/.commit-sha"
+CACHE_SHA=""
+if [[ -f "$CACHE_SHA_FILE" ]]; then
+  CACHE_SHA=$(cat "$CACHE_SHA_FILE" 2>/dev/null | tr -d '[:space:]')
+fi
+echo "CACHE_SHA=${CACHE_SHA:-none}"
+
 # ──────────────────────────────────────────
 # 2. 已部署版本（若指定）
 # ──────────────────────────────────────────
@@ -107,6 +115,14 @@ if $CHECK_REMOTE; then
     echo "REMOTE_VERSION=unknown"
     echo "REMOTE_CHECK=failed"
   fi
+
+  # 3b. 遠端 SHA（GitHub API，5 秒超時）
+  REMOTE_SHA=""
+  REMOTE_SHA_RAW=$(curl -sL --max-time 5 "https://api.github.com/repos/gatewen/ClaudeCodeTools/commits/main" 2>/dev/null || true)
+  if [[ -n "$REMOTE_SHA_RAW" ]]; then
+    REMOTE_SHA=$(echo "$REMOTE_SHA_RAW" | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//' || true)
+  fi
+  echo "REMOTE_SHA=${REMOTE_SHA:-none}"
 fi
 
 # ──────────────────────────────────────────
@@ -125,6 +141,10 @@ if $CHECK_REMOTE && [[ -n "$REMOTE_VERSION" ]] && [[ "$REMOTE_VERSION" != "unkno
   if is_newer "$REMOTE_VERSION" "$CACHE_VERSION"; then
     echo "STATUS=cache_outdated"
     exit 0
+  fi
+  # 版本相同但 SHA 不同 → 有未發版的改動
+  if [[ "$REMOTE_VERSION" == "$CACHE_VERSION" ]] && [[ -n "$REMOTE_SHA" ]] && [[ -n "$CACHE_SHA" ]] && [[ "$REMOTE_SHA" != "$CACHE_SHA" ]]; then
+    echo "SHA_MISMATCH=true"
   fi
 fi
 
