@@ -12,7 +12,7 @@
 
 | 文件 | 說明 |
 |------|------|
-| `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含 Agent 調度規則、閘門、學習日誌） |
+| `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含 Agent 調度規則、閘門、學習日誌、活動日誌、Task 可見性） |
 | `.claudedocs/` | 技術文檔（10 核心 + 9 agent prompt），給人類閱讀 |
 | `.claudedocs/agents/` | Agent 專家庫（8 個專家 prompt），Phase 觸發時按需載入 |
 | `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
@@ -29,7 +29,9 @@
 | `design/02_深度分析.md` | 對原始構想的問題分析和改進方向 |
 | `design/03_落地路線圖.md` | 5 個 Phase 的執行計畫 |
 | `design/04_Skill設計規劃.md` | `dev:init-claude` Skill 的設計藍圖 |
-| `design/05-07` | 方法論分析、深度檢討、專案協調者研究 |
+| `design/05-research-methodology-analysis.md` | 方法論比較分析 |
+| `design/06-analysis-deep-review.md` | 方法論深度檢討 |
+| `design/07-research-project-orchestrator.md` | 專案協調者研究 |
 
 ## 使用方式
 
@@ -95,7 +97,7 @@
 |------|------|
 | v5.17.0 | Agent 調用精確化——自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm + 斷點回退可見性 |
 | v5.16.0 | 回顧式學習自動化——失敗驅動學習日誌 + 模式分析 + PostToolUse Hook 檢查 |
-| v5.15.0 | 精簡閉環迷你追溯（步驟 4.5）+ CLAUDE_TEMPLATE 認知負荷降低（-37%） |
+| v5.15.0 | 精簡閉環迷你追溯（步驟 4.5）+ CLAUDE_TEMPLATE 認知負荷降低（606→361 行，-40%） |
 | v5.14.0 | Agent 專家庫（8 個自包含 agent prompt），方法論自包含無外部依賴 |
 | v5.13.0 | 全 Hook 阻擋式升級：因果鏈守衛 + 理解確認守衛均為 block 機制（雙閘門合併阻擋） |
 | v5.12.0 | 理解確認守衛 Hook + 全 Hook 橙色可見性（防不對頻，用戶輸入即觸發理解確認） |
