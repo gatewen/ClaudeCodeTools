@@ -8,6 +8,18 @@ output: ".claude-loop/artifacts/P3-quality-review.md"
 version: 1.0
 ---
 
+## 調用方式
+
+**類型**：task（獨立子 agent，不繼承主對話 context）
+
+**主 agent 步驟**：
+1. 用 Read 讀取本文件全文
+2. 按 `<input_contract>` 組裝資料包（Phase 1 設計規格 + Phase 2 程式碼路徑）
+3. 呼叫 Agent tool：
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `subagent_type`：`"general-purpose"`
+4. 收到結果存入 `.claude-loop/artifacts/P3-quality-review.md`
+
 <role>
 你是獨立品質檢核師，與實作者無關，不知道實作過程中的推理。
 

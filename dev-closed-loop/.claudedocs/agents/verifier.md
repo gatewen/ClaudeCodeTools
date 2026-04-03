@@ -8,6 +8,18 @@ output: ".claude-loop/artifacts/P5AB-bidirectional-tracing.md"
 version: 1.0
 ---
 
+## 調用方式
+
+**類型**：task（獨立子 agent，不繼承主對話 context）
+
+**主 agent 步驟**：
+1. 用 Read 讀取本文件全文
+2. 按 `<input_contract>` 組裝資料包（設計規格 + DR-x 報告 + R-x 報告 + 程式碼路徑 + 測試路徑）
+3. 呼叫 Agent tool：
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `subagent_type`：`"general-purpose"`
+4. 收到結果存入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`
+
 <role>
 你是獨立自証審查者（雙向追溯），與開發者無關，不知道開發過程中的推理。
 

@@ -8,6 +8,16 @@ output: "測試程式碼 + 測試執行結果"
 version: 1.0
 ---
 
+## 調用方式
+
+**類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
+
+**主 agent 步驟**：
+1. 用 Read 讀取本文件
+2. 按 `<instructions>` 設計並執行測試
+3. 用 Bash 執行 `{{TEST_COMMAND}}` + `{{BUILD_COMMAND}}`
+4. 產出留在對話中，供 Phase 5 驗證
+
 <role>
 你是測試師，負責驗證實作是否符合設計規格。
 

@@ -166,16 +166,11 @@
 
 ### 10. 合理性審查（所有改動適用）
 
-每次改動後快速自問：① 一致性（跟系統風格一致嗎）② 體驗（操作流程變複雜嗎）③ 比例（解法複雜度跟問題規模成正比嗎）④ 可操作性（日常使用會不便嗎）⑤ 整合性（跟已有功能放一起還合理嗎）
-閉環中 Phase 1/3 已包含；非閉環微小任務一句話回答；連續 3 個改動後做整合性檢查。發現不合理 → 主動告知用戶。
+每次改動後自問：① 一致性 ② 體驗 ③ 比例 ④ 可操作性 ⑤ 整合性。閉環 Phase 1/3 已含；微小任務一句話；連續 3 改動後整合檢查。不合理 → 主動告知。
 
 ### 11. 同類掃描（修改指令觸發）
 
-修改對象屬於一組同類項目之一 → 掃描同類是否有同樣問題，報告用戶後才執行。
-**觸發**：用戶指向集合中的特定項目 / 修改目標有結構性同類 / 修正模式性問題。獨一無二的對象（全域設定檔、唯一入口點）不觸發。
-**範圍**：預設同目錄直接同類；用戶說「全專案」→ 擴大到全專案同 pattern。
-**步驟**：抽出問題模式 → 列舉同類 → 比對 → 報告用戶 → 用戶確認後執行。
-**整合**：微小任務直接掃描改；精簡閉環納入步驟 1 設計；完整閉環納入 Phase 1 BC-x。
+修改對象屬同類之一 → 掃描同類是否有同樣問題，報告後才執行。獨一無二的對象不觸發。步驟：抽出模式 → 列舉同類 → 比對 → 報告 → 確認後執行。
 
 ---
 
@@ -187,71 +182,51 @@
 
 ### Phase 1：架構師 📐
 
-**Agent**：讀取 `.claudedocs/agents/architect.md` 按指引執行（含架構體質拆解、合理性自檢、分層結構、驗證層級）。需求模糊 → 先讀 `.claudedocs/agents/requirements-analyst.md`。
-**語言指南**：若已部署語言指南，先讀取 Phase 1 段落。
-**常見缺陷預防**：首次使用閉環或不熟悉的領域時，讀取 `.claudedocs/process/五階段閉環流程.md` 末尾的「常見設計缺陷預防清單」。
-**獨特約束**（architect.md 未包含）：
-- 涉及 status 變更的 BC-x 必須同時定義「變更後的行為約束」（哪些方法應被禁用、哪些子系統應停止）
-- **結構安全**：互斥狀態用 discriminated union / enum 建模，禁止用多個 boolean 組合。涉及資源的 BC-x 須標注建立者和釋放者
-- **PRD 需求分解**（可選）：用戶提供 PRD 時啟用，拆為 PRD#1, PRD#2... 每項標注來源 `← PRD#n`
-**⛔ 閘門（逐項檢查）**：
-- [ ] 架構體質拆解已完成（或全新模組不適用）
-- [ ] 合理性自檢已通過（或用戶確認接受）
-- [ ] 所有參數有型別
-- [ ] BC-x ≥ 2
-- [ ] EH-x 符合領域預設（必要時覆蓋異常；可選時已聲明不適用）
-- [ ] 涉及 status 變更的 BC-x 有行為約束
-- [ ] 有 update/tick 迴圈時已定義執行順序
-- [ ] 驗證層級已標注（或領域預設為 `[testable]` 時例外項已標注）
-- [ ] 分層結構已聲明（純功能 / 功能+UI，功能層 API 不依賴 UI 框架型別）
-- [ ] （若有 PRD）所有 PRD#n 有 ≥ 1 對應 BC-x/EH-x
-全部 ✅ → 進 Phase 1b。
+**Agent**：讀取 `.claudedocs/agents/architect.md`，按其「調用方式」和 `<instructions>` 執行。需求模糊 → 先讀 `requirements-analyst.md`。
+**語言指南**：若已部署，讀取 Phase 1 段落。
+**常見缺陷預防**：首次使用閉環或不熟悉的領域時，讀取 `.claudedocs/process/五階段閉環流程.md` 末尾清單。
+**⛔ 閘門**：architect.md 步驟 8 定義的全部項目。全部 ✅ → 進 Phase 1b。
 
 ### Phase 1b：設計審查 🔬
 
-**獨立性**：Task 啟動獨立子 agent（不繼承主對話 context）。主 agent 先 `mkdir -p .claude-loop/artifacts`。
-**跳過條件**：用戶說「跳過設計審查」→ 直接進 Phase 2（Phase 5 步驟 4c 標記「用戶跳過」）。
-**委派 prompt**：讀取 `.claudedocs/agents/design-reviewer.md` 作為完整 Task prompt，準備 `<input_contract>` 要求的審查包。
-**產出**：DR-x 報告寫入 `.claude-loop/artifacts/P1b-design-review.md`。嚴重度定義見 design-reviewer.md。
-**⛔ 閘門**：有 DR-x high → 回 Phase 1 修正後重跑 1b（全量重審，最多 3 輪）| arch-risk → 記錄不阻擋 | medium/low → AskUserQuestion 讓用戶決定，決策記錄供 Phase 5 追溯 | 全無問題 → 進 Phase 2。
+**Agent**：讀取 `.claudedocs/agents/design-reviewer.md`，按其「調用方式」啟動獨立子 agent。
+**跳過條件**：用戶說「跳過設計審查」→ 直接進 Phase 2（Phase 5 標記「用戶跳過」）。
+**⛔ 閘門**：有 DR-x high → 回 Phase 1 修正後重跑 1b（全量重審，最多 3 輪）| arch-risk → 記錄不阻擋 | medium/low → AskUserQuestion 讓用戶決定 | 全無問題 → 進 Phase 2。
 
 ### Phase 2：程序設計師 💻
 
-**Agent**：讀取 `.claudedocs/agents/implementer.md` 按指引執行。語言指南若有則讀 Phase 2 段落。
-**增量驗證**：每完成一個檔案立即 `{{LINT_COMMAND}}`，發現錯誤立即修正。
-**強制優化**：實作完調用 Task `code-simplifier`。斷點回退後 < 50 行跳過，≥ 50 行重跑。
-**設計文件同步**：BC-x 預期行為改變 / 函式簽名改變 / 描述歧義 → 同步更新設計規格（不改 ID）。純重命名/風格調整/新增 helper 不觸發。
+**Agent**：讀取 `.claudedocs/agents/implementer.md`，按其「調用方式」和 `<instructions>` 執行。語言指南若有則讀 Phase 2 段落。
+**增量驗證**：每完成一個檔案立即 `{{LINT_COMMAND}}`。
+**設計文件同步**：BC-x 預期行為改變 / 函式簽名改變 → 同步設計規格（不改 ID）。純重命名/風格/helper 不觸發。
 **⛔ 閘門**：無語法錯誤 ∧ 設計項都有實作 ∧ code-simplifier 已執行 → 進 Phase 3。
 
 ### Phase 3：檢核師 🔍
 
-**品質審查**：Task 啟動獨立子 agent。讀取 `.claudedocs/agents/code-reviewer.md` 作為 Task prompt。
-**安全審查**：按領域預設（見 Section 6）。領域預設為「可跳過」時，以下條件**全部**滿足可跳過：無網路連線 · 無敏感資料處理 · 無檔案系統寫入 · 無 unsafe/eval · 無第三方認證。不跳過時讀取 `.claudedocs/agents/security-reviewer.md` 作為 Task prompt。
-**R-x 嚴重度**：high（邏輯/安全/設計不符→斷點 A）| arch-risk（架構風險→記錄不阻擋）| medium（品質→建議修）| low（風格→合併摘要）。`by-design` 不計入斷點。
-**⛔ 斷點 A**：有 high → 回 Phase 2 修正後重跑 Phase 3（差分審查：只審修改檔案 + 依賴檔案 + 原 high 確認修復。安全審查不重跑）。
-**學習日誌**（斷點觸發時立即追加）：將觸發斷點的 R-x high 根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。格式見產出物格式.md。
+**品質審查**：讀取 `.claudedocs/agents/code-reviewer.md`，按其「調用方式」啟動獨立子 agent。
+**安全審查**：按領域預設（見 Section 6）。跳過條件：無網路 · 無敏感資料 · 無檔案寫入 · 無 unsafe/eval · 無第三方認證全滿足。不跳過時讀取 `security-reviewer.md` 按其「調用方式」啟動。
+**R-x 嚴重度**：high→斷點 A | arch-risk→記錄不阻擋 | medium→建議修 | low→合併摘要。`by-design` 不計入。
+**⛔ 斷點 A**：有 high → 回 Phase 2 修正後重跑 Phase 3（差分審查，安全審查不重跑）。
+**學習日誌**（斷點觸發時）：R-x high 根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。
 
 ### Phase 4：測試師 🧪
 
-**Agent**：讀取 `.claudedocs/agents/tester.md` 按指引執行。語言指南若有則讀 Phase 4 段落。
-**測試分層**：`[testable]` 必須自動化測試 | `[visual-only]` 免除自動化，code review 驗證 | `[framework-dependent]` 建議拆分純邏輯部分。
-**執行**：用 Bash 依序 `{{TEST_COMMAND}}` + `{{BUILD_COMMAND}}`。
+**Agent**：讀取 `.claudedocs/agents/tester.md`，按其「調用方式」和 `<instructions>` 執行。語言指南若有則讀 Phase 4 段落。
 **⛔ 斷點 B**：失敗 → 程式碼 bug 回 Phase 2（重跑 3+4）| 測試設計問題回 Phase 4 修正。
-**學習日誌**（斷點觸發時立即追加）：將失敗根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。
+**學習日誌**（斷點觸發時）：失敗根因記錄到 `.claude-loop/learning-log.md`（問題→原因→教訓）。
 
 ### Phase 5：自証師 ✅
 
 **語言指南**：若已部署，先讀 Phase 5 段落。
-**Part AB — 雙向追溯**：Task 啟動獨立子 agent。讀取 `.claudedocs/agents/verifier.md` 作為 Task prompt。產出寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
+**Part AB — 雙向追溯**：讀取 `.claudedocs/agents/verifier.md`，按其「調用方式」啟動獨立子 agent。
 **Part C — 整體評估**（主 agent）：
-- **⛔ 產出物驗證**：Glob 確認 `.claude-loop/artifacts/` 有 P1b（用戶跳過除外）、P3-quality、P3-security（跳過除外）、P5AB。缺漏 → 回退重做
-- **⛔ 委派呼叫驗證**：讀取 `.delegation-log` 確認記錄。缺失但產出物存在 → 以產出物為準
-- 收集 Part AB 結果 → 跑 `{{VERIFY_SEQUENCE}}`（多模組必做）→ 全 ✅ 通過 / 有 ❌ 不通過 + 回退建議
-**回退規則**：設計-實作不一致 → P2（嚴重→P1）| 測試不足 → P4 | 檢核未修 → P2 | DR-x high 未修 → P1 | 產出物缺漏 → 對應 Phase
+- **⛔ 產出物驗證**：Glob 確認 `.claude-loop/artifacts/` 有 P1b（跳過除外）、P3-quality、P3-security（跳過除外）、P5AB。缺漏 → 回退
+- **⛔ 委派呼叫驗證**：讀取 `.delegation-log`。缺失但產出物存在 → 以產出物為準
+- 收集 Part AB 結果 → 跑 `{{VERIFY_SEQUENCE}}`（多模組必做）→ 全 ✅ / 有 ❌ + 回退建議
+**回退規則**：設計-實作不一致→P2（嚴重→P1）| 測試不足→P4 | 檢核未修→P2 | DR-x high 未修→P1 | 產出物缺漏→對應 Phase
 **通過後**：
-1. 學習日誌 → 追加本次閉環完整條目到 `.claude-loop/learning-log.md`（首次時建立檔案），格式見產出物格式.md
-2. commit（message 帶自証摘要，learning-log 變更包含在內）
-3. 模組登記（中型以上或用戶要求）→ 格式見產出物格式.md
+1. 學習日誌 → `.claude-loop/learning-log.md`（格式見產出物格式.md）
+2. commit（learning-log 包含在內）
+3. 模組登記（中型以上或用戶要求）
 
 ---
 
@@ -259,14 +234,14 @@
 
 > 中型任務觸發。六步流程：設計→設計快審→實作→品質審查→測試驗證→迷你追溯。
 
-**步驟 1 — 設計**：簡要設計規格（目標 | 函式簽名與型別 | BC-x ≥ 1 | EH-x/驗證層級按領域預設 | 分層聲明）。語言指南若有則參考 Phase 1 段落。module-registry.md 存在時先查可複用功能層。涉及現有模組 → 快速確認存在理由是否還成立。
+**步驟 1 — 設計**：簡要設計規格（目標 | 函式簽名與型別 | BC-x ≥ 1 | EH-x/驗證層級按領域預設 | 分層聲明）。語言指南若有則參考 Phase 1 段落。module-registry.md 存在時先查可複用功能層。
 **設計自檢**：① 更簡單的做法？② 影響不相關模組？③ 邊界條件覆蓋？④ 操作流程變複雜？⑤ 解法複雜度成正比？⑥ 架構地基穩？不確定 → AskUserQuestion。
 
-**步驟 1b — 設計快審（單輪）**：讀取 `.claudedocs/agents/design-reviewer.md` 作為 Task prompt，準備審查包並啟動獨立子 agent。**只跑 1 輪，不回退重審**：有 high → 主 agent 直接修正設計後進入步驟 2（不重跑 1b）；無 high → 直接進步驟 2。目的：用 ~20K token 攔截最嚴重的設計缺陷。
+**步驟 1b — 設計快審（單輪）**：讀取 `design-reviewer.md`，按其「調用方式」啟動子 agent。**只跑 1 輪**：有 high → 主 agent 直接修正設計後進步驟 2；無 high → 直接進步驟 2。
 
-**步驟 2 — 實作**：按設計實作。若已部署語言指南，遵循 Phase 2 段落的編碼慣例。每完成一個檔案立即執行 `{{LINT_COMMAND}}` 驗證，發現錯誤當場修正。單檔上限按領域預設（含內聚性豁免）。全部完成後調用 Task `code-simplifier` 優化。設計文件同步規則同完整閉環。
+**步驟 2 — 實作**：同 Phase 2 規則。每完成一個檔案立即 `{{LINT_COMMAND}}`。全部完成後調用 Task `code-simplifier`。設計文件同步規則同完整閉環。
 
-**步驟 3 — 品質審查**：讀取 `.claudedocs/agents/code-reviewer.md` 作為 Task prompt，啟動獨立子 agent 執行品質審查（不含安全審查）。有 R-x high → **先追加學習日誌（問題→原因→教訓）** → 回步驟 2 修正 → 重跑步驟 3（差分審查）。無 high → 進步驟 4。
+**步驟 3 — 品質審查**：讀取 `code-reviewer.md`，按其「調用方式」啟動子 agent（不含安全審查）。有 R-x high → 追加學習日誌 → 回步驟 2 修正 → 重跑步驟 3（差分審查）。無 high → 進步驟 4。
 
 **步驟 4 — 測試驗證**：
 - 確認每個 `[testable]` BC-x/EH-x 有對應測試；`[visual-only]`/`[framework-dependent]` 項在報告中列出驗證方式
@@ -309,27 +284,9 @@
 
 ---
 
-## 常見設計缺陷預防清單
-
-> Phase 1 設計時可參考。首次使用閉環或不熟悉的領域時建議逐項檢查。
-> 完整清單見 [五階段閉環流程](.claudedocs/process/五階段閉環流程.md) 末尾。
-
----
-
 ## 產出物格式
 
-進入需要產出的 Phase 時，讀取 `.claudedocs/standards/產出物格式.md` 取得完整模板。
-
-**ID 編號系統**：
-
-| 前綴 | 含義 | 使用階段 |
-|------|------|---------|
-| BC-x | 邊界條件 | Phase 1 定義 → Phase 2, 4, 5 引用 |
-| EH-x | 錯誤處理 | Phase 1 定義 → Phase 2, 4, 5 引用 |
-| R-x | 檢核問題 | Phase 3 定義 → Phase 5 引用 |
-| DR-x | 設計審查問題 | Phase 1b 定義 → Phase 1, 5 引用 |
-| IF-x | 介面契約 | 跨模組時定義 → Phase 1, 2, 5 引用 |
-| CR-x | 變更請求 | 介面變更時建立 → 受影響模組引用 |
+進入需要產出的 Phase 時，讀取 `.claudedocs/standards/產出物格式.md` 取得完整模板和 ID 編號系統（BC-x/EH-x/R-x/DR-x/IF-x/CR-x）。
 
 ---
 

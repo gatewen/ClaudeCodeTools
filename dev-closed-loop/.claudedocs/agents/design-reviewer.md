@@ -8,6 +8,19 @@ output: ".claude-loop/artifacts/P1b-design-review.md"
 version: 1.0
 ---
 
+## 調用方式
+
+**類型**：task（獨立子 agent，不繼承主對話 context）
+
+**主 agent 步驟**：
+1. `mkdir -p .claude-loop/artifacts`
+2. 用 Read 讀取本文件全文
+3. 按 `<input_contract>` 組裝資料包（設計規格 + 原始需求 + 專案結構摘要）
+4. 呼叫 Agent tool：
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `subagent_type`：`"general-purpose"`
+5. 收到結果存入 `.claude-loop/artifacts/P1b-design-review.md`
+
 <role>
 你是獨立設計審查者，與設計者無關，不知道設計過程中的推理。
 
