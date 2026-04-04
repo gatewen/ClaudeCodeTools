@@ -5,7 +5,7 @@
 # 範例：bash /path/to/ClaudeCodeTools/dev-closed-loop/deploy-hooks.sh /path/to/ClaudeCodeTools
 #
 # 執行內容：
-#   1. 複製 5 個 Hook 腳本到 .claude/hooks/
+#   1. 複製 6 個 Hook 腳本到 .claude/hooks/
 #   2. 合併 Hook 配置到 .claude/settings.json（保留既有設定）
 #   3. 驗證部署結果
 
@@ -37,6 +37,7 @@ HOOK_FILES=(
   "impact-analysis-guard.sh"
   "incremental-lint.sh"
   "delegation-tracker.sh"
+  "delegation-gate.sh"
   "prompt-understanding-guard.sh"
   "learning-log-checker.sh"
 )
@@ -82,6 +83,14 @@ guard_entry = {
 }
 if not any("impact-analysis-guard" in str(h) for h in pre_hooks):
     pre_hooks.append(guard_entry)
+
+# PreToolUse：委派前因果鏈閘門
+delegation_gate_entry = {
+    "matcher": "Agent",
+    "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-gate.sh"}]
+}
+if not any("delegation-gate" in str(h) for h in pre_hooks):
+    pre_hooks.append(delegation_gate_entry)
 
 # PostToolUse：增量驗證
 post_hooks = hooks.setdefault("PostToolUse", [])
@@ -154,7 +163,7 @@ for f in "${HOOK_FILES[@]}"; do
 done
 
 if [[ -f "$SETTINGS_FILE" ]]; then
-  for keyword in "impact-analysis-guard" "incremental-lint" "delegation-tracker" "prompt-understanding-guard" "learning-log-checker"; do
+  for keyword in "impact-analysis-guard" "delegation-gate" "incremental-lint" "delegation-tracker" "prompt-understanding-guard" "learning-log-checker"; do
     if ! grep -q "$keyword" "$SETTINGS_FILE" 2>/dev/null; then
       echo "❌ 驗證失敗：settings.json 缺少 $keyword 配置"
       VERIFY_OK=false
@@ -166,7 +175,7 @@ else
 fi
 
 if $VERIFY_OK; then
-  echo "✅ Hook 系統部署完成（5 腳本 + settings.json 配置）"
+  echo "✅ Hook 系統部署完成（6 腳本 + settings.json 配置）"
 else
   echo "⚠️  Hook 系統部署有問題，請檢查上方錯誤訊息"
   exit 1

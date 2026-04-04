@@ -291,6 +291,7 @@ HOOK_FILES=(
     "hooks/impact-analysis-guard.sh"
     "hooks/incremental-lint.sh"
     "hooks/delegation-tracker.sh"
+    "hooks/delegation-gate.sh"
     "hooks/prompt-understanding-guard.sh"
     "hooks/learning-log-checker.sh"
 )

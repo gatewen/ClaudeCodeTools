@@ -74,14 +74,15 @@ Phase 5 是這套方法的特色——它用編號系統（BC-x / EH-x / R-x）�
 
 ### 自動化 Hook
 
-部署時會一起裝五個 Hook，在背景自動幫你做品質把關：
+部署時會一起裝六個 Hook，在背景自動幫你做品質把關：
 
 | Hook | 什麼時候觸發 | 做什麼 |
 |------|------------|--------|
 | **修改前統一守衛** | 修改檔案之前 | **阻擋**修改，雙閘門：①理解確認（對頻）②因果鏈分析（影響評估），合併為一次 block |
-| **理解確認旗標** | 用戶提交指令時 | 偵測修改意圖，設定旗標供修改前守衛檢查 |
+| **委派前因果鏈閘門** | 呼叫 Agent 之前 | **阻擋**修改型 Agent 委派，要求先分析預期修改範圍和影響 |
+| **理解確認旗標** | 用戶提交指令時 | 偵測修改意圖，設定旗標 + 清理因果鏈/委派閘門 marker |
 | **增量驗證** | 修改檔案之後 | 自動對改過的檔案跑 lint |
-| **委派追蹤** | 呼叫 Agent 時 | 自動記錄 Agent 的任務和結果 |
+| **委派追蹤** | 呼叫 Agent 之後 | 自動記錄 Agent 的任務和結果 |
 | **學習日誌提醒** | git commit 之後 | 檢查 learning-log.md 是否在 commit 中，未包含則提醒 |
 
 ## 目錄結構
@@ -99,7 +100,8 @@ ClaudeCodeTools/
     ├── check-version.sh              ← 版本檢查工具（快取/部署/遠端一次比完）
     ├── hooks/
     │   ├── impact-analysis-guard.sh  ← 修改前統一守衛（雙閘門阻擋）
-    │   ├── prompt-understanding-guard.sh ← 理解確認旗標
+    │   ├── delegation-gate.sh        ← 委派前因果鏈閘門（修改型 Agent 阻擋）
+    │   ├── prompt-understanding-guard.sh ← 理解確認旗標 + marker 清理
     │   ├── incremental-lint.sh       ← 增量驗證
     │   ├── delegation-tracker.sh     ← 委派追蹤
     │   └── learning-log-checker.sh   ← 學習日誌提醒
@@ -132,6 +134,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| v5.18.0 | Hook 系統修正 + 委派前閘門——因果鏈 marker 每輪重置 + 短指令偵測擴充 + 新增 delegation-gate.sh（修改型 Agent 委派前強制因果鏈分析） |
 | v5.17.1 | 升級系統 SHA 追蹤——下載時記錄 commit SHA + 版本同但 SHA 異時警告 + status 顯示 SHA |
 | v5.17.0 | Agent 調用精確化——自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm + 斷點回退可見性 |
 | v5.16.0 | 回顧式學習自動化——失敗驅動學習日誌（即時捕獲 + commit 前寫入 + Hook 檢查）+ 模式分析 |

@@ -17,7 +17,7 @@
 | `.claudedocs/agents/` | Agent 專家庫（8 個專家 prompt），Phase 觸發時按需載入 |
 | `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
-| `hooks/` | 5 個 Hook 腳本（修改守衛、理解確認、增量 lint、委派追蹤、學習日誌提醒） |
+| `hooks/` | 6 個 Hook 腳本（修改守衛、委派前閘門、理解確認、增量 lint、委派追蹤、學習日誌提醒） |
 | `deploy-hooks.sh` | 一鍵部署 Hook 系統（複製腳本 + 合併 settings.json + 驗證） |
 | `check-version.sh` | 版本檢查工具（快取/部署/遠端一次比完，輸出 key=value） |
 
@@ -95,6 +95,7 @@
 
 | 版本 | 重點 |
 |------|------|
+| v5.18.0 | Hook 系統修正 + 委派前閘門——因果鏈 marker 每輪重置 + 短指令偵測擴充 + delegation-gate.sh（修改型 Agent 委派前強制因果鏈分析） |
 | v5.17.1 | 升級系統 SHA 追蹤——下載時記錄 commit SHA + 版本同但 SHA 異時警告 + status 顯示 SHA |
 | v5.17.0 | Agent 調用精確化——自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm + 斷點回退可見性 |
 | v5.16.0 | 回顧式學習自動化——失敗驅動學習日誌 + 模式分析 + PostToolUse Hook 檢查 |

@@ -45,7 +45,7 @@ fi
 
 # 偵測修改意圖關鍵字（覆蓋問句判定）
 HAS_ACTION=false
-if echo "$PROMPT" | grep -qE '修改|改|加入|新增|刪除|移除|修正|修復|實作|建立|建置|部署|更新|替換|重構|優化|fix|add|remove|delete|create|implement|build|deploy|update|replace|refactor'; then
+if echo "$PROMPT" | grep -qE '修改|改|加入|新增|刪除|移除|修正|修復|實作|建立|建置|部署|更新|替換|重構|優化|進行|繼續|開始|執行|處理|做|跑|重啟|升級|fix|add|remove|delete|create|implement|build|deploy|update|replace|refactor'; then
   HAS_ACTION=true
 fi
 
@@ -54,18 +54,24 @@ if $IS_QUESTION && ! $HAS_ACTION; then
   exit 0
 fi
 
-# 無修改意圖的短句（< 20 字）→ 不觸發
+# 無修改意圖的短句（< 5 字）→ 不觸發
 PROMPT_LEN=${#PROMPT}
-if ! $HAS_ACTION && [[ $PROMPT_LEN -lt 20 ]]; then
+if ! $HAS_ACTION && [[ $PROMPT_LEN -lt 5 ]]; then
   exit 0
 fi
 
-# 3. 建立理解確認旗標（供 PreToolUse Hook 檢查）
+# 3. 清理上一輪的因果鏈 marker 和委派閘門 marker（每輪用戶指令重置）
+rm -rf /tmp/claude-causal-chain
+mkdir -p /tmp/claude-causal-chain
+rm -rf /tmp/claude-delegation-gate
+mkdir -p /tmp/claude-delegation-gate
+
+# 5. 建立理解確認旗標（供 PreToolUse Hook 檢查）
 GATE_DIR="/tmp/claude-understanding-gate"
 mkdir -p "$GATE_DIR"
 echo "$PROMPT" > "$GATE_DIR/pending"
 
-# 4. 輸出橙色提醒
+# 6. 輸出橙色提醒
 ORANGE='\033[38;5;208m'
 RESET='\033[0m'
 

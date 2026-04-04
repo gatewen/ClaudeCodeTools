@@ -65,9 +65,10 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    | 修改前統一守衛 Hook | `.claude/hooks/impact-analysis-guard.sh` 存在且可執行 | ✅/❌ |
    | 增量驗證 Hook | `.claude/hooks/incremental-lint.sh` 存在且可執行 | ✅/❌ |
    | 委派追蹤 Hook | `.claude/hooks/delegation-tracker.sh` 存在且可執行 | ✅/❌ |
+   | 委派前閘門 Hook | `.claude/hooks/delegation-gate.sh` 存在且可執行 | ✅/❌ |
    | 理解確認旗標 Hook | `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行 | ✅/❌ |
    | 學習日誌提醒 Hook | `.claude/hooks/learning-log-checker.sh` 存在且可執行 | ✅/❌ |
-   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard`、`learning-log-checker` | 5/5 = ✅，否則 ⚠️ 列出缺少 |
+   | Hook 配置 | `.claude/settings.json` 含 `impact-analysis-guard`、`delegation-gate`、`incremental-lint`、`delegation-tracker`、`prompt-understanding-guard`、`learning-log-checker` | 6/6 = ✅，否則 ⚠️ 列出缺少 |
    | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
    | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
@@ -103,8 +104,9 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
   ✅ 理解確認旗標 Hook
   ✅ 增量驗證 Hook
   ✅ 委派追蹤 Hook
+  ✅ 委派前閘門 Hook（修改型 Agent 因果鏈分析）
   ✅ 學習日誌提醒 Hook
-  ✅ Hook 配置（5/5）
+  ✅ Hook 配置（6/6）
   ✅ 無 Placeholder 殘留
   — .claude-loop/ 未啟用
 
@@ -204,6 +206,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - `.claude/hooks/impact-analysis-guard.sh`
    - `.claude/hooks/incremental-lint.sh`
    - `.claude/hooks/delegation-tracker.sh`
+   - `.claude/hooks/delegation-gate.sh`
    - `.claude/hooks/prompt-understanding-guard.sh`
    - `.claude/settings.json` 中的 PreToolUse、PostToolUse、UserPromptSubmit hook 配置
    - `.claude-loop/` 目錄（若存在）
@@ -218,6 +221,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    - .claude/hooks/impact-analysis-guard.sh
    - .claude/hooks/incremental-lint.sh
    - .claude/hooks/delegation-tracker.sh
+   - .claude/hooks/delegation-gate.sh
    - .claude/hooks/prompt-understanding-guard.sh
    - .claude/settings.json 中的閉環 hook 配置
    [若有 .claude-loop/]
@@ -233,7 +237,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 4. **執行移除**：
    - 用 Bash `rm -rf .claudedocs/` 刪除文檔
-   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/prompt-understanding-guard.sh .claude/hooks/learning-log-checker.sh` 刪除 hook 腳本
+   - 用 Bash `rm -f .claude/hooks/impact-analysis-guard.sh .claude/hooks/incremental-lint.sh .claude/hooks/delegation-tracker.sh .claude/hooks/delegation-gate.sh .claude/hooks/prompt-understanding-guard.sh .claude/hooks/learning-log-checker.sh` 刪除 hook 腳本
    - 用 python3 從 `.claude/settings.json` 移除閉環 hook 配置（保留其他設定）：
      ```python
      import json
@@ -242,7 +246,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
      pre_hooks = cfg.get("hooks", {}).get("PreToolUse", [])
      cfg["hooks"]["PreToolUse"] = [
        h for h in pre_hooks
-       if "impact-analysis-guard" not in str(h)
+       if "impact-analysis-guard" not in str(h) and "delegation-gate" not in str(h)
      ]
      if not cfg["hooks"]["PreToolUse"]:
        del cfg["hooks"]["PreToolUse"]
@@ -285,7 +289,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    已刪除：
    - CLAUDE.md [或「已保留（含自訂內容）」]
    - .claudedocs/（N 個檔案）
-   - 5 個 Hook 腳本
+   - 6 個 Hook 腳本
    - .claude/settings.json 中的閉環 hook 配置（PreToolUse + PostToolUse + UserPromptSubmit）
    [若移除] - .claude-loop/
 
@@ -629,12 +633,13 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 
 ### Step 4b：部署 Hook 系統
 
-閉環透過五個 Hook 自動化品質保障：
+閉環透過六個 Hook 自動化品質保障：
 - **修改前統一守衛**（PreToolUse）：雙閘門阻擋——閘門 A 理解確認 + 閘門 B 因果鏈分析，合併為單次 block
+- **委派前因果鏈閘門**（PreToolUse）：修改型 Agent 委派前阻擋，要求主 agent 先分析預期修改範圍
 - **增量驗證**（PostToolUse）：修改後自動 per-file lint
 - **委派追蹤**（PostToolUse）：Agent 呼叫自動記錄
 - **學習日誌提醒**（PostToolUse）：git commit 後檢查 learning-log.md 是否在 commit 中
-- **理解確認旗標**（UserPromptSubmit）：偵測修改意圖，設定旗標供修改前守衛檢查
+- **理解確認旗標**（UserPromptSubmit）：偵測修改意圖，設定旗標供修改前守衛檢查 + 清理因果鏈/委派閘門 marker
 
 **⛔ 一鍵部署（禁止跳過，禁止手動替代）**：
 用 Bash 執行部署腳本（腳本內部自動完成複製、配置、驗證）：
@@ -695,8 +700,9 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
    - `.claude/hooks/impact-analysis-guard.sh` 存在且可執行
    - `.claude/hooks/incremental-lint.sh` 存在且可執行
    - `.claude/hooks/delegation-tracker.sh` 存在且可執行
+   - `.claude/hooks/delegation-gate.sh` 存在且可執行
    - `.claude/hooks/prompt-understanding-guard.sh` 存在且可執行
-   - `.claude/settings.json` 包含 `PreToolUse` hook 配置（含 impact-analysis-guard）
+   - `.claude/settings.json` 包含 `PreToolUse` hook 配置（含 impact-analysis-guard 和 delegation-gate）
    - `.claude/settings.json` 包含 `PostToolUse` hook 配置（含 incremental-lint 和 delegation-tracker）
    - `.claude/settings.json` 包含 `UserPromptSubmit` hook 配置（含 prompt-understanding-guard）
    （若任一檢查失敗 → 報錯並嘗試修正）
@@ -713,7 +719,8 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - .claudedocs/agents/（8 個專家 Agent prompt，無需外部依賴）
 - .claudedocs/languages/（語言指南：{語言}.md）← 有對應 Skill 時顯示
 - 修改前統一守衛 Hook：✅ 已部署（PreToolUse → 雙閘門阻擋：理解確認 + 因果鏈分析）
-- 理解確認旗標 Hook：✅ 已部署（UserPromptSubmit → 設定理解確認閘門旗標）
+- 委派前閘門 Hook：✅ 已部署（PreToolUse → 修改型 Agent 委派前因果鏈分析）
+- 理解確認旗標 Hook：✅ 已部署（UserPromptSubmit → 設定理解確認閘門旗標 + 清理 marker）
 - 增量驗證 Hook：✅ 已部署（PostToolUse → per-file lint）
 - 委派追蹤 Hook：✅ 已部署（PostToolUse → Agent 呼叫記錄）
 
@@ -745,7 +752,8 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - .claudedocs/agents/（8 個專家 Agent prompt 已更新）
 - .claudedocs/languages/（語言指南已更新）← 有對應 Skill 時顯示
 - 修改前統一守衛 Hook：✅ 已更新（PreToolUse → 雙閘門阻擋：理解確認 + 因果鏈分析）
-- 理解確認旗標 Hook：✅ 已更新（UserPromptSubmit → 設定理解確認閘門旗標）
+- 委派前閘門 Hook：✅ 已更新（PreToolUse → 修改型 Agent 委派前因果鏈分析）
+- 理解確認旗標 Hook：✅ 已更新（UserPromptSubmit → 設定理解確認閘門旗標 + 清理 marker）
 - 增量驗證 Hook：✅ 已更新
 [若有用戶自訂內容]
 - 用戶自訂內容：已保留在 CLAUDE.md 頂部（{N} 行）
@@ -775,6 +783,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 - v5.15.0 → v5.16.0：回顧式學習自動化——學習日誌（失敗事件立即捕獲 + commit 前追加 + PostToolUse Hook 檢查）+ 模式分析
 - v5.16.0 → v5.17.0：Agent 調用精確化（自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm 即時可見性 + 斷點狀態回退）
 - v5.17.0 → v5.17.1：升級系統 SHA 追蹤（下載時記錄 commit SHA + 版本同但 SHA 異時警告 + status 顯示 SHA）
+- v5.17.1 → v5.18.0：Hook 系統修正 + 委派前閘門——因果鏈 marker 每輪重置（P0）+ 短指令偵測擴充（P1）+ 新增 delegation-gate.sh 硬閘門（修改型 Agent 委派前強制因果鏈分析）+ 委派後範圍檢查規則
 
 下一步：
 1. 閉環流程已自動生效，無需額外操作
