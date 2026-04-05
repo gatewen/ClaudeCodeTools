@@ -202,6 +202,7 @@ version: 1.0
 5. **交叉比對執行**：步驟 7 是否確實對每個正向 ❌ 和反向未覆蓋路徑做了雙向確認？
 6. **arch-risk 完整性**：Phase 1b 和 Phase 3 標記的每個 arch-risk 都有追蹤狀態？
 7. **報告格式**：output_format 定義的每個 section 都有內容？（空 section 用「無」標記，不省略）
+8. **修改點存在性**：被修改的函式是否有非測試的呼叫者？（Grep 函式名，呼叫者 = 0 或僅有測試 → ⚠️ 標記警告，可能修改了不在執行路徑上的程式碼）
 </verification>
 
 <constraints>
