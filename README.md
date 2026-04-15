@@ -134,6 +134,8 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| v5.20.0 | 反偷懶三措施——因果鏈呼叫者逐條展開 + Phase 5 行為路徑枚舉前置 + 跨 Phase 一致性驗證 |
+| v5.19.0 | 因果鏈分析「呼叫者存在性」——修改函式前 grep 確認呼叫者，呼叫者=0 禁止修改 |
 | v5.18.0 | Hook 系統修正 + 委派前閘門——因果鏈 marker 每輪重置 + 短指令偵測擴充 + 新增 delegation-gate.sh（修改型 Agent 委派前強制因果鏈分析） |
 | v5.17.1 | 升級系統 SHA 追蹤——下載時記錄 commit SHA + 版本同但 SHA 異時警告 + status 顯示 SHA |
 | v5.17.0 | Agent 調用精確化——自文檔化調用方式 + 活動日誌 + learning-log agent 標籤 + Task activeForm + 斷點回退可見性 |
