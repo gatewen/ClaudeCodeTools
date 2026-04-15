@@ -213,6 +213,7 @@
 **Agent**：讀取 `.claudedocs/agents/architect.md`，按其「調用方式」和 `<instructions>` 執行。需求模糊 → 先讀 `requirements-analyst.md`。
 **語言指南**：若已部署，讀取 Phase 1 段落。
 **常見缺陷預防**：首次使用閉環或不熟悉的領域時，讀取 `.claudedocs/process/五階段閉環流程.md` 末尾清單。
+**設計規格持久化**：閘門通過後，將設計規格寫入 `.claude-loop/artifacts/P1-design-spec.md`（後續 Phase 的 Sub-Agent 從此檔案讀取，不經主 agent 轉述）。
 **⛔ 閘門**：architect.md 步驟 8 定義的全部項目。全部 ✅ → 進 Phase 1b。
 
 ### Phase 1b：設計審查 🔬
@@ -225,7 +226,7 @@
 
 **Agent**：讀取 `.claudedocs/agents/implementer.md`，按其「調用方式」和 `<instructions>` 執行。語言指南若有則讀 Phase 2 段落。
 **增量驗證**：每完成一個檔案立即 `{{LINT_COMMAND}}`。
-**設計文件同步**：BC-x 預期行為改變 / 函式簽名改變 → 同步設計規格（不改 ID）。純重命名/風格/helper 不觸發。
+**設計文件同步**：BC-x 預期行為改變 / 函式簽名改變 → 同步設計規格（不改 ID），同時更新 `.claude-loop/artifacts/P1-design-spec.md`。純重命名/風格/helper 不觸發。
 **⛔ 閘門**：無語法錯誤 ∧ 設計項都有實作 ∧ code-simplifier 已執行 → 進 Phase 3。
 
 ### Phase 3：檢核師 🔍
@@ -247,7 +248,7 @@
 **語言指南**：若已部署，先讀 Phase 5 段落。
 **Part AB — 雙向追溯**：讀取 `.claudedocs/agents/verifier.md`，按其「調用方式」啟動獨立子 agent。
 **Part C — 整體評估**（主 agent）：
-- **⛔ 產出物驗證**：Glob 確認 `.claude-loop/artifacts/` 有 P1b（跳過除外）、P3-quality、P3-security（跳過除外）、P5AB。缺漏 → 回退
+- **⛔ 產出物驗證**：Glob 確認 `.claude-loop/artifacts/` 有 P1-design-spec、P1b（跳過除外）、P3-quality、P3-security（跳過除外）、P5AB。缺漏 → 回退
 - **⛔ 委派呼叫驗證**：讀取 `.delegation-log`。缺失但產出物存在 → 以產出物為準
 - 收集 Part AB 結果 → 跑 `{{VERIFY_SEQUENCE}}`（多模組必做）→ 全 ✅ / 有 ❌ + 回退建議
 - **⛔ 跨 Phase 一致性**：比對 Phase 3 R-x 數量與 Phase 5 反向分析未覆蓋路徑數量。若 R-x ≥ 3 但未覆蓋路徑 = 0 → 判定原因：(a) R-x 皆為品質問題非設計遺漏（合理，記錄理由）；(b) 反向分析可能不夠深入 → 要求 verifier 重做反向分析
@@ -265,10 +266,11 @@
 
 **步驟 1 — 設計**：簡要設計規格（目標 | 函式簽名與型別 | BC-x ≥ 1 | EH-x/驗證層級按領域預設 | 分層聲明）。語言指南若有則參考 Phase 1 段落。module-registry.md 存在時先查可複用功能層。
 **設計自檢**：① 更簡單的做法？② 影響不相關模組？③ 邊界條件覆蓋？④ 操作流程變複雜？⑤ 解法複雜度成正比？⑥ 架構地基穩？不確定 → AskUserQuestion。
+**設計規格持久化**：自檢通過後，將設計規格寫入 `.claude-loop/artifacts/P1-design-spec.md`（後續步驟的 Sub-Agent 從此檔案讀取）。
 
 **步驟 1b — 設計快審（單輪）**：讀取 `design-reviewer.md`，按其「調用方式」啟動子 agent。**只跑 1 輪**：有 high → 主 agent 直接修正設計後進步驟 2；無 high → 直接進步驟 2。
 
-**步驟 2 — 實作**：同 Phase 2 規則。每完成一個檔案立即 `{{LINT_COMMAND}}`。全部完成後調用 Task `code-simplifier`。設計文件同步規則同完整閉環。
+**步驟 2 — 實作**：同 Phase 2 規則。每完成一個檔案立即 `{{LINT_COMMAND}}`。全部完成後調用 Task `code-simplifier`。設計文件同步規則同完整閉環（含同步更新 `P1-design-spec.md`）。
 
 **步驟 3 — 品質審查**：讀取 `code-reviewer.md`，按其「調用方式」啟動子 agent（不含安全審查）。有 R-x high → 追加學習日誌（標記 `[code-reviewer]`）→ 回步驟 2 修正 → 重跑步驟 3（差分審查）。無 high → 進步驟 4。
 
@@ -323,7 +325,7 @@
 
 **觸發條件**：模組數 ≥ 3 且有跨模組依賴 | 預計多 Session | 用戶說「啟用持久化」
 **委派產出物**：完整閉環必建 `.claude-loop/artifacts/`，子 agent 審查產出寫入此目錄。
-**輕量持久化**：大型任務的 Phase 1 設計規格建議寫入 `.claude-loop/modules/{name}/design-spec.md`，避免 context 壓縮丟失設計意圖。
+**設計規格持久化**：Phase 1 設計規格必須寫入 `.claude-loop/artifacts/P1-design-spec.md`（Sub-Agent 從此檔案直接讀取，不經主 agent 轉述，避免轉述遺漏）。多模組持久化時另存 `.claude-loop/modules/{name}/design-spec.md`。
 詳細規則：[跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md)
 
 ## 跨時間語義記憶（claude-mem · 可選）
@@ -358,7 +360,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）、Agent 專家庫（9 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.20.0
+closed-loop v5.21.0
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄

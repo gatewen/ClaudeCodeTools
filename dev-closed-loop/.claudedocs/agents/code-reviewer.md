@@ -5,7 +5,7 @@ type: task
 description: "獨立品質檢核師——設計一致性 + 結構安全 + 依賴方向 + 語言專屬 + 合理性"
 input: "Phase 1 設計規格 + Phase 2 程式碼路徑 + 語言指南(可選)"
 output: ".claude-loop/artifacts/P3-quality-review.md"
-version: 1.0
+version: 1.1
 ---
 
 ## 調用方式
@@ -15,9 +15,9 @@ version: 1.0
 **主 agent 步驟**：
 1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[code-reviewer]` 條目
 2. 用 Read 讀取本文件全文
-3. 按 `<input_contract>` 組裝資料包（Phase 1 設計規格 + Phase 2 程式碼路徑 + 相關教訓）
+3. 按 `<input_contract>` 組裝路徑清單（⚠️ 不轉述檔案內容，只列路徑，Sub-Agent 自行 Read）
 4. 呼叫 Agent tool：
-   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 路徑清單
    - `subagent_type`：`"general-purpose"`
 5. 收到結果存入 `.claude-loop/artifacts/P3-quality-review.md`
 6. 追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
@@ -56,11 +56,14 @@ version: 1.0
 
 <input_contract>
 必要輸入：
-1. **Phase 1 設計規格**：BC-x/EH-x/IF-x 清單，含分層結構聲明
-2. **Phase 2 程式碼檔案路徑**：你用 Read 工具自行讀取
+1. **Phase 1 設計規格** → 路徑：`.claude-loop/artifacts/P1-design-spec.md`（你用 Read 自行讀取全文）
+2. **Phase 2 程式碼檔案路徑** → 路徑清單由主 agent 提供（你用 Read 自行讀取每個檔案）
 
 可選輸入：
-- **語言指南 Phase 3 段落**：若已部署，包含語言專屬的審查規則
+- **語言指南 Phase 3 段落** → 由主 agent 提供在審查包中
+- **相關教訓** → 由主 agent 提供在審查包中（Grep 搜尋結果）
+
+⛔ 路徑完整性校驗：主 agent 提供的路徑清單必須包含以上所有「路徑」項（設計規格 + 程式碼）。缺少任一路徑 → 回報主 agent，不可自行推斷缺失內容。
 </input_contract>
 
 <instructions>

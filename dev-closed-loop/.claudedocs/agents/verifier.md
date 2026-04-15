@@ -5,7 +5,7 @@ type: task
 description: "獨立自証審查者——行為路徑枚舉 + 雙向追溯（正向+反向）+ 交叉比對 + arch-risk 追蹤"
 input: "設計規格(BC-x/EH-x/IF-x) + DR-x報告 + R-x報告 + 程式碼路徑 + 測試路徑 + PRD分解(可選) + 語言指南狀態"
 output: ".claude-loop/artifacts/P5AB-bidirectional-tracing.md"
-version: 1.1
+version: 1.2
 ---
 
 ## 調用方式
@@ -15,9 +15,9 @@ version: 1.1
 **主 agent 步驟**：
 1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[verifier]` 條目
 2. 用 Read 讀取本文件全文
-3. 按 `<input_contract>` 組裝資料包（設計規格 + DR-x 報告 + R-x 報告 + 程式碼路徑 + 測試路徑 + 相關教訓）
+3. 按 `<input_contract>` 組裝路徑清單（⚠️ 不轉述檔案內容，只列路徑，Sub-Agent 自行 Read）
 4. 呼叫 Agent tool：
-   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 路徑清單
    - `subagent_type`：`"general-purpose"`
 5. 收到結果存入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`
 6. 追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
@@ -54,15 +54,19 @@ version: 1.1
 
 <input_contract>
 必要輸入（缺任一項須回報主 agent，不可自行推斷）：
-1. **Phase 1 設計規格全文**：包含 BC-x、EH-x 清單，每項含驗證層級標注（[testable]/[visual-only]/[framework-dependent]）。若有 IF-x 跨模組介面契約，一併包含
-2. **Phase 1b DR-x 審查報告**：含 arch-risk 項目清單。若用戶跳過 Phase 1b，標記「用戶跳過」
-3. **Phase 3 R-x 檢核報告**：品質審查 + 安全審查（若有），含 arch-risk 項目清單
-4. **Phase 2 程式碼檔案路徑清單**：你用 Read 工具自行讀取比對
-5. **Phase 4 測試檔案路徑清單**：你用 Read 工具自行讀取比對
+1. **Phase 1 設計規格** → 路徑：`.claude-loop/artifacts/P1-design-spec.md`（你用 Read 自行讀取全文）。包含 BC-x、EH-x 清單，每項含驗證層級標注。若有 IF-x 跨模組介面契約，一併包含
+2. **Phase 1b DR-x 審查報告** → 路徑：`.claude-loop/artifacts/P1b-design-review.md`（你用 Read 自行讀取全文）。若用戶跳過 Phase 1b，主 agent 在路徑清單中標記「用戶跳過，無此檔案」
+3. **Phase 3 R-x 品質報告** → 路徑：`.claude-loop/artifacts/P3-quality-review.md`（你用 Read 自行讀取全文）
+4. **Phase 3 R-x 安全報告** → 路徑：`.claude-loop/artifacts/P3-security-review.md`（你用 Read 自行讀取全文）。若安全審查跳過，主 agent 在路徑清單中標記跳過條件
+5. **Phase 2 程式碼檔案路徑清單** → 路徑清單由主 agent 提供（你用 Read 自行讀取每個檔案）
+6. **Phase 4 測試檔案路徑清單** → 路徑清單由主 agent 提供（你用 Read 自行讀取每個檔案）
 
 可選輸入：
-- **PRD 分解表**：若有，需驗證每個 PRD#n 有 ≥ 1 個對應 BC-x/EH-x
-- **語言指南部署狀態**：若已部署，需驗證 Phase 3 R-x 包含語言專屬項
+- **PRD 分解表** → 由主 agent 提供在路徑清單中（若有）
+- **語言指南部署狀態** → 由主 agent 提供在路徑清單中（若已部署）
+- **相關教訓** → 由主 agent 提供在路徑清單中（Grep 搜尋結果）
+
+⛔ 路徑完整性校驗：主 agent 提供的路徑清單必須包含以上所有「路徑」項（設計規格 + DR-x + R-x 品質 + R-x 安全 + 程式碼 + 測試，跳過項須標記）。缺少任一路徑且未標記跳過 → 回報主 agent，不可自行推斷缺失內容。
 </input_contract>
 
 <instructions>

@@ -5,7 +5,7 @@ type: task
 description: "獨立設計審查者——挑戰式審查 + 架構體質 + 驗證式標準 + 分層審查"
 input: "Phase 1 設計規格 + 原始需求 + 專案結構摘要"
 output: ".claude-loop/artifacts/P1b-design-review.md"
-version: 1.0
+version: 1.1
 ---
 
 ## 調用方式
@@ -16,9 +16,9 @@ version: 1.0
 1. `mkdir -p .claude-loop/artifacts`
 2. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[design-reviewer]` 條目
 3. 用 Read 讀取本文件全文
-4. 按 `<input_contract>` 組裝資料包（設計規格 + 原始需求 + 專案結構摘要 + 相關教訓）
+4. 按 `<input_contract>` 組裝路徑清單和內容項（⚠️ 不轉述檔案內容，路徑項只列路徑，Sub-Agent 自行 Read）
 5. 呼叫 Agent tool：
-   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 路徑清單和內容項
    - `subagent_type`：`"general-purpose"`
 6. 收到結果存入 `.claude-loop/artifacts/P1b-design-review.md`
 7. 追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
@@ -53,12 +53,17 @@ version: 1.0
 
 <input_contract>
 必要輸入：
-1. **Phase 1 設計規格全文**：BC-x/EH-x/IF-x 清單，含驗證層級標注和分層結構聲明
-2. **原始需求描述**：用戶的任務說明，或 PRD 原文
-3. **專案結構摘要**：
+1. **Phase 1 設計規格** → 路徑：`.claude-loop/artifacts/P1-design-spec.md`（你用 Read 自行讀取全文）
+2. **原始需求描述** → 由主 agent 提供在審查包中（用戶對話內容，無獨立檔案）
+3. **專案結構摘要** → 由主 agent 提供在審查包中（ls/tree 輸出，無獨立檔案）：
    - 一層目錄結構（`ls` 或 `tree -L 2` 產出）
    - 每個現有關鍵模組的一句話職責（從 README 或程式碼推斷）
    - 現有 IF-x 介面契約清單（若有跨模組依賴）
+
+可選輸入：
+- **相關教訓** → 由主 agent 提供在審查包中（Grep 搜尋結果）
+
+⛔ 路徑完整性校驗：主 agent 提供的路徑必須包含以上所有「路徑」項。缺少任一路徑 → 回報主 agent，不可自行推斷缺失內容。
 </input_contract>
 
 <instructions>

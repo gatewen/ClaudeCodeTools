@@ -5,7 +5,7 @@ type: task
 description: "獨立安全檢核師——輸入驗證/注入/認證授權/資料暴露/依賴安全"
 input: "Phase 2 程式碼路徑"
 output: ".claude-loop/artifacts/P3-security-review.md"
-version: 1.0
+version: 1.1
 ---
 
 ## 調用方式
@@ -15,9 +15,9 @@ version: 1.0
 **主 agent 步驟**：
 1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[security-reviewer]` 條目
 2. 用 Read 讀取本文件全文
-3. 按 `<input_contract>` 組裝資料包（Phase 2 程式碼路徑 + 相關教訓）
+3. 按 `<input_contract>` 組裝路徑清單（⚠️ 不轉述檔案內容，只列路徑，Sub-Agent 自行 Read）
 4. 呼叫 Agent tool：
-   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 資料包
+   - `prompt`：本文件全文 + `\n---\n## 審查包\n` + 路徑清單
    - `subagent_type`：`"general-purpose"`
 5. 收到結果存入 `.claude-loop/artifacts/P3-security-review.md`
 6. 追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
@@ -54,9 +54,14 @@ version: 1.0
 
 <input_contract>
 必要輸入：
-1. **Phase 2 程式碼檔案路徑**：你用 Read 工具自行讀取
+1. **Phase 2 程式碼檔案路徑** → 路徑清單由主 agent 提供（你用 Read 自行讀取每個檔案）
+
+可選輸入：
+- **相關教訓** → 由主 agent 提供在審查包中（Grep 搜尋結果）
 
 無需設計規格——安全審查是純程式碼層面的，不需要對照設計。
+
+⛔ 路徑完整性校驗：主 agent 提供的路徑清單必須包含所有程式碼檔案路徑。缺少路徑 → 回報主 agent，不可自行推斷缺失內容。
 </input_contract>
 
 <instructions>

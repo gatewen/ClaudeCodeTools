@@ -24,12 +24,12 @@
 
 ```
 .claude-loop/
-├── artifacts/                        # 委派產出物（完整閉環必建，與持久化無關）
+├── artifacts/                        # 閉環產出物（完整/精簡閉環必建）
+│   ├── P1-design-spec.md             # Phase 1 設計規格（Sub-Agent 直接讀取，不經主 agent 轉述）
 │   ├── P1b-design-review.md          # Phase 1b 設計審查報告
 │   ├── P3-quality-review.md          # Phase 3 品質審查報告
 │   ├── P3-security-review.md         # Phase 3 安全審查報告
-│   ├── P5A-traceability.md           # Phase 5 Part A 追溯檢查
-│   └── P5B-reverse-analysis.md       # Phase 5 Part B 反向分析
+│   └── P5AB-bidirectional-tracing.md  # Phase 5 Part AB 雙向追溯
 ├── module-registry.md            # 模組索引：分層/API/複用資訊（閉環通過後登記）
 ├── project-state.md              # 全局狀態：模組清單、依賴圖、進度
 ├── modules/
@@ -57,7 +57,8 @@
 
 | 檔案 | 用途 | 誰寫入 | 誰讀取 |
 |------|------|--------|--------|
-| `artifacts/*.md` | 委派子 agent 的產出物檔案（完整閉環必建） | 各 Phase 的委派子 agent | Phase 5 Part C 驗證存在性 |
+| `artifacts/P1-design-spec.md` | Phase 1 設計規格（Sub-Agent 從此檔案直接讀取） | 主 agent（Phase 1 閘門通過後寫入） | design-reviewer、code-reviewer、verifier 自行 Read |
+| `artifacts/*.md`（其他） | 委派子 agent 的產出物檔案（完整閉環必建） | 各 Phase 的委派子 agent | Phase 5 Part C 驗證存在性；verifier 自行 Read |
 | `module-registry.md` | 模組索引：分層、API、複用資訊 | 閉環通過後登記（中型以上或用戶要求） | Phase 1 前查詢可複用功能層 |
 | `project-state.md` | 全局鳥瞰：所有模組的進度和依賴關係 | 每個模組閉環完成時更新 | 新 Session 開始時第一個讀 |
 | `modules/{name}/status.md` | 單一模組的閉環狀態和歷史 | 每次 Phase 轉換時更新 | 進入該模組閉環時讀取 |
@@ -131,7 +132,7 @@
 
 | 事件 | 動作 |
 |------|------|
-| Phase 1 完成 | 將設計規格寫入 `modules/{name}/design-spec.md` |
+| Phase 1 閘門通過 | 將設計規格寫入 `artifacts/P1-design-spec.md`（Sub-Agent 讀取用）+ `modules/{name}/design-spec.md`（持久化用） |
 | Phase 5 完成 | 將自証結果寫入 `modules/{name}/self-verify.md` |
 | 任何 Phase 轉換 | 更新 `modules/{name}/status.md`（追加歷史記錄） |
 | 模組閉環完成（自証通過） | 更新 `project-state.md`（修改該模組的進度行） |
