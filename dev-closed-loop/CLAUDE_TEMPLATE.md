@@ -39,9 +39,9 @@
 ### 2. TaskCreate 拆解（中型 + 大型必做）
 
 **大型任務 — 單模組**：建 6 個 Phase 任務 + blockedBy 鏈：
-`[P1-設計] → [P1b-設計審查] → [P2-實作] → [P3-檢核] → [P4-測試] → [P5-自証]`
+`[P1-設計] → [P1b-設計審查] → [P2-實作] → [P3-檢核] → [P4-測試] → [P5-自證]`
 
-**大型任務 — 多模組**：每個模組建 `[P1] → [P1b] → [P2] → [P3] → [P4]` 鏈，有 IF-x 依賴的模組按依賴順序執行（被依賴方先完成 P2）。所有模組完成 P4 後 → 統一 `[P5-整合自証]`（blockedBy 所有 P4）。
+**大型任務 — 多模組**：每個模組建 `[P1] → [P1b] → [P2] → [P3] → [P4]` 鏈，有 IF-x 依賴的模組按依賴順序執行（被依賴方先完成 P2）。所有模組完成 P4 後 → 統一 `[P5-整合自證]`（blockedBy 所有 P4）。
 **單模組 vs 多模組判定**：子系統共享核心狀態物件且 API 邊界不清晰 → 視為單模組；子系統有獨立狀態且透過明確介面溝通 → 視為多模組。
 
 **中型任務** — 建 6 個任務 + blockedBy 鏈：
@@ -243,7 +243,7 @@
 **⛔ 斷點 B**：失敗 → 程式碼 bug：TaskUpdate P2 回 `in_progress`（activeForm: `"修正測試失敗..."`）+ P3/P4 回 `pending`（重跑 3+4）| 測試設計問題：P4 原地修正。
 **學習日誌**（斷點觸發時）：失敗根因記錄到 `.claude-loop/learning-log.md`，標題標記 `[tester]`（問題→原因→教訓）。
 
-### Phase 5：自証師 ✅
+### Phase 5：自證師 ✅
 
 **語言指南**：若已部署，先讀 Phase 5 段落。
 **Part AB — 雙向追溯**：讀取 `.claudedocs/agents/verifier.md`，按其「調用方式」啟動獨立子 agent。
@@ -336,7 +336,7 @@
 
 ## 工作規範
 
-- **Git**：自証通過後 commit（message 帶自証摘要）| 風險修改前先 commit | 大功能用分支 | 斷點觸發時先 commit 標 `[斷點X]`
+- **Git**：自證通過後 commit（message 帶自證摘要）| 風險修改前先 commit | 大功能用分支 | 斷點觸發時先 commit 標 `[斷點X]`
 - **品質**：跟專案慣例 | `[testable]` BC-x/EH-x 100% 自動化測試覆蓋 | 外部輸入必驗證 | 敏感資料不寫死
 - **文檔**：放 `.claudedocs/`、白話文、修訂不新增、專業眼光不討好
 - **問題追蹤**：Bug 和踩坑記到 `.claudedocs/records/問題追蹤.md`
@@ -360,7 +360,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）、Agent 專家庫（9 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.21.0
+closed-loop v5.21.1
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄

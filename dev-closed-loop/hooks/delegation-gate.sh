@@ -52,7 +52,7 @@ RESET='\033[0m'
 # ═══════════════════════════════════════════
 # 2. 排除唯讀型委派（優先判定，直接放行）
 # ═══════════════════════════════════════════
-if echo "$PROMPT" | grep -qiE '設計審查|品質檢核|安全檢核|追溯檢查|design.review|quality.review|security.review|traceability|獨立設計審查者|獨立品質檢核師|獨立安全檢核師|自証審查者'; then
+if echo "$PROMPT" | grep -qiE '設計審查|品質檢核|安全檢核|追溯檢查|design.review|quality.review|security.review|traceability|獨立設計審查者|獨立品質檢核師|獨立安全檢核師|自證審查者'; then
   exit 0
 fi
 

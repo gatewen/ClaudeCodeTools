@@ -304,11 +304,11 @@ service := NewUserService(repo)
 
 ---
 
-## Phase 5：自証師補充 ✅
+## Phase 5：自證師補充 ✅
 
 ### 驗證指令
 
-Phase 5 自証時依序執行：
+Phase 5 自證時依序執行：
 
 ```bash
 # 1. 靜態分析（驗程式碼品質）

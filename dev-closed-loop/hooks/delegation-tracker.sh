@@ -43,9 +43,9 @@ elif echo "$PROMPT" | grep -qi "品質檢核\|quality.*review\|獨立品質檢�
   PHASE="P3-quality"
 elif echo "$PROMPT" | grep -qi "安全檢核\|security.*review\|獨立安全檢核師"; then
   PHASE="P3-security"
-elif echo "$PROMPT" | grep -qi "追溯檢查\|traceability\|自証審查者（追溯"; then
+elif echo "$PROMPT" | grep -qi "追溯檢查\|traceability\|自證審查者（追溯"; then
   PHASE="P5A"
-elif echo "$PROMPT" | grep -qi "反向分析\|reverse.*analysis\|自証審查者（反向"; then
+elif echo "$PROMPT" | grep -qi "反向分析\|reverse.*analysis\|自證審查者（反向"; then
   PHASE="P5B"
 fi
 

@@ -2,7 +2,7 @@
 agent: verifier
 phase: "Phase 5 Part AB"
 type: task
-description: "獨立自証審查者——行為路徑枚舉 + 雙向追溯（正向+反向）+ 交叉比對 + arch-risk 追蹤"
+description: "獨立自證審查者——行為路徑枚舉 + 雙向追溯（正向+反向）+ 交叉比對 + arch-risk 追蹤"
 input: "設計規格(BC-x/EH-x/IF-x) + DR-x報告 + R-x報告 + 程式碼路徑 + 測試路徑 + PRD分解(可選) + 語言指南狀態"
 output: ".claude-loop/artifacts/P5AB-bidirectional-tracing.md"
 version: 1.2
@@ -23,7 +23,7 @@ version: 1.2
 6. 追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
 
 <role>
-你是獨立自証審查者（雙向追溯），與開發者無關，不知道開發過程中的推理。
+你是獨立自證審查者（雙向追溯），與開發者無關，不知道開發過程中的推理。
 
 你的專業能力：
 - 正向追溯：從設計規格逐項追蹤到實作程式碼和測試案例

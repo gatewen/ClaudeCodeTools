@@ -93,7 +93,7 @@ Phase 3 同時啟動：
 
 **絕對不能省**：用 Bash 實際執行測試。「寫了測試」跟「測試通過」是兩回事。
 
-### Phase 5：自証師 ✅（`verifier.md` · task + 主 agent 彙整）
+### Phase 5：自證師 ✅（`verifier.md` · task + 主 agent 彙整）
 
 分兩段：
 - **Part AB**：讀取 `verifier.md` 啟動 Task agent，執行 10 步驟雙向追溯（行為路徑枚舉+正向+反向+交叉比對+arch-risk 追蹤）
@@ -123,7 +123,7 @@ inline agent 在對話中執行，自動看到前面 Phase 的產出物。task a
 
 claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 
-- `.claude-loop/` 存的是「產出物」（設計規格、自証結果）
+- `.claude-loop/` 存的是「產出物」（設計規格、自證結果）
 - claude-mem 存的是「經驗」（架構決策理由、踩坑教訓、慣例約定）
 
 **在閉環中的使用時機**：
@@ -202,9 +202,9 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 | `frontend-testing` | Vitest + React Testing Library 測試生成 | 前端專用 |
 | `test-generation` | 自動生成測試案例 | 通用測試生成 |
 
-#### Phase 5：自証師
+#### Phase 5：自證師
 
-目前沒有直接對應的社群 Skill。自証（跨產出物一致性驗證）是本閉環系統的獨有概念。CLAUDE.md 裡的自証檢查表就是為這個目的設計的。
+目前沒有直接對應的社群 Skill。自證（跨產出物一致性驗證）是本閉環系統的獨有概念。CLAUDE.md 裡的自證檢查表就是為這個目的設計的。
 
 ### 安全注意事項
 

@@ -36,7 +36,7 @@
 │   ├── user/
 │   │   ├── status.md             # 模組閉環狀態與歷史
 │   │   ├── design-spec.md        # Phase 1 設計規格
-│   │   └── self-verify.md        # Phase 5 自証結果
+│   │   └── self-verify.md        # Phase 5 自證結果
 │   ├── auth/
 │   │   ├── status.md
 │   │   ├── design-spec.md
@@ -63,7 +63,7 @@
 | `project-state.md` | 全局鳥瞰：所有模組的進度和依賴關係 | 每個模組閉環完成時更新 | 新 Session 開始時第一個讀 |
 | `modules/{name}/status.md` | 單一模組的閉環狀態和歷史 | 每次 Phase 轉換時更新 | 進入該模組閉環時讀取 |
 | `modules/{name}/design-spec.md` | Phase 1 的設計規格 | Phase 1 完成時寫入 | Phase 2-5 引用、依賴模組讀取 |
-| `modules/{name}/self-verify.md` | Phase 5 的自証結果 | Phase 5 完成時寫入 | 依賴模組確認前置模組已通過 |
+| `modules/{name}/self-verify.md` | Phase 5 的自證結果 | Phase 5 完成時寫入 | 依賴模組確認前置模組已通過 |
 | `interfaces/IF-{n}.md` | 跨模組公開 API 的介面契約 | Phase 1 定義跨模組 API 時寫入 | 消費模組的 Phase 1 引用、Phase 5 驗證 |
 | `changes/CR-{n}.md` | 介面變更的連鎖影響記錄 | 模組修改了 IF-x 介面時建立 | 受影響模組閉環恢復時讀取 |
 
@@ -121,8 +121,8 @@
 
 ### modules/{name}/self-verify.md
 
-直接沿用 CLAUDE.md「產出物格式」章節中的**自証結果（Phase 5 產出）**格式。
-即以 `## ✅ 自証結果` 開頭，包含四個維度的比對結果和判定。
+直接沿用 CLAUDE.md「產出物格式」章節中的**自證結果（Phase 5 產出）**格式。
+即以 `## ✅ 自證結果` 開頭，包含四個維度的比對結果和判定。
 
 ---
 
@@ -133,9 +133,9 @@
 | 事件 | 動作 |
 |------|------|
 | Phase 1 閘門通過 | 將設計規格寫入 `artifacts/P1-design-spec.md`（Sub-Agent 讀取用）+ `modules/{name}/design-spec.md`（持久化用） |
-| Phase 5 完成 | 將自証結果寫入 `modules/{name}/self-verify.md` |
+| Phase 5 完成 | 將自證結果寫入 `modules/{name}/self-verify.md` |
 | 任何 Phase 轉換 | 更新 `modules/{name}/status.md`（追加歷史記錄） |
-| 模組閉環完成（自証通過） | 更新 `project-state.md`（修改該模組的進度行） |
+| 模組閉環完成（自證通過） | 更新 `project-state.md`（修改該模組的進度行） |
 | 閉環通過（中型以上或用戶要求） | 將模組資訊登記/更新到 `module-registry.md` |
 
 ### 讀取時機
@@ -145,7 +145,7 @@
 | 新 Session 開始 | 先讀 `project-state.md` 了解全局狀態 |
 | Phase 1 前（模組資產查詢） | 讀取 `module-registry.md` 查詢可複用功能層（檔案存在時） |
 | 進入模組閉環 | 讀取該模組的 `status.md` 恢復斷點；讀取依賴模組的 `design-spec.md` 和 `self-verify.md` |
-| Phase 5 自証 | 從 `design-spec.md` 讀取設計規格做比對（不依賴對話記憶） |
+| Phase 5 自證 | 從 `design-spec.md` 讀取設計規格做比對（不依賴對話記憶） |
 
 ### 操作範例：三模組專案
 
@@ -186,14 +186,14 @@
 
 ## 語義記憶層（claude-mem · 可選）
 
-`.claude-loop/` 解決的是結構化狀態的跨 Session 持久化——設計規格、自証結果、模組進度。
+`.claude-loop/` 解決的是結構化狀態的跨 Session 持久化——設計規格、自證結果、模組進度。
 但有些知識不適合用結構化檔案保存：架構決策的「為什麼」、踩坑的教訓、專案慣例的演變。
 
 claude-mem 是一個 Claude Code MCP 插件，提供語義搜尋的長期記憶。兩者的分工：
 
 | | .claude-loop/ | claude-mem |
 |---|---|---|
-| 存什麼 | 結構化產出物（設計規格、自証結果、模組狀態） | 語義化經驗（決策理由、教訓、慣例） |
+| 存什麼 | 結構化產出物（設計規格、自證結果、模組狀態） | 語義化經驗（決策理由、教訓、慣例） |
 | 什麼時候寫 | Phase 轉換時 | Phase 5 通過後、斷點回退時 |
 | 什麼時候讀 | 新 Session 恢復閉環時 | Phase 1 開始前查詢歷史 |
 | 生命週期 | 隨任務結束可清理 | 跨任務永久保留 |
