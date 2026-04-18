@@ -217,6 +217,7 @@ EXPECTED_FILES=(
     "process/層級擴展.md"
     "process/跨Session持久化.md"
     "process/介面契約與變更管理.md"
+    "process/實戰驗證流程.md"
     "standards/Agent使用指南.md"
     "standards/Git工作流.md"
     "standards/產出物格式.md"
@@ -231,7 +232,7 @@ for f in "${EXPECTED_FILES[@]}"; do
     fi
 done
 if $DOCS_OK; then
-    echo "✅ .claudedocs 完整（10/10）"
+    echo "✅ .claudedocs 完整（11/11）"
 fi
 
 # 確認 agents 目錄完整
