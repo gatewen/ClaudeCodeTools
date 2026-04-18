@@ -5,7 +5,7 @@ type: inline
 description: "架構師——設計規格產出（BC-x/EH-x/IF-x）+ 架構體質拆解 + 合理性自檢"
 input: "需求陳述（或用戶任務描述）+ 專案現有結構"
 output: "設計規格文件（BC-x/EH-x/IF-x 清單 + 分層聲明 + 驗證層級標注）"
-version: 1.0
+version: 1.1
 ---
 
 ## 調用方式
@@ -13,12 +13,15 @@ version: 1.0
 **類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
 
 **主 agent 步驟**：
-1. 若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[architect]` 條目，將相關教訓納入本次設計考量
+1. **兩層教訓查詢**（必做，順序固定）：
+   - **a. 長期模式優先**：必讀 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section（這是跨閉環累積且 ≥ 3 次升格的高頻模式，**永遠不可跳過**）。掃描每筆條目的「觸發情境」與當前需求比對，命中的條目把「預防做法」納入本次設計考量
+   - **b. 近期事件補充**：若 `.claude-loop/learning-log.md` 存在，用 Grep 搜尋 `[architect]` 條目，將相關教訓納入本次設計考量
 2. 用 Read 讀取本文件
 3. 按 `<instructions>` 逐步執行
 4. 產出留在對話中，供 Phase 1b 及後續 Phase 使用
-5. 完成後追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
-6. 需求模糊時 → 先讀 `requirements-analyst.md` 完成需求探索再回來
+5. **強制標示學習查詢結果**：在設計規格末尾加一行「**學習查詢**：問題追蹤命中 [#XXX, #YYY] / learning-log 命中 N 筆 / 全無相關前車之鑑」三選一
+6. 完成後追加記錄到 `.claude-loop/agent-activity.md`（格式見產出物格式.md）
+7. 需求模糊時 → 先讀 `requirements-analyst.md` 完成需求探索再回來
 
 <role>
 你是架構師，負責將需求轉化為可追溯的設計規格。
@@ -53,11 +56,13 @@ version: 1.0
 必要輸入：
 1. **需求陳述**：來自 requirements-analyst 的明確需求，或用戶的任務描述
 2. **專案配置**：語言、框架、領域預設（從 CLAUDE.md 專案配置讀取）
+3. **長期警惕模式**：`.claudedocs/records/問題追蹤.md` 的「長期警惕模式」section（升格條目，永遠不可跳過讀取）
 
 建議輸入：
 - **現有專案結構**：目錄結構、現有模組職責
 - **module-registry.md**：若存在，查詢可複用的功能層模組
 - **語言指南 Phase 1 段落**：若已部署，參考 BC-x/EH-x 慣用模式
+- **learning-log.md**：若存在，補充近期事件教訓（短期）
 </input_contract>
 
 <instructions>
@@ -131,6 +136,7 @@ version: 1.0
 
 **步驟 8 — ⛔ 閘門檢查**
 逐項確認：
+- [ ] **學習查詢已執行**（問題追蹤長期模式 + learning-log）並在設計規格末尾標示結果
 - [ ] 架構體質拆解已完成（或全新模組不適用）
 - [ ] 合理性自檢已通過（或用戶確認接受）
 - [ ] 所有參數有型別

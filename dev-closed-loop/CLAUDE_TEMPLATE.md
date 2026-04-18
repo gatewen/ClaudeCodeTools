@@ -105,19 +105,37 @@
 - 有可複用功能層 → Phase 1 設計規格標注「複用 [模組名] 功能層」，只設計新增功能或 UI 層
 - 無可複用 → 正常設計，但在分層聲明中考慮未來複用性
 
-### 6c. 學習日誌查詢（Phase 1 前 · 條件式）
+### 6c. 兩層教訓查詢（Phase 1 前）
 
-`.claude-loop/learning-log.md` 存在時讀取，不存在則跳過。
-掃描歷次閉環的教訓記錄，找出與當前需求相關的失敗根因和誤判模式。在畫面輸出：
+兩層架構分工：**長期警惕模式**（跨閉環，問題追蹤.md）+ **learning-log**（session 內，per-閉環）。Phase 1 起手式按以下順序查詢：
+
+#### 6c-1 長期警惕模式（**必讀，永遠不可跳過**）
+
+讀取 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section。這是累積 ≥ 3 次升格的高頻模式，每次 Phase 1 必過。掃描每筆條目的「觸發情境」與當前需求比對，命中的條目把「預防做法」納入本次設計考量。在畫面輸出：
+
+```
+🛡️ [長期警惕模式] {N} 筆已升格條目
+├─ 命中條目：{#XXX [模式名] - 預防做法}
+└─ 無命中：{已掃 N 筆，無相關前車之鑑}
+```
+
+#### 6c-2 learning-log 補充（條件式）
+
+`.claude-loop/learning-log.md` 存在時讀取，不存在則跳過。掃描近期事件條目，找出與當前需求相關的失敗根因和誤判模式。在畫面輸出：
 
 ```
 📚 [學習日誌] {N} 筆記錄
-├─ 相關教訓：{與當前需求相關的歷史失敗根因}
-└─ 高頻問題：{出現 ≥ 3 次的問題類型}
+├─ 相關教訓：{與當前需求相關的近期失敗根因}
+└─ 高頻問題：{出現 ≥ 3 次但未升格的問題類型 → 提示 Phase 5 升格時應確認}
 ```
 
 - 有相關教訓 → Phase 1 設計時主動考慮（例如：歷史上 resource cleanup 常遺漏 → 本次設計 EH-x 時特別標注 cleanup）
 - 條目 ≥ 5 且未做過模式分析 → 提示用戶，同意後執行（格式見產出物格式.md）
+
+#### 6c-3 強制標示
+
+設計規格末尾必須附一行學習查詢結果：
+- 「**學習查詢**：問題追蹤命中 [#XXX, #YYY] / learning-log 命中 N 筆 / 全無相關前車之鑑」三選一
 
 ### 7. 子 agent 失敗處理（全域規則）
 
@@ -255,8 +273,12 @@
 **回退規則**：設計-實作不一致→P2（嚴重→P1）| 測試不足→P4 | 檢核未修→P2 | DR-x high 未修→P1 | 產出物缺漏→對應 Phase
 **通過後**：
 1. 學習日誌 → `.claude-loop/learning-log.md`（格式見產出物格式.md）
-2. commit（learning-log 包含在內）
-3. 模組登記（中型以上或用戶要求）
+2. **升格檢查**（兩層教訓架構）：讀 P5AB 報告的「升格候選」section
+   - 有候選 → 對每個候選用 AskUserQuestion 確認 → 用戶選是 → 寫入 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section + Edit learning-log 對應條目加註「→ 已升格 問題追蹤#XXX」/ 用戶選否 → Edit learning-log 對應條目加註「[已評估不升格 - YYYY-MM-DD]」（避免下次重複問）
+   - 無候選 → 跳過（learning-log 條目未達 ≥ 3 次門檻）
+   - 流程細節見產出物格式.md「長期警惕模式」section
+3. commit（learning-log + 問題追蹤更新一併包含）
+4. 模組登記（中型以上或用戶要求）
 
 ---
 
@@ -287,8 +309,14 @@
 
 **迷你追溯通過後**：
 1. 學習日誌 → 追加本次閉環完整條目到 `.claude-loop/learning-log.md`，格式見產出物格式.md
-2. commit（learning-log 變更包含在內）
-3. 模組登記（用戶要求時）→ 格式見「模組登記格式」section
+2. **升格檢查**（主 agent 自做，無 verifier sub-agent — 跟完整閉環 Phase 5 的分工差異）：
+   - 讀 `.claude-loop/learning-log.md` 全部條目，按「原因」段關鍵字分組計數
+   - 比對 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section，找出未升格且 ≥ 3 次的根因
+   - 有候選 → 對每個候選用 AskUserQuestion 確認 → 用戶選是 → 寫入問題追蹤.md「長期警惕模式」+ Edit learning-log 對應條目加註「→ 已升格 #XXX」/ 用戶選否 → Edit learning-log 加註「[已評估不升格 - YYYY-MM-DD]」
+   - 無候選 → 一行說明「無升格候選（最高頻根因 N 次未達 3 次門檻）」
+   - 流程細節見產出物格式.md「長期警惕模式」section
+3. commit（learning-log + 問題追蹤更新一併包含）
+4. 模組登記（用戶要求時）→ 格式見「模組登記格式」section
 
 ---
 
@@ -339,8 +367,9 @@
 - **Git**：自證通過後 commit（message 帶自證摘要）| 風險修改前先 commit | 大功能用分支 | 斷點觸發時先 commit 標 `[斷點X]`
 - **品質**：跟專案慣例 | `[testable]` BC-x/EH-x 100% 自動化測試覆蓋 | 外部輸入必驗證 | 敏感資料不寫死
 - **文檔**：放 `.claudedocs/`、白話文、修訂不新增、專業眼光不討好
-- **問題追蹤**：Bug 和踩坑記到 `.claudedocs/records/問題追蹤.md`
-- **驗證紀錄**：閉環驗證結果記到 `.claudedocs/records/問題追蹤.md`
+- **問題追蹤**：兩層教訓架構（見 `.claudedocs/records/問題追蹤.md`）：
+  - 「長期警惕模式」section：跨閉環高頻模式，由 Phase 5 verifier 升格機制（≥ 3 次 + 用戶確認）寫入，architect Phase 1 必讀
+  - 「單一 incident 記錄」section：一次性 Bug 或踩坑事件，用戶或 agent 主動記錄
 
 ## 參考文檔
 
@@ -360,7 +389,7 @@
 `.claudedocs/` 目錄含核心文檔（10 份）、Agent 專家庫（9 份）和語言指南（按偵測結果部署）。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v5.21.1
+closed-loop v5.22.1
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄

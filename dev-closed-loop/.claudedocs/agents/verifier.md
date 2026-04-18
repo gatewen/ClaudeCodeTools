@@ -5,7 +5,7 @@ type: task
 description: "獨立自證審查者——行為路徑枚舉 + 雙向追溯（正向+反向）+ 交叉比對 + arch-risk 追蹤"
 input: "設計規格(BC-x/EH-x/IF-x) + DR-x報告 + R-x報告 + 程式碼路徑 + 測試路徑 + PRD分解(可選) + 語言指南狀態"
 output: ".claude-loop/artifacts/P5AB-bidirectional-tracing.md"
-version: 1.2
+version: 1.3
 ---
 
 ## 調用方式
@@ -65,6 +65,10 @@ version: 1.2
 - **PRD 分解表** → 由主 agent 提供在路徑清單中（若有）
 - **語言指南部署狀態** → 由主 agent 提供在路徑清單中（若已部署）
 - **相關教訓** → 由主 agent 提供在路徑清單中（Grep 搜尋結果）
+
+升格機制必要輸入（步驟 9b 用）：
+- **learning-log.md** → 路徑：`.claude-loop/learning-log.md`（你用 Read 自行讀取，不存在則步驟 9b 回報「無學習日誌」並跳過）
+- **問題追蹤.md** → 路徑：`.claudedocs/records/問題追蹤.md`（你用 Read 自行讀取「長期警惕模式」section，比對已升格條目）
 
 ⛔ 路徑完整性校驗：主 agent 提供的路徑清單必須包含以上所有「路徑」項（設計規格 + DR-x + R-x 品質 + R-x 安全 + 程式碼 + 測試，跳過項須標記）。缺少任一路徑且未標記跳過 → 回報主 agent，不可自行推斷缺失內容。
 </input_contract>
@@ -137,8 +141,23 @@ version: 1.2
 - 仍存在 → ⚠️ + 當前狀態描述
 - 惡化 → ❌ + 惡化原因
 
+**步驟 9b — 升格候選掃描（兩層教訓架構支撐）**
+
+掃描 `.claude-loop/learning-log.md` 與 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section，找出**未升格且累積 ≥ 3 次**的高頻根因。
+
+執行步驟：
+1. **讀取兩份檔案**：`.claude-loop/learning-log.md`（不存在則本步驟回報「無學習日誌」並跳過）與 `.claudedocs/records/問題追蹤.md`
+2. **根因聚類**：以 learning-log 各事件條目「原因」段的核心關鍵字（語意相同的視為同類）做分組
+3. **比對已升格條目**：問題追蹤.md「長期警惕模式」section 的每個 #XXX 條目對應一個已升格根因，比對 learning-log 分組是否已涵蓋
+4. **找候選**：未升格且分組計數 ≥ 3 的根因即為升格候選
+5. **產出候選描述**：每個候選需附 4 個欄位草稿（觸發情境 / 預防做法 / 檢測信號 / 歷史證據），供主 agent 在 Part C 與用戶確認
+
+無候選時須在報告中明確寫「無升格候選（learning-log N 筆，最高頻根因 M 次未達 3 次門檻）」。
+
+**重要**：本步驟只負責「掃描+草稿」，**不寫入 問題追蹤.md**。實際升格寫入由主 agent 在 Part C（用戶確認後）執行——本 agent 為唯讀，不可直接寫入除追溯報告外的任何檔案。
+
 **步驟 10 — 撰寫報告**
-按 output_format 彙整所有結果，寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
+按 output_format 彙整所有結果（含步驟 9b 的升格候選 section），寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
 </instructions>
 
 <output_format>
@@ -194,10 +213,28 @@ version: 1.2
 |------|-----|------|---------|
 | Phase 1b | DR-3 | [描述] | ✅ 已緩解 / ⚠️ 仍存在 / ❌ 惡化 |
 
+## 升格候選（步驟 9b 產出，主 agent 在 Part C 處理）
+
+無候選時寫：「無升格候選（learning-log N 筆，最高頻根因 M 次未達 3 次門檻）」或「無學習日誌」。
+
+### 候選 #1
+- **根因類型**：[一句話描述]
+- **累積次數**：N（≥ 3）
+- **learning-log 條目**：
+  - [YYYY-MM-DD HH:MM] [tag] [事件描述]
+  - [YYYY-MM-DD HH:MM] [tag] [事件描述]
+  - ...
+- **建議模式（草稿，待用戶確認後升格）**：
+  - 觸發情境：[何時容易發生]
+  - 預防做法：[Phase 1 設計時要做什麼]
+  - 檢測信號：[Phase 3/5 審查時要看什麼]
+  - 歷史證據：[N 筆 learning-log 時間戳]
+
 ## 總結
 - 正向追溯：X/Y 項通過（Z%）
 - 反向分析：X 條未覆蓋路徑
 - arch-risk：X 項已緩解，Y 項仍存在
+- 升格候選：N 個（≥ 3 次未升格根因）
 - 總體判定：✅ 通過 / ❌ 不通過 + [回退建議]
 ```
 

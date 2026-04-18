@@ -96,7 +96,7 @@ Phase 3 同時啟動：
 ### Phase 5：自證師 ✅（`verifier.md` · task + 主 agent 彙整）
 
 分兩段：
-- **Part AB**：讀取 `verifier.md` 啟動 Task agent，執行 10 步驟雙向追溯（行為路徑枚舉+正向+反向+交叉比對+arch-risk 追蹤）
+- **Part AB**：讀取 `verifier.md` 啟動 Task agent，執行 10 步驟雙向追溯（行為路徑枚舉+正向+反向+交叉比對+arch-risk 追蹤+步驟 9b 升格候選掃描）
 - **Part C**：主 agent 彙整 Part AB 結果 + 委派產出物驗證 + 全專案回歸測試
 
 **為什麼 Part AB 用 Task agent？**

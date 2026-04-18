@@ -134,6 +134,8 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| v5.22.1 | 升格機制覆蓋擴大——design-reviewer 步驟 5b 學習查詢執行檢查（補閉環獨立性漏洞）+ 精簡閉環迷你追溯加入升格檢查（主 agent 自做，補日常 80-90% 工作的累積落差） |
+| v5.22.0 | 兩層教訓架構——`learning-log.md` 短期工作記憶 + `問題追蹤.md` 長期警惕模式 + 升格機制（同類根因 ≥ 3 次 + Phase 5 verifier 偵測候選 + 主 agent AskUserQuestion 確認 + 升格寫入並標記）+ architect Phase 1 必讀長期模式 + reel_core 案兩條種子條目 |
 | v5.21.1 | 術語修正——「自証」→「自證」（繁中正寫），跨 23 個活檔案統一替換 105 處（design/ 設計歷史保留原始術語作為時間快照） |
 | v5.21.0 | 防轉述遺漏——設計規格持久化為 `P1-design-spec.md`（必須）+ 4 個 task agent 改為路徑模式（Sub-Agent 直接 Read 原始產出物，主 agent 不轉述） + input_contract 每項標明讀取方式 + 路徑完整性校驗 |
 | v5.20.0 | 反偷懶三措施——因果鏈呼叫者逐條展開 + Phase 5 行為路徑枚舉前置 + 跨 Phase 一致性驗證 |
