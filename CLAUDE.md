@@ -64,6 +64,8 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 | CLAUDE_TEMPLATE.md — 層級擴展 / 模組層級 | `.claudedocs/process/層級擴展.md` |
 | CLAUDE_TEMPLATE.md — 結構變更（section / placeholder 增刪） | `dev-closed-loop/skill/init-claude.md` |
 | CLAUDE_TEMPLATE.md — 語言指南引用方式 | `.claudedocs/languages/*.md` |
+| CLAUDE_TEMPLATE.md — 認知驗證層 / Section 12-13 | `.claudedocs/agents/architect.md`（Step 0a/0b）· `.claudedocs/agents/design-reviewer.md`（Step 5c）· `.claudedocs/agents/verifier.md`（Step 9c）· `.claudedocs/concepts/閉環核心理念.md`（認知驗證 concept）· `.claudedocs/standards/產出物格式.md`（事實主張閘門格式）· `.claudedocs/records/問題追蹤.md`（#003-#005 認知性種子） |
+| `.claudedocs/agents/*.md` — agent 步驟 / 閘門 / severity 變更 | CLAUDE_TEMPLATE.md 對應 Phase 描述 · `.claudedocs/process/五階段閉環流程.md` · `.claudedocs/standards/Agent使用指南.md`（若調用方式變動） |
 | `.claudedocs/` — 檔案增刪 | `setup.sh`（驗證清單）· `.claudedocs/README.md` |
 | Hook 腳本增刪或行為變更 | `deploy-hooks.sh`（部署邏輯）· `init-claude.md`（Step 4b） |
 | 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 |

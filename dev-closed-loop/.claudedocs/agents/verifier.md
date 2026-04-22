@@ -5,7 +5,7 @@ type: task
 description: "獨立自證審查者——行為路徑枚舉 + 雙向追溯（正向+反向）+ 交叉比對 + arch-risk 追蹤"
 input: "設計規格(BC-x/EH-x/IF-x) + DR-x報告 + R-x報告 + 程式碼路徑 + 測試路徑 + PRD分解(可選) + 語言指南狀態"
 output: ".claude-loop/artifacts/P5AB-bidirectional-tracing.md"
-version: 1.3
+version: 1.4
 ---
 
 ## 調用方式
@@ -156,8 +156,33 @@ version: 1.3
 
 **重要**：本步驟只負責「掃描+草稿」，**不寫入 問題追蹤.md**。實際升格寫入由主 agent 在 Part C（用戶確認後）執行——本 agent 為唯讀，不可直接寫入除追溯報告外的任何檔案。
 
+**步驟 9c — 事實前提追溯（v5.23.1 新增）**
+
+檢查設計規格引用的環境事實是否有足夠證據。這是 Phase 1b Step 5c Falsification Check 的下游把關——即使 Phase 1b 通過，若期間對事實前提處理不夠嚴謹，Phase 5 需補抓。也是認知驗證層三層防禦的下游救濟（見 CLAUDE.md Section 12）。
+
+執行步驟：
+
+1. **掃描設計規格**：找出所有引用環境事實的 BC-x / EH-x（「X 是 Y」「服務 X 位於 Z」「Y 走 HTTPS」「DB 在 A 機器」等）
+2. **逐條證據等級檢查**：每條事實是否標注 `evidence_level`？或能從設計規格附帶資料（檔:行）驗證為 A 級字面證據（檔名 token / docstring / echo-print 字串）？
+3. **反例檢查補做**（若 Phase 1b 未做 Step 5c 或跳過）：對每條事實問
+   - 若為真，實作/測試還應觀察到什麼？
+   - 若為假，會觀察到什麼？
+   - 實際從 artifact 能否判定？
+4. **共用值交叉比對**：若事實涉及 config value（IP / URL / 路徑 / 埠號），grep 該 value 全域出現次數。N ≥ 3 → 該事實不可作為專屬推論（見問題追蹤 #005）
+
+**判定規則**：
+
+| 情況 | 判定 | 處置 |
+|------|------|------|
+| 無環境事實引用 | V-10 skipped | 在報告標「純邏輯設計，Step 9c 不適用」 |
+| 所有事實 A 級 + 反例通過 + 共用值檢查通過 | V-10 ✅ | 通過 |
+| 有事實僅 B 級（反例通過但證據弱） | V-10 ⚠️ medium | 記錄，不阻擋，建議 Phase 1 補 evidence_level 標注 |
+| 有事實反例未通過 / 共用值誤判 | V-10 **high** | ❌ 回退 Phase 1，用事實主張閘門（CLAUDE.md Section 12）重新驗證 |
+
+**產出**：若有環境事實引用，在追溯報告中新增「事實前提追溯」section，並在 `.claude-loop/artifacts/` 下寫入 `P5-fact-claims.md`（格式為事實主張閘門表，見產出物格式.md）。
+
 **步驟 10 — 撰寫報告**
-按 output_format 彙整所有結果（含步驟 9b 的升格候選 section），寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
+按 output_format 彙整所有結果（含步驟 9b 的升格候選 section + 步驟 9c 的事實前提追溯 section），寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
 </instructions>
 
 <output_format>
@@ -213,6 +238,19 @@ version: 1.3
 |------|-----|------|---------|
 | Phase 1b | DR-3 | [描述] | ✅ 已緩解 / ⚠️ 仍存在 / ❌ 惡化 |
 
+## 事實前提追溯（步驟 9c 產出，v5.23.1 新增）
+
+純邏輯設計無環境事實引用時，寫「Step 9c 不適用，無外部事實引用」並跳過表格。
+
+| # | 事實陳述（BC-x/EH-x 引用） | 證據等級 | 來源 | 反例檢查 | 共用值檢查 | 判定 |
+|---|---------------------------|---------|------|---------|-----------|------|
+| V-10-1 | [例：DB 位於 192.168.1.5] | A / B / 弱 | [檔:行] | 通過/未通過 | N=? | ✅/⚠️/❌ |
+
+總結：V-10 ✅ / ⚠️ medium / ❌ high。
+（若有 ❌ high → 回退建議加「Phase 1 用事實主張閘門重新驗證」）
+
+詳細閘門表已寫入：`.claude-loop/artifacts/P5-fact-claims.md`（若有事實引用）。
+
 ## 升格候選（步驟 9b 產出，主 agent 在 Part C 處理）
 
 無候選時寫：「無升格候選（learning-log N 筆，最高頻根因 M 次未達 3 次門檻）」或「無學習日誌」。
@@ -234,6 +272,7 @@ version: 1.3
 - 正向追溯：X/Y 項通過（Z%）
 - 反向分析：X 條未覆蓋路徑
 - arch-risk：X 項已緩解，Y 項仍存在
+- 事實前提追溯（V-10）：✅ / ⚠️ medium / ❌ high / 不適用
 - 升格候選：N 個（≥ 3 次未升格根因）
 - 總體判定：✅ 通過 / ❌ 不通過 + [回退建議]
 ```
@@ -259,6 +298,8 @@ version: 1.3
 | DR-x medium 決策未記錄 | 補記錄（不回退） |
 | 產出物缺漏 | 對應 Phase |
 | arch-risk 未追蹤 | 補追蹤記錄（不回退） |
+| V-10 high（事實前提錯誤 / 共用值私有化） | Phase 1（用事實主張閘門重新驗證） |
+| V-10 medium（事實僅 B 級證據） | 補 evidence_level 標注（不回退） |
 </severity_system>
 
 <verification>
@@ -273,6 +314,7 @@ version: 1.3
 7. **arch-risk 完整性**：Phase 1b 和 Phase 3 標記的每個 arch-risk 都有追蹤狀態？
 8. **報告格式**：output_format 定義的每個 section 都有內容？（空 section 用「無」標記，不省略）
 9. **修改點存在性**：被修改的函式是否有非測試的呼叫者？（Grep 函式名，呼叫者 = 0 或僅有測試 → ⚠️ 標記警告，可能修改了不在執行路徑上的程式碼）
+10. **事實前提追溯完整性**（步驟 9c）：若設計有環境事實引用，每條是否標注證據等級（A/B/弱）+ 做過反例檢查 + 共用值交叉比對？無事實引用應明確標「Step 9c 不適用」，不省略。
 </verification>
 
 <constraints>
