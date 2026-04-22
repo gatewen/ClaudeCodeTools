@@ -95,6 +95,7 @@
 
 | 版本 | 重點 |
 |------|------|
+| v5.22.3 | 認知驗證層 P0——architect Step 0a 字面證據掃描（檔名 token + docstring + echo/print 字串，A 級優先於推論）+ Step 0b 共用值檢測（N≥3 強烈共用訊號，防止把共用資源私有化推論）+ 問題追蹤 3 條認知性種子條目（#003 單線索→事實 / #004 忽視字面證據 / #005 共用值私有化）+ learning-log 新增 `[事實誤判]` 事件類型。**P1/P2 待補**：事實主張閘門 + 質疑熔斷協議 + Phase 5 事實前提追溯。源起於 GS 誤判事件（2026-04-22 外部經驗反思） |
 | v5.22.2 | 為實戰驗證建立證據面——learning-log 事件條目新增 `failure_type` 4 類欄位（process_failure / judgment_failure / verification_failure / tooling_failure，按因果順序排列）+ 模式分析格式增加 failure_type 分布表（哪類佔比高決定下一版優化方向）+ 新增 `process/實戰驗證流程.md` retrospective 模板（含主觀規則疲勞調查欄）。**純工具升級，不動任何 phase 規則行為**——目的是讓下一版方法論升級從直覺驅動轉為證據驅動 |
 | v5.22.1 | 升格機制覆蓋擴大——design-reviewer 步驟 5b 學習查詢執行檢查（架構獨立性原則：主 agent 自我約束的關鍵動作需獨立 reviewer 把關）+ 精簡閉環迷你追溯加入升格檢查（主 agent 自做掃描+AskUserQuestion+寫入，跟完整閉環 verifier sub-agent 分工不同；理由：日常 80-90% 為精簡閉環，learning-log 累積主要在此，不能只在完整閉環觸發升格） |
 | v5.22.0 | 兩層教訓架構——`learning-log.md` 短期工作記憶 + `問題追蹤.md` 長期警惕模式 + 升格機制（同類根因 ≥ 3 次 + Phase 5 verifier 偵測候選 + 主 agent AskUserQuestion 確認 + 升格寫入並標記）+ architect Phase 1 必讀長期模式 + reel_core 案兩條種子條目（絕對負面陳述需證據 / existence-vs-routing 框架錯置） |

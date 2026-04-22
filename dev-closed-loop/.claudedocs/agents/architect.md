@@ -66,7 +66,49 @@ version: 1.1
 </input_contract>
 
 <instructions>
-**步驟 0 — 模組資產查詢**（module-registry.md 存在時）
+**步驟 0a — 字面證據掃描（Literal Evidence Scan）**（涉及讀取 config / 未知檔案 / legacy 程式碼時必做；純功能新增且不需讀既有環境則跳過）
+
+對作者親手留下的 self-declaration 做三層掃描——**這些是作者的誠實陳述，比任何推論都強**：
+
+1. **檔名 token 語意**：檔名中含意明確的 token（例：`PypiConfig` → 跟 pypi 有關；`SaltMaster` → Salt 架構；`DbMigration` → 資料庫遷移）。檔名 token 是線索非結論，需與下列兩項交叉驗證
+2. **首段 comment / docstring**：檔案開頭的註解往往說明檔案用途
+3. **字串常數**：grep 檔內 `echo` / `print` / `log` / `panic!` / `throw` 的字串，這些是 runtime 會吐給人看的訊息，作者最誠實
+
+在畫面輸出：
+
+```
+🔬 [字面證據掃描] {檔案名}
+├─ 檔名 token：{判讀}
+├─ docstring：{首段摘要 或「無」}
+├─ 關鍵字串：{echo/print/panic 找到的線索}
+└─ 推定用途：{字面證據指向的用途}
+```
+
+**衝突裁定**：若後續觀察（如「某 workflow SSH 到這個 IP」）跟字面證據衝突，默認以字面證據為準，另一條線索降級為「待查證」。反例見 anti-pattern「忽視字面證據」。
+
+**步驟 0b — 共用值檢測（Shared-Value Scan）**（處理 config / 資料檔中的 key-value 時必做；無 config 讀取則跳過）
+
+對 config 中的 value（特別是 IP / URL / 路徑 / 埠號 / token）做全域出現次數檢查：
+
+| N | 判讀 | 行動 |
+|---|------|------|
+| 1 | entry 私有 | 可放心推論為該 entry 專屬資源 |
+| 2 | 需警覺 | 檢查兩處是否確實共用 |
+| **≥3** | **強烈共用訊號** | 傾向共用資源（pypi server / Salt Master / DNS / 監控） |
+| ≥5 | 幾乎確定共用 | 直接視為共享基礎設施，不可推論為專屬 |
+
+有 N≥3 時在畫面輸出：
+
+```
+⚠️ [共用值警訊] {value}
+├─ 出現次數：N 次
+├─ 出現位置：{檔:section 列表}
+└─ 判讀：共用資源嫌疑（非單一歸屬）
+```
+
+**反例原則**：同一 IP 同時被 N 個不同遊戲 / 模組 / 服務引用 → 數學上不可能是某一方的專屬 GS / DB / 私有機器。若設計推論與此原則衝突，推論必錯。
+
+**步驟 0c — 模組資產查詢**（module-registry.md 存在時）
 查詢可複用的功能層模組：
 - 有匹配的 → 在設計中引用現有模組，標注 IF-x
 - 無匹配的 → 標記為新模組
@@ -137,6 +179,8 @@ version: 1.1
 **步驟 8 — ⛔ 閘門檢查**
 逐項確認：
 - [ ] **學習查詢已執行**（問題追蹤長期模式 + learning-log）並在設計規格末尾標示結果
+- [ ] 字面證據掃描已執行（涉及讀取未知檔案時；否則標「不適用」）
+- [ ] 共用值檢測已執行（處理 config/資料檔時；否則標「不適用」）
 - [ ] 架構體質拆解已完成（或全新模組不適用）
 - [ ] 合理性自檢已通過（或用戶確認接受）
 - [ ] 所有參數有型別
@@ -194,6 +238,8 @@ version: 1.1
 3. **驗證層級必須標注**：每個 BC-x/EH-x 都要有 testable/visual-only/framework-dependent 標注
 4. **ID 編號連續**：BC-1, BC-2, ... 不跳號
 5. **設計文件是合約**：Phase 2 的實作者必須嚴格按此執行，用詞要精確不留歧義
+6. **字面證據優先**：檔名 token、docstring、字串常數是作者的 self-declaration，優先於任何架構推論或間接關聯
+7. **共用值不可私有化**：一個 value 出現 ≥3 次 → 判為共用資源；設計推論不可將其視為某 entry 專屬
 </constraints>
 
 <edge_cases>
@@ -226,4 +272,12 @@ BC-5：「系統應正確處理邊界情境」
 **❌ 跳過閘門**：
 「設計看起來完整了，直接進 Phase 1b 吧。」→ 沒有逐項檢查閘門。
 → 理由：閘門是品質守門員。跳過閘門等於跳過品質保證。
+
+**❌ 忽視字面證據**：
+檔名 `PypiConfig.cfg` 明寫 "Pypi"，但推論「`[pig]` entry 的 IP 是 pig_server 的 GS」。
+→ 理由：檔名是作者的 self-declaration，它說是 pypi 就是 pypi。忽視檔名用間接線索（如「workflow SSH 到這個 IP」）建構相反結論是確認偏誤。歷史教訓見問題追蹤 #C002。
+
+**❌ 共用值私有化**：
+config 中 `52.74.89.132` 同時出現在 `[pig] [phoenix] [karasu] [cube] [sphinxsg] [trout]` 6 個 entry，卻推論為「pig 遊戲的 GS」。
+→ 理由：一個 IP 不可能同時是 6 款不同遊戲的專屬 GS。共用值（N≥3）必為共用資源（pypi server / DNS / 監控）。歷史教訓見問題追蹤 #C003。
 </anti_patterns>
