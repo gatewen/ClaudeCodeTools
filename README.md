@@ -134,6 +134,9 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| v5.23.1 | 認知驗證層 P2（完整閉合）——design-reviewer 步驟 5c Falsification Check（對設計引用的環境事實做反例提問 + 證據等級檢查 + 共用值檢測，弱證據 DR-x medium / 反例未通過 DR-x high）+ verifier 步驟 9c 事實前提追溯（產出 `P5-fact-claims.md` + V-10 severity 映射）+ AI-ClaudeCode/CLAUDE.md 依賴表 2 新列。三層防禦閉合（上游 Step 0a/0b → 中游 Section 12/13 → 下游 Step 5c + 9c） |
+| v5.23.0 | 認知驗證層 P1——CLAUDE_TEMPLATE Section 12 事實主張閘門（A/B 級證據 + 反例檢查 + 共用值檢查 + 強/中/弱決策 + memory `evidence_level` frontmatter）+ Section 13 質疑熔斷協議（4 條白名單句式強制熔斷 + 5 步重審）+ 閉環核心理念新增「認知驗證」三層防禦概念 + 產出物格式新增事實主張閘門結構化表格。定位升級：從實作方法論擴展為認知 + 實作方法論，`/sc:analyze`、`/sc:troubleshoot` 類分析任務可走同一閉環 |
+| v5.22.3 | 認知驗證層 P0——architect Step 0a 字面證據掃描（檔名 token / docstring / echo-print 字串，A 級優先於推論）+ Step 0b 共用值檢測（N≥3 強烈共用訊號，防止把共用資源私有化推論）+ 問題追蹤 3 條認知性種子（#003 單線索→事實 / #004 忽視字面證據 / #005 共用值私有化）+ learning-log 新增 `[事實誤判]` 事件類型。源起於 GS 誤判事件經驗反思 |
 | v5.22.2 | 為實戰驗證建立證據面——learning-log 加 `failure_type` 4 類欄位 + 模式分析加類型分布 + 新增 `實戰驗證流程.md` retrospective 模板（含主觀規則疲勞調查）。純工具升級，不動 phase 規則，目的是讓下一版方法論升級從直覺驅動轉為證據驅動 |
 | v5.22.1 | 升格機制覆蓋擴大——design-reviewer 步驟 5b 學習查詢執行檢查（補閉環獨立性漏洞）+ 精簡閉環迷你追溯加入升格檢查（主 agent 自做，補日常 80-90% 工作的累積落差） |
 | v5.22.0 | 兩層教訓架構——`learning-log.md` 短期工作記憶 + `問題追蹤.md` 長期警惕模式 + 升格機制（同類根因 ≥ 3 次 + Phase 5 verifier 偵測候選 + 主 agent AskUserQuestion 確認 + 升格寫入並標記）+ architect Phase 1 必讀長期模式 + reel_core 案兩條種子條目 |
