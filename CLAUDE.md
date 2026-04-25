@@ -83,3 +83,49 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。
 - `languages/` 目錄的語言 Skill 遵循 Phase 1-5 結構，新增語言時保持一致格式。
+
+## 每日日誌（meta layer · 你跟 Claude 的協作脈絡）
+
+> 解決跨 session 失憶。**僅限這個 repo**，個人脈絡不進 git。
+
+### 何時寫
+
+- **達成決策時**（拍板、採用方案、確認方向）
+- **用戶糾正/反對你的時刻** + 修正後方向
+- **Session 即將結束時** 補 TL;DR header
+
+### 寫去哪
+
+`~/.claude/projects/-Users-gatewenlee-AI-ClaudeCode/memory/daily/YYYY-MM-DD.md`
+
+不存在就建立，存在就 append/edit。範本在同目錄 `_template.md`。
+
+### 寫什麼
+
+- 用戶明確要求/問題（簡短）
+- 達成的結論（拍板的事 + 為什麼）
+- 用戶糾正你的時刻 + 修正後方向
+- 為什麼選 A 不選 B 的理由
+
+### 不寫什麼
+
+- 逐字對話、內心思考
+- 中間嘗試但沒成立的猜測
+- 純資訊查詢（「這檔幾行」）
+
+### 修正格式（同檔內就地）
+
+- `~~舊結論~~`
+- `> ⚠️ [HH:MM update] 新結論：...`
+- 文末 `# 修正歷史` section 集中標記重大修正
+
+### 跨檔不追溯
+
+昨天的反悔**不去動昨天那份檔**。以最新時間的結論為準。讀取時 SessionStart hook 會自動載入最後 3 份檔名最新的日誌。
+
+### Hook 機制（自動）
+
+- **SessionStart**：自動讀取 `daily/[0-9]*.md` 中檔名最新的 3 份，注入 context
+- **Stop**：今日日誌不存在或長度 < 200 chars → exit 2 + STDERR 提醒補寫；尊重 `stop_hook_active` 防 infinite loop
+
+Hook 腳本位於 `.claude/hooks/`，註冊在 `.claude/settings.json`。整個 `.claude/` 已加入 `.gitignore`（路徑硬編使用者，不適合公開）。

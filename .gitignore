@@ -5,3 +5,6 @@
 .idea/
 .vscode/
 temp/
+
+# Per-user daily-log hook system (paths hardcoded to user)
+.claude/
