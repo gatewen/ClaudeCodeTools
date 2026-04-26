@@ -2,6 +2,10 @@
 
 讓 Claude Code 寫出更可靠的程式碼。
 
+> **定位**：個人 hardcore 修煉工具——對自己嚴格的閉環方法論，不適合直接套到團隊。給用戶的 cognitive overhead 已被任務分流屏蔽，日常 80% 工作不會被打擾（見下方「微小任務直通保護」）。
+>
+> **English version** → [README.en.md](README.en.md) · **30-min quick start** → [dev-closed-loop/QUICKSTART.md](dev-closed-loop/QUICKSTART.md)
+
 ## LLM 編碼的根本問題
 
 [Andrej Karpathy 觀察](https://x.com/karpathy/status/2015883857489522876)：
@@ -19,6 +23,20 @@
 這個工具包的核心是「開發設計閉環」——一套品質保證方法。簡單來說，每段程式碼都會經過五個角色的檢查（架構師 → 程序設計師 → 檢核師 → 測試師 → 自證師），最後由自證師確認所有產出物沒有矛盾，才算完成。
 
 裝好之後，你只要在專案目錄裡跑一行指令，Claude Code 就會自動按照這套流程工作。
+
+## 微小任務直通保護（你日常 80% 的工作不走閉環）
+
+不是每件事都會被「閉環」拖慢。系統內建三段任務分流：
+
+| 任務等級 | 條件 | Claude 怎麼做 |
+|---------|------|------------|
+| **微小** | < 50 行 / 單檔修改 / 設定調整 / 你說「快速修改」 | **直通** — 直接寫，無閉環 overhead |
+| **中型** | 1-3 檔案 / < 300 行 / 新增單一函式或元件 | 精簡六步閉環（設計 → 設計快審 → 實作 → 品質審 → 測試 → 迷你追溯） |
+| **大型** | ≥ 3 檔案 / ≥ 300 行 / 新模組或多子系統 | 完整 5-Phase 閉環（含獨立子 agent 委派） |
+
+**結果**：修個 typo / 改個 config / 補個 type hint 不會啟動閉環。閉環只在「值得保護的工作量」上 pay 成本。判定規則由 CLAUDE.md `Section 1` 定義，不靠 AI 自由心證。
+
+> 進一步了解任務分流場景 → [dev-closed-loop/QUICKSTART.md](dev-closed-loop/QUICKSTART.md)
 
 ## 安裝
 
