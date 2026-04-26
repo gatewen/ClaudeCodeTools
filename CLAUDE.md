@@ -15,12 +15,20 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 - `setup.sh` — 安裝腳本（雙模式）。支援 `curl | bash` 遠端安裝和本地 `bash setup.sh`。遠端模式從 GitHub 下載 tarball 到 `~/.claude/cache/ClaudeCodeTools/`，本地模式直接從 repo 目錄安裝。將 Skill 部署到 `~/.claude/commands/dev/init-claude.md`（對應 `/dev:init-claude` 指令），過程中把 `{{REPO_PATH}}` 替換為來源路徑。
 - `dev-closed-loop/CLAUDE_TEMPLATE.md` — 核心產物。自包含的 CLAUDE.md 模板，含完整五階段閉環方法論。內有 `{{PLACEHOLDER}}` 變數，部署到專案時由 Skill 填入實際值。
 - `dev-closed-loop/skill/init-claude.md` — Skill 源碼。定義 `/dev:init-claude` 指令（專案偵測、互動確認、模板填充部署）。
-- `dev-closed-loop/.claudedocs/` — 10 份核心文檔（concepts/process/standards/records）+ Agent 專家庫（agents/ 9 份）+ 語言指南（languages/），給人類閱讀。部署時會一併複製到目標專案。
-- `dev-closed-loop/design/` — 設計歷史（01-04）：原始構想、深度分析、落地路線圖、Skill 設計規劃。僅供參考。
+- `dev-closed-loop/.claudedocs/` — 11 份核心文檔（concepts/process/standards/records）+ Agent 專家庫（agents/ 9 份）+ 5 個 anti-pattern 對照範例（examples/，v6.3.0 K-07 新增）+ 語言指南（languages/），給人類閱讀。部署時會一併複製到目標專案。
+- `dev-closed-loop/hooks/` — 6 個 Hook 腳本（修改前統一守衛 / 委派前因果鏈閘門 / 理解確認旗標 / 增量驗證 / 委派追蹤 / 學習日誌提醒），由 `deploy-hooks.sh` 一鍵部署到 `~/.claude/hooks/`。
+- `dev-closed-loop/deploy-hooks.sh` — Hook 部署腳本（複製 + 合併 settings.json + 驗證）。`dev-closed-loop/check-version.sh` — 版本檢查工具（快取/部署/遠端一次比完）。
+- `dev-closed-loop/design/` — 設計歷史（01-11）：v3 原始構想 → v4 重寫 → v5 認知驗證層 → v6 Karpathy 行為哲學 + 對照範例 + KPI。僅供參考。
 
 ## 核心概念
 
 閉環方法論五階段：架構師（設計規格）→ 程序設計師（實作 + code-simplifier 強制優化）→ 檢核師（檢核報告）→ 測試師（測試報告）→ 自證師（跨產出物一致性驗證）。Phase 5 自證是本方法論的核心特色——用 BC-x / EH-x / R-x 編號做精確追溯，檢查 Phase 1-4 的產出物之間有沒有矛盾。
+
+v6.x 系列在五階段之上加了三層擴充：
+
+- **行為哲學**（v6.0/v6.1）：Karpathy 4 原則橫切自檢（Think / Simplicity / Surgical / Goal）+ Section 12.5 push back 義務（Claude 在 5 種情境主動反對用戶）
+- **認知驗證**（v5.23 + v6.2）：事實主張閘門 + 質疑熔斷協議 + Section 12.5 第 5 條反向質疑（Claude 質疑用戶事實前提）
+- **健康指標 + 對照範例**（v6.2/v6.3）：3 指標 + 三區間門檻監測方法論本身運作 + 5 個 anti-pattern 對照範例
 
 ## 操作方式
 
@@ -68,6 +76,8 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 | `.claudedocs/agents/*.md` — agent 步驟 / 閘門 / severity 變更 | CLAUDE_TEMPLATE.md 對應 Phase 描述 · `.claudedocs/process/五階段閉環流程.md` · `.claudedocs/standards/Agent使用指南.md`（若調用方式變動） |
 | `.claudedocs/` — 檔案增刪 | `setup.sh`（驗證清單）· `.claudedocs/README.md` |
 | Hook 腳本增刪或行為變更 | `deploy-hooks.sh`（部署邏輯）· `init-claude.md`（Step 4b） |
+| `.claudedocs/examples/*.md` — anti-pattern 範例修改（K-07 主檔） | `.claudedocs/concepts/閉環核心理念.md`「Anti-Patterns Summary」段（K-16 對照表）· CLAUDE_TEMPLATE.md Section 0 4 原則對映表（若範例 Q1-Q4 對應變動） |
+| `.claudedocs/concepts/方法論運作指標.md` — KPI 指標 / 門檻 / 觸發條件變動（K-11 主檔） | `.claudedocs/records/問題追蹤.md`（升格觸發機制）· CLAUDE_TEMPLATE.md Phase 5 步驟 4.5（觀察項記入機制） |
 | 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 · 根 `README.md` 版本歷史 |
 
 **流程**：
@@ -78,7 +88,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 ### 靜態規則
 
 - `CLAUDE_TEMPLATE.md` 必須保留所有 `{{PLACEHOLDER}}` 標記——它們在部署時才被替換。
-- `.claudedocs/` 目錄必須維持 10 個核心檔案 + 9 個 agent 檔案的完整結構（setup.sh 會驗證）。
+- `.claudedocs/` 目錄必須維持 11 個核心檔案 + 9 個 agent 檔案 + 5 個 examples（v6.3.0 K-07 新增）的完整結構（setup.sh 會驗 17/17 + 9/9）。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。
@@ -96,7 +106,13 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 
 ### 寫去哪
 
-`~/.claude/projects/-Users-gatewenlee-AI-ClaudeCode/memory/daily/YYYY-MM-DD.md`
+`~/.claude/projects/<repo-slug>/memory/daily/YYYY-MM-DD.md`
+
+> `<repo-slug>` 是 Claude Code 把工作目錄絕對路徑轉成 slug 的結果（路徑分隔符換成 `-`）。例：
+> - macOS `/Users/foo/AI-ClaudeCode` → `-Users-foo-AI-ClaudeCode`
+> - Windows `D:\Code\ClaudeCodeTools` → `D--Code-ClaudeCodeTools`
+>
+> 本 repo 實際在 Windows 為 `D--Code-ClaudeCodeTools`；macOS 上視工作目錄而定。
 
 不存在就建立，存在就 append/edit。範本在同目錄 `_template.md`。
 
