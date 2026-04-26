@@ -1,5 +1,21 @@
 # 開發設計閉環
 
+## LLM 編碼的根本問題
+
+[Andrej Karpathy 觀察](https://x.com/karpathy/status/2015883857489522876)：
+
+> "The models make wrong assumptions on your behalf and just run along with them without checking. They overcomplicate code and APIs. They sometimes change/remove comments and code they don't sufficiently understand as side effects."
+
+本專案發現的進階問題：
+- **跨產出物矛盾**：設計說 5 種錯誤、實作 3 種、測試 2 種——傳統 Code Review 抓不到
+- **認知前提誤判**：基於單一線索就斷言為事實（GS 誤判事件，問題追蹤 #003-#005）
+
+本方法論是針對這兩層問題的解法：Karpathy 4 原則處理「行為紀律」，閉環方法論處理「跨產出物驗證」。
+
+## ⚖️ Trade-off 宣告
+
+本方法論偏向**正確性與可追溯性 > 速度**。微小任務不走閉環（直通保護），中型任務多花 ~30% 時間在設計/審查，大型任務多花 ~50-80%。換來的是跨產出物矛盾在 commit 前被攔截、認知誤判有三層防禦、失敗模式自動累積避開。**不適用於拋棄式 prototype 與緊急 hotfix。**
+
 ## 這是什麼
 
 一套軟體開發的品質保證方法。核心概念是：每寫一段程式碼，都要經過五個角色的驗證（架構師 → 程序設計師 → 檢核師 → 測試師 → 自證師），最後由自證師確認所有產出物之間沒有矛盾，才算完成。
@@ -95,6 +111,7 @@
 
 | 版本 | 重點 |
 |------|------|
+| **v6.0.0** | **Karpathy 行為哲學整合**——CLAUDE_TEMPLATE Section 0「四原則橫切自檢層」（Q1 Think / Q2 Simplicity / Q3 Surgical / Q4 Goal cross-cutting，對映既有 Section 9-12.5 閘門）+ Section 12.5「Push back 義務」（5 條觸發場景白名單，含「用戶事實前提待驗證」與 Section 12 對稱）+ 開頭「⚖️ Trade-off 顯式宣告」+ 兩處 README 加 Karpathy 引用問題陳述 + IF-1 `migration-notes` metadata（list of objects + position 屬性，連接方法論文檔層 ↔ Skill 部署層）+ `skill/init-claude.md` 加 v5.x→v6.0.0 智能合併 migration logic（策略 A 全替換 / B 智能合併 / C 手動 diff）。**定位升級**：實作 + 認知方法論 → **實作 + 認知 + 行為哲學**（LLM 對用戶的義務明確）。源起於 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) 4 原則整合 |
 | v5.23.1 | 認知驗證層 P2（完整閉合）——design-reviewer 步驟 5c「Falsification Check」（對設計規格引用的環境事實做反例提問 + 證據等級檢查 + 共用值檢測回溯，弱證據 DR-x medium，反例未通過 DR-x high）+ verifier 步驟 9c「事實前提追溯」（Phase 1b Step 5c 的下游把關，產出 `.claude-loop/artifacts/P5-fact-claims.md`，V-10 嚴重度映射回退規則）+ AI-ClaudeCode/CLAUDE.md 依賴表追加「認知驗證層」+「`.claudedocs/agents/*`」兩列。三層防禦（上游 Step 0a/0b → 中游 Section 12/13 → 下游 Step 5c + 9c）完整閉合 |
 | v5.23.0 | 認知驗證層 P1——CLAUDE_TEMPLATE Section 12「事實主張閘門」（觸發場景 + A/B 級證據 + 反例檢查 + 共用值檢查 + 強/中/弱決策 + evidence_level memory 標注）+ Section 13「質疑熔斷協議」（4 條白名單句式強制熔斷 + 5 步重審必做 + 污染清理）+ 閉環核心理念新增「認知驗證」三層防禦說明 + 五階段閉環流程 Phase 1 加入 Step 0a/0b 觸發引用 + 產出物格式新增「事實主張閘門」結構化表格。**定位升級**：從「實作方法論」擴展為「認知 + 實作方法論」，`/sc:analyze /sc:troubleshoot` 類分析任務也可走同一閉環 |
 | v5.22.3 | 認知驗證層 P0——architect Step 0a 字面證據掃描（檔名 token + docstring + echo/print 字串，A 級優先於推論）+ Step 0b 共用值檢測（N≥3 強烈共用訊號，防止把共用資源私有化推論）+ 問題追蹤 3 條認知性種子條目（#003 單線索→事實 / #004 忽視字面證據 / #005 共用值私有化）+ learning-log 新增 `[事實誤判]` 事件類型。**P1/P2 待補**：事實主張閘門 + 質疑熔斷協議 + Phase 5 事實前提追溯。源起於 GS 誤判事件（2026-04-22 外部經驗反思） |

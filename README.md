@@ -2,6 +2,20 @@
 
 讓 Claude Code 寫出更可靠的程式碼。
 
+## LLM 編碼的根本問題
+
+[Andrej Karpathy 觀察](https://x.com/karpathy/status/2015883857489522876)：
+
+> "The models make wrong assumptions on your behalf and just run along with them without checking. They overcomplicate code and APIs. They sometimes change/remove comments and code they don't sufficiently understand as side effects."
+
+本專案發現的進階問題：
+- **跨產出物矛盾**：設計說 5 種錯誤、實作 3 種、測試 2 種——傳統 Code Review 抓不到
+- **認知前提誤判**：基於單一線索就斷言為事實（GS 誤判事件，問題追蹤 #003-#005）
+
+本工具包是針對這兩層問題的解法：Karpathy 4 原則處理「行為紀律」，閉環方法論處理「跨產出物驗證」。
+
+---
+
 這個工具包的核心是「開發設計閉環」——一套品質保證方法。簡單來說，每段程式碼都會經過五個角色的檢查（架構師 → 程序設計師 → 檢核師 → 測試師 → 自證師），最後由自證師確認所有產出物沒有矛盾，才算完成。
 
 裝好之後，你只要在專案目錄裡跑一行指令，Claude Code 就會自動按照這套流程工作。
@@ -134,6 +148,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| **v6.0.0** | **Karpathy 行為哲學整合**——CLAUDE_TEMPLATE Section 0「四原則橫切自檢層」（Q1 Think / Q2 Simplicity / Q3 Surgical / Q4 Goal cross-cutting，對映既有 Section 9-12.5 閘門）+ Section 12.5「Push back 義務」（5 條觸發場景白名單）+ 開頭「⚖️ Trade-off 顯式宣告」+ 兩處 README 加 Karpathy 引用問題陳述 + IF-1 `migration-notes` metadata（連接方法論文檔層 ↔ Skill 部署層）+ `skill/init-claude.md` 加 v5.x→v6.0.0 智能合併 migration logic。**定位升級**：實作 + 認知 → **實作 + 認知 + 行為哲學**。源起於 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) 4 原則整合 |
 | v5.23.1 | 認知驗證層 P2（完整閉合）——design-reviewer 步驟 5c Falsification Check（對設計引用的環境事實做反例提問 + 證據等級檢查 + 共用值檢測，弱證據 DR-x medium / 反例未通過 DR-x high）+ verifier 步驟 9c 事實前提追溯（產出 `P5-fact-claims.md` + V-10 severity 映射）+ AI-ClaudeCode/CLAUDE.md 依賴表 2 新列。三層防禦閉合（上游 Step 0a/0b → 中游 Section 12/13 → 下游 Step 5c + 9c） |
 | v5.23.0 | 認知驗證層 P1——CLAUDE_TEMPLATE Section 12 事實主張閘門（A/B 級證據 + 反例檢查 + 共用值檢查 + 強/中/弱決策 + memory `evidence_level` frontmatter）+ Section 13 質疑熔斷協議（4 條白名單句式強制熔斷 + 5 步重審）+ 閉環核心理念新增「認知驗證」三層防禦概念 + 產出物格式新增事實主張閘門結構化表格。定位升級：從實作方法論擴展為認知 + 實作方法論，`/sc:analyze`、`/sc:troubleshoot` 類分析任務可走同一閉環 |
 | v5.22.3 | 認知驗證層 P0——architect Step 0a 字面證據掃描（檔名 token / docstring / echo-print 字串，A 級優先於推論）+ Step 0b 共用值檢測（N≥3 強烈共用訊號，防止把共用資源私有化推論）+ 問題追蹤 3 條認知性種子（#003 單線索→事實 / #004 忽視字面證據 / #005 共用值私有化）+ learning-log 新增 `[事實誤判]` 事件類型。源起於 GS 誤判事件經驗反思 |
