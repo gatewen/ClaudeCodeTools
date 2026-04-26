@@ -91,6 +91,21 @@ version: 1.1
 按語言指南 Phase 3 段落的審查規則逐項檢查。
 每個語言相關的 R-x 標記 `[語言名]`。
 
+**步驟 5.5 — R-style 檢核（v6.1.0 新增 · 獨立子類別）**
+
+檢查改動的程式碼是否與**改動檔案內**或**同模組鄰近檔案**的既有風格一致：
+- 引號風格（`'` vs `"`）
+- type hints（是否一律加）
+- 命名慣例（snake_case / camelCase）
+- 縮排與換行慣例
+- 註解語言與密度
+
+判定規則：
+- 改動引入的不一致 → **R-style medium**（建議改回）
+- 既有已存在的不一致 → 不報告（非本次任務範圍）
+
+**與 Q3 Surgical 邊界**：Q3 Surgical 從 implementer 端要求「style match 既有」（自律）；R-style 從 reviewer 端反向兜底（檢查實際是否落實）——雙向覆蓋同一概念，互不重疊。
+
 **步驟 6 — 跨模組資料流追蹤**（若有跨模組拆分）
 追蹤拆分邊界的資料流：
 - 資料過濾/轉換是否保持下游模組預期的語意？
@@ -205,4 +220,8 @@ BC-1 說「驗證輸入」，程式碼有個 validateInput() → ✅。
 **❌ 嚴重度降級以求通過**：
 本應標 high 的問題（邏輯錯誤）標成 medium 以避免觸發斷點。
 → 理由：你的職責是準確標記，閘門決策是主 agent 的責任。
+
+**❌ 把 pre-existing dead code 標 R-x 缺失**（v6.1.0 新增 · Karpathy 學習）：
+看到 dead code 就標 R-x medium 要求清理。
+→ 理由：CLAUDE_TEMPLATE Section 11.5 的 dead code 立場是「pre-existing dead code 提及不動」。除非用戶明確要求清理或它是改動造成的 orphan，否則 reviewer 應在報告中**提及但不算 R-x 缺失**。
 </anti_patterns>

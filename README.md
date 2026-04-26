@@ -148,6 +148,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| **v6.1.0** | **執行細節打磨**（Karpathy 6 條 K-x）——BC-1 資深工程師審視（設計自檢第 7 問）+ BC-2 3x rule 重寫觸發 + BC-3 Dead Code 立場「mention but don't delete」+ BC-4 R-style 獨立子類別 + BC-5 Goal 轉換 architect 步驟 1.5（命令式→可驗證目標對照表）+ BC-6 Anti-Patterns Summary 對照表。**精簡閉環 dogfooding**，CLAUDE_TEMPLATE 510→520 行 |
 | **v6.0.0** | **Karpathy 行為哲學整合**——CLAUDE_TEMPLATE Section 0「四原則橫切自檢層」（Q1 Think / Q2 Simplicity / Q3 Surgical / Q4 Goal cross-cutting，對映既有 Section 9-12.5 閘門）+ Section 12.5「Push back 義務」（5 條觸發場景白名單）+ 開頭「⚖️ Trade-off 顯式宣告」+ 兩處 README 加 Karpathy 引用問題陳述 + IF-1 `migration-notes` metadata（連接方法論文檔層 ↔ Skill 部署層）+ `skill/init-claude.md` 加 v5.x→v6.0.0 智能合併 migration logic。**定位升級**：實作 + 認知 → **實作 + 認知 + 行為哲學**。源起於 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) 4 原則整合 |
 | v5.23.1 | 認知驗證層 P2（完整閉合）——design-reviewer 步驟 5c Falsification Check（對設計引用的環境事實做反例提問 + 證據等級檢查 + 共用值檢測，弱證據 DR-x medium / 反例未通過 DR-x high）+ verifier 步驟 9c 事實前提追溯（產出 `P5-fact-claims.md` + V-10 severity 映射）+ AI-ClaudeCode/CLAUDE.md 依賴表 2 新列。三層防禦閉合（上游 Step 0a/0b → 中游 Section 12/13 → 下游 Step 5c + 9c） |
 | v5.23.0 | 認知驗證層 P1——CLAUDE_TEMPLATE Section 12 事實主張閘門（A/B 級證據 + 反例檢查 + 共用值檢查 + 強/中/弱決策 + memory `evidence_level` frontmatter）+ Section 13 質疑熔斷協議（4 條白名單句式強制熔斷 + 5 步重審）+ 閉環核心理念新增「認知驗證」三層防禦概念 + 產出物格式新增事實主張閘門結構化表格。定位升級：從實作方法論擴展為認知 + 實作方法論，`/sc:analyze`、`/sc:troubleshoot` 類分析任務可走同一閉環 |
