@@ -29,7 +29,7 @@
 | 文件 | 說明 |
 |------|------|
 | `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含 Agent 調度規則、閘門、學習日誌、活動日誌、Task 可見性） |
-| `.claudedocs/` | 技術文檔（11 核心 + 9 agent prompt），給人類閱讀 |
+| `.claudedocs/` | 技術文檔（11 核心 + 9 agent prompt + 5 anti-pattern 範例），給人類閱讀 |
 | `.claudedocs/agents/` | Agent 專家庫（8 個專家 prompt），Phase 觸發時按需載入 |
 | `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
@@ -111,6 +111,7 @@
 
 | 版本 | 重點 |
 |------|------|
+| **v6.3.0** | **對照範例庫**（Karpathy 1 條 K-x · K-13 緩議）——BC-1（K-07）新增 `.claudedocs/examples/` 目錄含 5 個 anti-pattern 對照檔案（仿 Karpathy EXAMPLES.md 形式）：01-think-before-coding（Q1 Think 違反 · 默默選一種解讀）/ 02-simplicity-first（Q2 Simplicity · Strategy pattern 處理單一計算）/ 03-surgical-changes（Q3 Surgical · 修 typo 順手 reformat）/ 04-goal-driven-execution（Q4 Goal · 我先 review 再改善）/ 05-cross-artifact-mismatch（閉環特色 · 設計實作測試對齊缺失）。每檔 5 段結構（場景 / 錯誤示範 / 原則診斷 / 修正版本 / 關鍵限制）共 482 行內容。setup.sh EXPECTED_FILES 12→17，部署到目標供 reviewer / architect 按需查閱。**P1b 0 high / 2 arch-risk / 2 medium / 1 low — 不觸發回退**：DR-1（design/10 與 P1 的 migration-notes-v6.3 分歧）+ DR-3 跨 4 處 v6.3.0 + setup.sh 條件式 + DR-5 行數 prose/code 比例皆採納；DR-2 K-x 變動需同步 examples/ + DR-4 緩衝零容錯入 RISK-8/RISK-9。**K-13（自循環模式）緩議**到 K-07 完成後 brainstorm（4 個未解的狀態機問題）。CLAUDE_TEMPLATE 行數無變動（保持 540 行，沿用 #006 預防做法）|
 | **v6.2.0** | **認知對稱性 + 運作指標**（Karpathy 3 條 K-x）——BC-1（K-14）Section 12.5 第 5 條從觸發點展開為完整反向質疑協議（5.1 4 條觸發場景 + 5.2 反向質疑輸出格式 + 5.3 對稱性表 + 5.4 解除條件分支處理「OK 不能跨越事實質疑代價差」）+ standards Push back 重組為兩變體（變體 1 = 1-4 條方案爭議 / 變體 2 = 第 5 條事實前提質疑）+ concepts「主動質疑」段擴為三方對稱表（Claude→自己 / Claude→用戶 / 用戶→Claude）+ BC-2（K-10）standards 開頭新增 ID ↔ 失誤類型對應表（7 列 BC/EH/R/R-style/DR/IF/CR × 4 欄常見/邊界 failure_type）+ BC-3（K-11）新增 `concepts/方法論運作指標.md`（精簡 3 指標 = DR-x high / R-x high / 升格觸發次數 + 三區間門檻健康/警示/危險 + 觀察期校準至 v7）+ BC-4 跨檔同步（CLAUDE_TEMPLATE migration-notes-v6.2 + setup.sh EXPECTED_FILES 11→12 + .claudedocs/README 第 12 項閱讀順序）。**P1b 採納 DR-1 high 修正**（concepts 緩衝 0→10 行）+ DR-3-DR-7 全採（5.4 分支處理 / standards 變體重組 / BC-4 兩段式驗收 / K-10 表壓 ≤ 18 行）+ DR-2 arch-risk 入 RISK-9（量測義務推 v6.3.0）。**精簡閉環 dogfooding**：六步流程含 P1b 1 high 觸發回退修正後通過 |
 | **v6.1.0** | **執行細節打磨**（Karpathy 6 條 K-x）——BC-1（K-02）資深工程師審視（設計自檢第 7 問 + architect Step 8 + design-reviewer 步驟 2）+ BC-2（K-03）3x rule 重寫觸發（architect 末尾新增實作規模估算與重寫條件）+ BC-3（K-05）Dead Code 立場 Section 11.5（採 Karpathy「mention but don't delete」+ code-reviewer anti_pattern）+ BC-4（K-06）R-style 獨立子類別（code-reviewer 步驟 5.5 + 產出物格式 R-x 編號表）+ BC-5（K-08）Goal 轉換 architect 步驟 1.5（命令式→可驗證目標對照表 + CLAUDE_TEMPLATE 步驟 1 補句）+ BC-6（K-16）Anti-Patterns Summary 對照表（閉環核心理念末尾，仿 Karpathy EXAMPLES.md）。**精簡閉環 dogfooding**：六步流程含 P1b 6 條 DR 全採用 / P3 0 high/medium/low（淨）/ P4 4/4 部署驗證。CLAUDE_TEMPLATE 510→520 行（預算 525） |
 | **v6.0.0** | **Karpathy 行為哲學整合**——CLAUDE_TEMPLATE Section 0「四原則橫切自檢層」（Q1 Think / Q2 Simplicity / Q3 Surgical / Q4 Goal cross-cutting，對映既有 Section 9-12.5 閘門）+ Section 12.5「Push back 義務」（5 條觸發場景白名單，含「用戶事實前提待驗證」與 Section 12 對稱）+ 開頭「⚖️ Trade-off 顯式宣告」+ 兩處 README 加 Karpathy 引用問題陳述 + IF-1 `migration-notes` metadata（list of objects + position 屬性，連接方法論文檔層 ↔ Skill 部署層）+ `skill/init-claude.md` 加 v5.x→v6.0.0 智能合併 migration logic（策略 A 全替換 / B 智能合併 / C 手動 diff）。**定位升級**：實作 + 認知方法論 → **實作 + 認知 + 行為哲學**（LLM 對用戶的義務明確）。源起於 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) 4 原則整合 |

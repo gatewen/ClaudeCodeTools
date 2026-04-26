@@ -31,6 +31,12 @@
 │   └── 產出物格式.md
 ├── records/               ← 最後知道「遇到問題怎麼辦」
 │   └── 問題追蹤.md
+├── examples/              ← 🆕 v6.3.0 K-07 anti-pattern 對照範例（按需查閱）
+│   ├── 01-think-before-coding.md      ← Q1 Think 違反
+│   ├── 02-simplicity-first.md         ← Q2 Simplicity 違反
+│   ├── 03-surgical-changes.md         ← Q3 Surgical 違反
+│   ├── 04-goal-driven-execution.md    ← Q4 Goal 違反
+│   └── 05-cross-artifact-mismatch.md  ← 閉環特色（跨產出物矛盾）
 └── languages/             ← 語言特定指南
     ├── README.md
     ├── typescript.md
@@ -56,6 +62,7 @@
 10. **語言指南** — 你的專案語言的特定工具鏈、慣例和驗證指令（按偵測結果部署）
 11. **實戰驗證流程** — 跑完 N 個任務後做 methodology retrospective（為下一版方法論升級提供證據基礎）
 12. **方法論運作指標** — v6.2.0 K-11 引入的健康 KPI（3 指標 + 三區間門檻 + 觀察期校準）
+13. **examples/** — v6.3.0 K-07 引入的 5 個 anti-pattern 對照範例（按需查閱，不需 default 讀取）
 
 ## 文檔維護規則
 

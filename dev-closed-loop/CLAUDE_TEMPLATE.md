@@ -529,7 +529,7 @@ extensions: K-14 (Section 12.5 第 5 條 5.1-5.4 + push back 兩變體 + concept
 -->
 
 <!--
-closed-loop v6.2.0
+closed-loop v6.3.0
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄

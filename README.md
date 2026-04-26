@@ -148,6 +148,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| **v6.3.0** | **對照範例庫**（Karpathy 1 條 K-x · K-13 緩議）——BC-1（K-07）新增 `.claudedocs/examples/` 5 個 anti-pattern 對照檔案（Q1 Think / Q2 Simplicity / Q3 Surgical / Q4 Goal + 跨產出物矛盾），每檔 5 段結構，482 行；setup.sh EXPECTED_FILES 12→17 部署到目標。**P1b 0 high / 2 arch-risk / 2 medium / 1 low**（不觸發回退，全採納）。K-13 緩議到 K-07 完成後 brainstorm |
 | **v6.2.0** | **認知對稱性 + 運作指標**（Karpathy 3 條 K-x）——BC-1（K-14）Section 12.5 第 5 條展開為完整反向質疑協議（5.1-5.4 + push back 重組為兩變體 + concepts 三方對稱表）+ BC-2（K-10）standards 新增 ID ↔ 失誤類型對應表（7 列 × 4 欄）+ BC-3（K-11）新增「方法論運作指標.md」（3 指標 + 三區間門檻 + v7 校準）+ BC-4 跨檔同步（migration-notes-v6.2 / setup.sh 11→12）。**P1b 1 high 修正後通過**（concepts 緩衝 0→10 行 + 5.4 分支處理 + standards 變體重組）|
 | **v6.1.0** | **執行細節打磨**（Karpathy 6 條 K-x）——BC-1 資深工程師審視（設計自檢第 7 問）+ BC-2 3x rule 重寫觸發 + BC-3 Dead Code 立場「mention but don't delete」+ BC-4 R-style 獨立子類別 + BC-5 Goal 轉換 architect 步驟 1.5（命令式→可驗證目標對照表）+ BC-6 Anti-Patterns Summary 對照表。**精簡閉環 dogfooding**，CLAUDE_TEMPLATE 510→520 行 |
 | **v6.0.0** | **Karpathy 行為哲學整合**——CLAUDE_TEMPLATE Section 0「四原則橫切自檢層」（Q1 Think / Q2 Simplicity / Q3 Surgical / Q4 Goal cross-cutting，對映既有 Section 9-12.5 閘門）+ Section 12.5「Push back 義務」（5 條觸發場景白名單）+ 開頭「⚖️ Trade-off 顯式宣告」+ 兩處 README 加 Karpathy 引用問題陳述 + IF-1 `migration-notes` metadata（連接方法論文檔層 ↔ Skill 部署層）+ `skill/init-claude.md` 加 v5.x→v6.0.0 智能合併 migration logic。**定位升級**：實作 + 認知 → **實作 + 認知 + 行為哲學**。源起於 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) 4 原則整合 |
