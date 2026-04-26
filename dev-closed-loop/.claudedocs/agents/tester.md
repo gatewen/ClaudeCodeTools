@@ -176,6 +176,12 @@ test('BC-1: 違規輸入 — ...', () => { ... })
 **修改錯誤處理/降級/fallback 邏輯後行為未變**：
 測試通過但修改的目標行為（如停止 pipeline、移除 placeholder）未生效。
 → 可能修改了不在執行路徑上的函式。回報主 agent，建議回到因果鏈分析確認呼叫者存在性（深度規則第 6 條）。若可行，用 Bash 實際觸發失敗場景驗證行為是否改變。
+
+**跨平台測試的環境前置檢查**（dogfooding-1 補強）：
+執行 EH-x 測試前，若涉及作業系統特性模擬（chmod 權限 / signal handling / process group / file locking），須先檢查環境支援度：
+→ 環境不支援（如 msys2 對 chmod 不生效）→ 標 skip 計入 PASS（環境降級），於迷你追溯註記。
+→ 環境支援 → 正常測試。
+→ **不要**寫死測試 case 期待 100% pass（會在 msys2/容器/受限環境誤報）。
 </edge_cases>
 
 <anti_patterns>

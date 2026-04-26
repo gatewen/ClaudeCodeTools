@@ -65,6 +65,18 @@
 | **中型** | 新增單一函式/元件 · 1-3 檔案 · < 300 行 | 精簡閉環（設計→設計快審→實作→品質審查→測試驗證→迷你追溯） |
 | **大型** | 新模組/功能 · (≥ 3 檔案或 ≥ 300 行) 且有多個交互子系統 · 用戶說「完整閉環」 | 完整五階段閉環（Phase 1→5） |
 
+### 1.5. 微小任務的探索成本上限（dogfooding-1 補強）
+
+微小任務涉及探索類動作（找 typo / 找未用 import / 找 lint warning / 找 dead code）時，「直接執行」原則需附加成本上限：
+
+- **候選數量**：找 1-3 個候選即停，**不窮舉**
+- **工具呼叫**：grep + read 合計 ≤ 3 次
+- **時間盒**：探索階段 token 成本 < 修正成本的 30%
+- **找不到顯著候選**：提早回報用戶，**不創造目標**（不退而求其次補不存在的問題）
+
+違反此邊界視為「微小任務升級為中型探索任務」，建簡單 TaskList 追蹤成本。
+**反例**：dogfooding T1「找 typo」跑 5+ 次 grep 後退而求其次補字 — 本規則直擋。
+
 ### 1b. 需求探索（中型 + 大型 · 可選）
 
 需求描述不夠具體（缺少明確範圍、技術路線、或行為預期）時，用 AskUserQuestion 詢問用戶是否要先探索需求。用戶選否 → 跳到 Section 2。
@@ -439,6 +451,15 @@
 3. P1b → 降為單輪不回退（精簡模式）
 4. P3 品質審查 → ⛔ **不可降級**（壓測實證：ROI 最高的 Phase，100% 攔截率）
 
+**主動降級判定點**（dogfooding-1 補強 · 對應 dogfooding §5.3 教訓）：
+
+session 開始時應預估剩餘 token vs 預期消耗：
+- 估算「主 agent 寫設計 + 子 agent 委派 + 工具呼叫」總和
+- 若估算 ≥ 配額 70% → **主動降級開始**（不等真的爆才被迫）
+- 降級順序按上方優先表
+
+**Hint**：每個 sub-agent 委派 ~5K-30K token；單次主 agent 設計輸出 ~2K-5K。session 餘量低於 50K 時即使 P3 都可能撐不過——應提早告知用戶並建議 deferred。
+
 ---
 
 ## 模組登記格式
@@ -526,6 +547,11 @@ anchors:
 <!--
 migration-notes-v6.2 (v6.0/v6.1 → v6.2.0): no breaking, K-14/K-10/K-11 extensions only.
 extensions: K-14 (Section 12.5 第 5 條 5.1-5.4 + push back 兩變體 + concepts 三方對稱表) / K-10 (standards ID↔失誤類型表) / K-11 (concepts/方法論運作指標.md). Recommended: 重讀兩 concept 檔 + 開始量測三指標。
+-->
+
+<!--
+dogfooding-1 patch (2026-04-26): no version bump, no breaking.
+extensions: Section 1.5 探索成本上限 / 配額管理主動降級判定 / design-reviewer 步驟 4.5 BC↔健康路徑審查 / tester 跨平台環境前置 / KPI baseline + dogfooding T1/T2 / design/12 v7 啟動條件。Recommended: 重讀 Section 1.5 + design/12。
 -->
 
 <!--

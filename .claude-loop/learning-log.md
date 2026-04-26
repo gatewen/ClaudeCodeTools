@@ -147,3 +147,55 @@
 - v6.2.0：3 條 K-x（認知對稱性 + KPI）+ 1 R-1 high → 升格 #006
 - v6.3.0：1 條 K-x（對照範例庫）+ 0 失敗（一次通過）
 - 累積 14 條 K-x 全部完成 + #006 升格為長期警惕模式 + K-13 緩議
+
+---
+
+## 2026-04-26 - dogfooding-1 milestone closure（dogfooding 試煉 + 方法論補強閉環）
+
+**Phase**: dogfooding 試煉 + dogfooding-1 補強閉環
+**failure_type**: §5.6 探索成本失控（judgment_failure）+ §5.5 DOGFOODING.md Y/N 反轉（process_failure · spec 自身沒跑閉環）
+
+**dogfooding 試煉結果**（D:\Code\DogFooding 跑）：
+- T1 微小直通 ✅ — 但 §5.6 抓出探索成本失控盲點
+- T2 精簡六步 ✅ — 0 high / 3 medium 用戶延後
+- T3 大型 5-Phase ⏸️ deferred — 配額考量
+- 質化 5 Y/N → 1 N (Q3) 健康閾值內
+
+**主要發現**：
+- **§5.6（最重要 · 元發現）**：CLAUDE_TEMPLATE Section 1 微小任務「直接執行」沒涵蓋探索類動作（找 typo / 找 dead code 等）token 成本失控盲點 → dogfooding-1 補 Section 1.5 探索成本上限
+- §5.1 BC↔健康路徑階層漂移：design-reviewer 缺檢查項 → 補步驟 4.5
+- §5.3 配額 ad hoc：主動降級無正規規範 → 補配額管理判定點
+- §5.4 跨平台環境降級：tester 缺前置檢查 → 補 edge_cases 段
+- §5.5 DOGFOODING.md Y/N 反轉：spec 自身沒跑閉環（process_failure · self-irony）→ Phase A 直通修
+
+**dogfooding-1 補強動作**（本次 commit）：
+- Phase A：DogFooding/DOGFOODING.md Y/N + 6 處路徑修正（直通，無 commit 因非 git）
+- Phase B：精簡六步閉環（配額降級 sub-agent 全 inline）
+  - CLAUDE_TEMPLATE.md Section 1.5（D-1）+ 主動降級判定點（D-2）+ migration-notes-dogfooding-1 + closed-loop 標記
+  - design-reviewer.md 步驟 4.5（D-3）
+  - tester.md 跨平台環境前置（D-4）
+  - 方法論運作指標.md baseline + dogfooding T1/T2（V7K-2）
+  - design/12-v7-kpi-calibration.md（V7K-1，含 §8 5 個缺口提醒）
+  - 兩個 README 加 dogfooding-1 patch row
+
+**統計**：DR-x 0h（P1b 自審無觸發）/ R-x 0h（P3 自審無觸發）/ 預算守住（CLAUDE_TEMPLATE 540→561 ≤ 580 緩衝 19）
+
+**沿用 #006 預防做法驗證**：(a) 每檔單獨估行數 ✅ (b) reviewer wc -l 主動 ✅（雖 P1b 自審但仍 wc -l）(c) 緩衝 ≥ 5 ✅（兩 README + design-reviewer 緩衝 < 5 by-design 接受）
+
+**升格候選**：
+- §5.6 探索成本失控 = 首次觀察 → 不到升格門檻（≥ 3 次）但已在 CLAUDE_TEMPLATE Section 1.5 處理
+- §5.5 DOGFOODING.md self-irony = 首次觀察 → 同上
+
+**v7 啟動條件**（本次 design/12 explicit 列）：
+1. ✅ K-11 baseline ≥ 5 個閉環（已達 6）
+2. ❌ 時間跨度 ≥ 3 個月（當前 1 個月）
+3. ❌ T3 大型 5-Phase 實戰樣本 ≥ 1
+4. ❌ 跨 session / 跨模組 / 跨 repo 樣本各 ≥ 1
+5. ❌ §8 5 個缺口中 ≥ 3 個已補上
+
+**最早 v7 啟動時機**：2026-07-26（3 個月後）+ 中間補 1-2 次 dogfooding。
+
+**下次注意**：
+- 下次 dogfooding spec 自身須走精簡六步閉環（避免 §5.5 self-irony 重蹈）
+- §5.6 探索成本上限規則需在實戰中驗證有效性（dogfooding-2 必跑）
+- §8 5 個缺口至少補 3 個才能啟 v7
