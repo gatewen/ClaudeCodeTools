@@ -185,7 +185,64 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    2. 繼續在當前對話中升級（使用舊 Skill 定義，可能缺少新功能）
    ```
    - 用戶選 1 → 結束，提示「在目標專案目錄開啟新對話，執行 /dev:init-claude 即可升級」
-   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）
+   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）→ 若 deployed 為 v5.x 自動觸發 Step 5 migration
+
+5. **v5.x → v6.0.0 Migration Flow（v6.0.0 新增）**：
+
+   當部署的 CLAUDE.md 版本為 v5.x 且 cache 為 v6.x 時，自動執行此步驟（v6.0.0+ → v6.x 走原有 upgrade flow，跳過此步驟）。
+
+   **5.1 偵測 deployed version**：
+   ```bash
+   DEPLOYED_VER=$(grep -oP 'closed-loop v\K[0-9]+\.[0-9]+\.[0-9]+' ./CLAUDE.md | head -1)
+   ```
+   - `v5.*` → 進入 migration（5.2）
+   - `v6.0.0+` → 跳過（走原有 flow）
+   - 空值 / `v4.*` 或更舊 → **EH-1 未知版本**：警告 + AskUserQuestion 三選一（A 全替換 / C 手動 diff / Abort）
+
+   **5.2 解析 cache 的 migration-notes**：
+   ```bash
+   CACHE_TEMPLATE="$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/CLAUDE_TEMPLATE.md"
+   awk '/<!--$/{p=1; b=""; next} /^-->$/{if (p && b ~ /migration-notes/) print b; p=0} p {b=b"\n"$0}' "$CACHE_TEMPLATE"
+   ```
+   解析出 `breaking-changes` / `required-actions` / `recommended-actions` / `anchors` 列表（含 `name` / `match` / `position`）。解析失敗 → 觸發 **EH-1**。
+
+   **5.3 顯示摘要 + AskUserQuestion**：
+   ```
+   🔄 v{DEPLOYED_VER} → v{CACHE_VER} Migration
+
+   破壞性變更：
+   [breaking-changes 逐條列出]
+
+   必要操作：
+   [required-actions 逐條列出]
+
+   建議閱讀：
+   [recommended-actions 逐條列出]
+
+   請選擇升級策略：
+   A. 全替換 — 用 fresh CLAUDE_TEMPLATE 覆蓋（⚠️ 會丟失你對 CLAUDE.md 的客製化）
+   B. 智能合併 — 在錨點注入新 Section，保留客製化（推薦）
+   C. 手動 diff — 列出 diff 後我自己處理
+   ```
+
+   **5.4 執行所選策略**：
+
+   - **A 全替換**：執行原 upgrade flow 覆蓋部署。
+   - **B 智能合併**（推薦）：對 `anchors` 列表中每個 anchor：
+     1. `grep -nF "$anchor.match" ./CLAUDE.md` 找定位 line
+     2. 找不到 → 觸發 **EH-2** 自動降級為策略 C，告知用戶「⚠️ 智能合併錨點失敗（用戶可能客製化 heading），自動降級為手動 diff 模式」
+     3. 找得到 → 按 `position`（`before` / `after`）用 `sed -i` 在該行前/後插入對應 Section 的內容（內容從 fresh CLAUDE_TEMPLATE 對應 anchor 段落抽取）
+     4. 全部 anchor 處理完 → grep 驗收新 Section 都已注入
+   - **C 手動 diff**：`diff -u ./CLAUDE.md "$CACHE_TEMPLATE" | head -200` 印出差異，提示用戶手動編輯。
+
+   **5.5 部署後驗收**：
+   ```bash
+   grep -c "## 0 四原則橫切自檢層" ./CLAUDE.md
+   grep -c "### 12.5 Push Back 義務" ./CLAUDE.md
+   grep -c "## ⚖️ Trade-off" ./CLAUDE.md
+   grep -c "{{" ./CLAUDE.md  # 應為 0（**EH-3 placeholder 未替換** → 報錯）
+   ```
+   三新 Section 都 ≥ 1 命中 + placeholder 計數為 0 → 完成；否則告知用戶哪段缺失，回到 5.4 選 C。
 
 ---
 

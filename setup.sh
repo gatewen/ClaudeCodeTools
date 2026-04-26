@@ -213,6 +213,7 @@ fi
 EXPECTED_FILES=(
     "README.md"
     "concepts/閉環核心理念.md"
+    "concepts/方法論運作指標.md"
     "process/五階段閉環流程.md"
     "process/層級擴展.md"
     "process/跨Session持久化.md"
@@ -222,6 +223,11 @@ EXPECTED_FILES=(
     "standards/Git工作流.md"
     "standards/產出物格式.md"
     "records/問題追蹤.md"
+    "examples/01-think-before-coding.md"
+    "examples/02-simplicity-first.md"
+    "examples/03-surgical-changes.md"
+    "examples/04-goal-driven-execution.md"
+    "examples/05-cross-artifact-mismatch.md"
 )
 DOCS_DIR="${SOURCE_DIR}/dev-closed-loop/.claudedocs"
 DOCS_OK=true
@@ -232,7 +238,7 @@ for f in "${EXPECTED_FILES[@]}"; do
     fi
 done
 if $DOCS_OK; then
-    echo "✅ .claudedocs 完整（11/11）"
+    echo "✅ .claudedocs 完整（17/17）"
 fi
 
 # 確認 agents 目錄完整
