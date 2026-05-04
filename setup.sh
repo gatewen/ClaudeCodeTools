@@ -76,6 +76,21 @@ download_to_cache() {
     mv "$extracted_dir" "$CACHE_DIR"
     rm -rf "$tmp_dir"
 
+    # 記錄 main branch SHA 到 .commit-sha（供 check-version.sh 偵測同版本不同 patch）
+    # 失敗不阻擋安裝；只是 same-version-diff-patch 場景無法被自動偵測
+    local sha=""
+    local sha_raw
+    sha_raw=$(curl -sL --max-time 5 "https://api.github.com/repos/${GITHUB_REPO}/commits/main" 2>/dev/null || true)
+    if [ -n "$sha_raw" ]; then
+        sha=$(echo "$sha_raw" | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//' 2>/dev/null || true)
+    fi
+    if [ -n "$sha" ]; then
+        echo "$sha" > "${CACHE_DIR}/.commit-sha"
+        echo "📌 commit SHA: ${sha:0:7}"
+    else
+        echo "ℹ️  無法取得 GitHub SHA（不影響安裝；同版本不同 patch 將無法自動偵測）"
+    fi
+
     echo "✅ 已下載至 ${CACHE_DIR}"
 }
 
