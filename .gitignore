@@ -8,3 +8,10 @@ temp/
 
 # Per-user daily-log hook system (paths hardcoded to user)
 .claude/
+
+# 評估/建議草稿（一次性產物，不進 git）
+cc_recommand.md
+codex_recommand.md
+
+# 簡報資產（大檔，不適合進 git）
+_slides/

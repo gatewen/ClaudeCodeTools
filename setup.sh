@@ -119,52 +119,30 @@ fi
 mkdir -p "$COMMANDS_DIR/dev"
 
 # --------------------------------------------------
-# 2. 檢查依賴
+# 2. 檢查可選增強工具（v5.14.0 後閉環自帶 Agent 專家庫，全部 optional）
 # --------------------------------------------------
 
-echo "--- 依賴檢查 ---"
-MISSING=""
+echo "--- 可選增強工具檢查（缺少不影響閉環核心運作）---"
 
-# 檢查 SuperClaude
+# SuperClaude（可選 — sc:* 系列分析/設計指令）
 if ls "$HOME/.claude/commands/sc/" >/dev/null 2>&1 && [ "$(ls -A "$HOME/.claude/commands/sc/" 2>/dev/null)" ]; then
     echo "✅ SuperClaude 已安裝"
 else
-    echo "❌ SuperClaude 未安裝"
-    MISSING="$MISSING superclaude"
+    echo "ℹ️  SuperClaude 未安裝（可選 — 安裝後可用 sc:* 系列分析指令）"
 fi
 
-# 檢查 Superpowers
+# Superpowers（可選 — superpowers:* 系列 TDD/debugging skills）
 if grep -q "superpowers@claude-plugins-official" "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null; then
     echo "✅ Superpowers 已安裝"
 else
-    echo "❌ Superpowers 未安裝"
-    MISSING="$MISSING superpowers"
+    echo "ℹ️  Superpowers 未安裝（可選 — 安裝後可用 superpowers:* 系列 skills）"
 fi
 
-# 檢查 claude-mem（可選）
+# claude-mem（可選 — 跨時間語義記憶）
 if grep -rqw "claude-mem" "$HOME/.claude/plugins/" 2>/dev/null || grep -qw "claude-mem" "$HOME/.claude/.mcp.json" 2>/dev/null; then
     echo "✅ claude-mem 已安裝（可選 — 跨時間語義記憶）"
 else
     echo "ℹ️  claude-mem 未安裝（可選 — 安裝後可啟用跨時間語義記憶）"
-fi
-
-if [ -n "$MISSING" ]; then
-    echo ""
-    echo "⚠️  以下依賴缺少（閉環需要這些工具才能正常運作）："
-    echo ""
-    if echo "$MISSING" | grep -q "superclaude"; then
-        echo "  SuperClaude："
-        echo "    pipx install superclaude && superclaude install"
-        echo "    https://github.com/SuperClaude-Org/SuperClaude_Framework"
-        echo ""
-    fi
-    if echo "$MISSING" | grep -q "superpowers"; then
-        echo "  Superpowers："
-        echo "    在 Claude Code 中安裝插件 superpowers@claude-plugins-official"
-        echo ""
-    fi
-    echo "（Skill 會先安裝，依賴可以之後再補）"
-    echo ""
 fi
 
 # --------------------------------------------------
@@ -340,10 +318,6 @@ echo "================================================"
 echo ""
 echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署閉環。"
 echo ""
-if [ -n "$MISSING" ]; then
-    echo "⚠️  記得安裝缺少的依賴，否則閉環的部分功能無法使用。"
-    echo ""
-fi
 if [ "$INSTALL_MODE" = "local" ]; then
     echo "更新流程：git pull → bash setup.sh"
 else

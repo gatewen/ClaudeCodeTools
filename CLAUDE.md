@@ -15,7 +15,12 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 - `setup.sh` — 安裝腳本（雙模式）。支援 `curl | bash` 遠端安裝和本地 `bash setup.sh`。遠端模式從 GitHub 下載 tarball 到 `~/.claude/cache/ClaudeCodeTools/`，本地模式直接從 repo 目錄安裝。將 Skill 部署到 `~/.claude/commands/dev/init-claude.md`（對應 `/dev:init-claude` 指令），過程中把 `{{REPO_PATH}}` 替換為來源路徑。
 - `dev-closed-loop/CLAUDE_TEMPLATE.md` — 核心產物。自包含的 CLAUDE.md 模板，含完整五階段閉環方法論。內有 `{{PLACEHOLDER}}` 變數，部署到專案時由 Skill 填入實際值。
 - `dev-closed-loop/skill/init-claude.md` — Skill 源碼。定義 `/dev:init-claude` 指令（專案偵測、互動確認、模板填充部署）。
-- `dev-closed-loop/.claudedocs/` — 11 份核心文檔（concepts/process/standards/records）+ Agent 專家庫（agents/ 9 份）+ 5 個 anti-pattern 對照範例（examples/，v6.3.0 K-07 新增）+ 語言指南（languages/），給人類閱讀。部署時會一併複製到目標專案。
+- `dev-closed-loop/.claudedocs/` — 共 33 個檔，分布如下（給人類閱讀，部署時一併複製到目標專案）：
+  - 11 份核心方法論文檔（concepts 2 + process 5 + standards 3 + records 1）
+  - Agent 專家庫 `agents/` 9 檔（8 個 agent prompt + 1 個 README 索引）
+  - 對照範例 `examples/` 5 檔（v6.3.0 K-07 新增）
+  - 語言指南 `languages/` 7 檔（6 語言指南：TS/Py/Go/Rust/C#/Bash + 1 個 README 索引）
+  - `.claudedocs/README.md` 1 檔（總目錄導覽）
 - `dev-closed-loop/hooks/` — 6 個 Hook 腳本（修改前統一守衛 / 委派前因果鏈閘門 / 理解確認旗標 / 增量驗證 / 委派追蹤 / 學習日誌提醒），由 `deploy-hooks.sh` 一鍵部署到 `~/.claude/hooks/`。
 - `dev-closed-loop/deploy-hooks.sh` — Hook 部署腳本（複製 + 合併 settings.json + 驗證）。`dev-closed-loop/check-version.sh` — 版本檢查工具（快取/部署/遠端一次比完）。
 - `dev-closed-loop/design/` — 設計歷史（01-11）：v3 原始構想 → v4 重寫 → v5 認知驗證層 → v6 Karpathy 行為哲學 + 對照範例 + KPI。僅供參考。
@@ -52,9 +57,9 @@ v6.x 系列在五階段之上加了三層擴充：
 - 一行指令安裝者：在任何專案中執行 `/dev:init-claude upgrade`（自動從 GitHub 下載最新版）
 - git clone 安裝者：`git pull && bash setup.sh`
 
-**依賴**（setup.sh 會檢查）：
-- SuperClaude（`sc:*` 系列 Skills）：`pipx install superclaude && superclaude install`
-- Superpowers（`superpowers:*` 系列 Skills）：Claude Code 插件 `superpowers@claude-plugins-official`
+**可選增強工具**（v5.14.0 後 Agent 專家庫自包含，以下全部 optional，缺少不影響閉環核心運作）：
+- SuperClaude（可選 — `sc:*` 系列分析/設計指令）：`pipx install superclaude && superclaude install`
+- Superpowers（可選 — `superpowers:*` 系列 TDD/debugging skills）：Claude Code 插件 `superpowers@claude-plugins-official`
 - claude-mem（可選 — 跨時間語義記憶）：Claude Code 插件 `claude-mem`
 
 ## 編輯規範
@@ -88,7 +93,7 @@ v6.x 系列在五階段之上加了三層擴充：
 ### 靜態規則
 
 - `CLAUDE_TEMPLATE.md` 必須保留所有 `{{PLACEHOLDER}}` 標記——它們在部署時才被替換。
-- `.claudedocs/` 目錄必須維持 11 個核心檔案 + 9 個 agent 檔案 + 5 個 examples（v6.3.0 K-07 新增）的完整結構（setup.sh 會驗 17/17 + 9/9）。
+- `.claudedocs/` 目錄必須維持完整結構，setup.sh 分三類驗證：核心 17/17（= 11 核心 + 5 examples + 1 `.claudedocs/README.md`）+ agents 9/9（= 8 agent prompt + 1 README）+ languages 7/7（= 6 語言指南 + 1 README）。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。

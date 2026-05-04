@@ -4,6 +4,8 @@
 
 > **定位**：個人 hardcore 修煉工具——對自己嚴格的閉環方法論，不適合直接套到團隊。給用戶的 cognitive overhead 已被任務分流屏蔽，日常 80% 工作不會被打擾（見下方「微小任務直通保護」）。
 >
+> **公開狀態**：repo 公開可 fork / 學習 / 自用，但**未主動推廣**——不承諾外部支援、不主動接受功能 PR、issue 視作者時間回應。如果發現 bug 或想討論方法論，歡迎開 issue 但不保證 SLA。**MIT 授權**（見根目錄 `LICENSE`）。
+>
 > **English version** → [README.en.md](README.en.md) · **30-min quick start** → [dev-closed-loop/QUICKSTART.md](dev-closed-loop/QUICKSTART.md)
 
 ## LLM 編碼的根本問題
@@ -52,12 +54,14 @@ curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh
 
 ### 前置依賴
 
-閉環自帶 Agent 專家庫（8 個專家 prompt），**不依賴外部工具**即可完整運作。Task agent（`code-simplifier` 等）是 Claude Code 內建功能。
+閉環自帶 Agent 專家庫（`agents/` 9 檔 = 8 個 agent prompt + 1 個 README 索引），**不依賴外部工具**即可完整運作。Task agent（`code-simplifier` 等）是 Claude Code 內建功能。
 
 以下是可選的增強工具，有的話體驗更好，沒有也不影響閉環流程：
 
 | 工具 | 做什麼用的 | 怎麼裝 |
 |------|-----------|--------|
+| **SuperClaude** _(可選)_ | `sc:*` 系列分析 / 設計 / 改進指令 | `pipx install superclaude && superclaude install` |
+| **Superpowers** _(可選)_ | `superpowers:*` 系列 TDD / debugging skills | Claude Code 插件：`superpowers@claude-plugins-official` |
 | **claude-mem** _(可選)_ | 跨對話的語義記憶（Phase 前查歷史決策、Phase 後保存教訓） | Claude Code 插件：`claude-mem` |
 
 ## 使用
@@ -138,7 +142,7 @@ ClaudeCodeTools/
     │   ├── delegation-tracker.sh     ← 委派追蹤
     │   └── learning-log-checker.sh   ← 學習日誌提醒
     ├── .claudedocs/                  ← 給人看的技術文檔
-    │   ├── agents/                   ← Agent 專家庫（8 個專家 prompt）
+    │   ├── agents/                   ← Agent 專家庫（8 個 agent prompt + 1 索引 README，共 9 檔）
     │   ├── concepts/                 ← 核心理念
     │   ├── process/                  ← 流程說明
     │   ├── standards/                ← 工具和格式規範
