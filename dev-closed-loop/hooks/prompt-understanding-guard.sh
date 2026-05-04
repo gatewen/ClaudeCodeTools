@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# Source shared helpers (provides get_gate_base for project-scoped markers)
+# shellcheck source=_helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/_helpers.sh"
+
 # 1. 讀取 stdin JSON，提取 prompt
 INPUT=$(cat)
 PROMPT=""
@@ -61,13 +65,14 @@ if ! $HAS_ACTION && [[ $PROMPT_LEN -lt 5 ]]; then
 fi
 
 # 3. 清理上一輪的因果鏈 marker 和委派閘門 marker（每輪用戶指令重置）
-rm -rf /tmp/claude-causal-chain
-mkdir -p /tmp/claude-causal-chain
-rm -rf /tmp/claude-delegation-gate
-mkdir -p /tmp/claude-delegation-gate
+GATE_BASE="$(get_gate_base)"
+rm -rf "${GATE_BASE}/causal-chain"
+mkdir -p "${GATE_BASE}/causal-chain"
+rm -rf "${GATE_BASE}/delegation-gate"
+mkdir -p "${GATE_BASE}/delegation-gate"
 
 # 5. 建立理解確認旗標（供 PreToolUse Hook 檢查）
-GATE_DIR="/tmp/claude-understanding-gate"
+GATE_DIR="${GATE_BASE}/understanding-gate"
 mkdir -p "$GATE_DIR"
 echo "$PROMPT" > "$GATE_DIR/pending"
 

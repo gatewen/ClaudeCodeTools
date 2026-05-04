@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# Source shared helpers (provides get_gate_base for project-scoped markers)
+# shellcheck source=_helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/_helpers.sh"
+
 # 1. 讀取 stdin JSON，提取 file_path
 INPUT=$(cat)
 FILE_PATH=""
@@ -40,7 +44,7 @@ RESET='\033[0m'
 # ═══════════════════════════════════════════
 # 閘門 A：理解確認（檢查 UserPromptSubmit 旗標）
 # ═══════════════════════════════════════════
-UNDERSTANDING_GATE="/tmp/claude-understanding-gate/pending"
+UNDERSTANDING_GATE="$(get_gate_base)/understanding-gate/pending"
 NEED_UNDERSTANDING=false
 
 if [[ -f "$UNDERSTANDING_GATE" ]]; then
@@ -52,7 +56,7 @@ fi
 # ═══════════════════════════════════════════
 # 閘門 B：因果鏈分析（首次修改檔案檢查）
 # ═══════════════════════════════════════════
-GUARD_DIR="/tmp/claude-causal-chain"
+GUARD_DIR="$(get_gate_base)/causal-chain"
 mkdir -p "$GUARD_DIR"
 
 MARKER_NAME=$(echo "$FILE_PATH" | tr '/' '_' | tr ' ' '_')

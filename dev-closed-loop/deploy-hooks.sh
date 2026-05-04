@@ -53,7 +53,13 @@ for f in "${HOOK_FILES[@]}"; do
   fi
 done
 
-echo "📋 Hook 腳本：${COPY_COUNT}/${#HOOK_FILES[@]} 已複製"
+# 複製共用 helpers（被 hooks source，不註冊到 settings.json）
+if [[ -f "${HOOKS_SOURCE}/_helpers.sh" ]]; then
+  cp "${HOOKS_SOURCE}/_helpers.sh" ".claude/hooks/_helpers.sh"
+  chmod +x ".claude/hooks/_helpers.sh"
+fi
+
+echo "📋 Hook 腳本：${COPY_COUNT}/${#HOOK_FILES[@]} 已複製（+ _helpers.sh 共用層）"
 
 # ──────────────────────────────────────────
 # 2. 合併 settings.json 配置

@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# Source shared helpers (provides get_gate_base for project-scoped markers)
+# shellcheck source=_helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/_helpers.sh"
+
 # 1. 讀取 stdin JSON，提取 prompt 和 description
 INPUT=$(cat)
 PROMPT=""
@@ -72,7 +76,7 @@ fi
 # ═══════════════════════════════════════════
 # 4. 檢查 marker（重試放行機制）
 # ═══════════════════════════════════════════
-GATE_DIR="/tmp/claude-delegation-gate"
+GATE_DIR="$(get_gate_base)/delegation-gate"
 mkdir -p "$GATE_DIR"
 
 # 用 description 作為 marker key（同一委派重試時 description 不變）
