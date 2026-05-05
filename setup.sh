@@ -11,7 +11,9 @@ set -e
 main() {
 
 GITHUB_REPO="gatewen/ClaudeCodeTools"
-TARBALL_URL="https://github.com/${GITHUB_REPO}/archive/refs/heads/main.tar.gz"
+# 測試用 env var override（生產環境留空時使用 GitHub 預設值）
+TARBALL_URL="${SETUP_TARBALL_URL:-https://github.com/${GITHUB_REPO}/archive/refs/heads/main.tar.gz}"
+SHA_URL="${SETUP_SHA_URL:-https://api.github.com/repos/${GITHUB_REPO}/commits/main}"
 CACHE_DIR="$HOME/.claude/cache/ClaudeCodeTools"
 COMMANDS_DIR="$HOME/.claude/commands"
 SKILL_TARGET="$COMMANDS_DIR/dev/init-claude.md"
@@ -80,7 +82,7 @@ download_to_cache() {
     # 失敗不阻擋安裝；只是 same-version-diff-patch 場景無法被自動偵測
     local sha=""
     local sha_raw
-    sha_raw=$(curl -sL --max-time 5 "https://api.github.com/repos/${GITHUB_REPO}/commits/main" 2>/dev/null || true)
+    sha_raw=$(curl -sL --max-time 5 "$SHA_URL" 2>/dev/null || true)
     if [ -n "$sha_raw" ]; then
         sha=$(echo "$sha_raw" | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//' 2>/dev/null || true)
     fi
