@@ -211,6 +211,8 @@
 **怎麼修的**：用戶提供 codex_recommand → 4 階段執行（衛生修補 b86d34a / hook isolation 461c1cc / SHA tracking fa390e4 + 階段 2-3 tests/）→ 分數推到 86.5 並建立 7 smoke 防回歸。
 **下次注意**：對「方法論本身的評估」「自評」「review」類認知性產出，single-LLM 視角不夠，最好搭配 ≥ 1 個獨立來源（不同 LLM、人類、或同一 LLM 不同 session 的盲評）。Section 12 事實主張閘門對「我的方法論評分是 X」這類斷言應視為 B 級證據（單來源），標註「待 cross-source 驗證」。
 
+→ 已升格 問題追蹤#007 [2026-05-05]（用戶於今日 session 確認升格 · 第 1 筆證據）
+
 ---
 
 ## 2026-05-05 - [single-source 評估盲點] [接續執行計畫前的審查漏看]
@@ -221,24 +223,40 @@
 **原因**：跨 session 接續執行時，預設信任「之前 session 寫的計畫」是高風險的 single-source 盲點——同一 LLM 在不同 session 寫的計畫對「下一個 session 的 LLM」來說仍是 single-source。沒有主動套用 architect Step 0a 對「計畫前提」做事實主張閘門驗證，等於跳過了對 prior planning 的審查。
 **怎麼修的**：開工前主動 ultrathink → 列 5 個替代方案 → 走 Push back（Section 12.5 變體 1 方案爭議）→ 用戶選方案 E + C → 純壓縮 -19 行 + 平台/curl|bash 文檔，避免動核心架構。
 **下次注意**：接續執行跨 session 計畫時，在開工前必須主動跑：(1) Step 0a 對「計畫的核心前提」做字面證據掃描——這個前提是基於什麼證據？(2) 主動引用 Section 12.5 第 5 條對待用戶事實前提的反向質疑機制——「用戶寫的計畫」也屬於需驗證的事實前提之一。
-**候選升格 #007**：與 2026-05-04 cc_recommand 事件同根因（**single-source 視角的系統性盲點，不論是跨 LLM 還是跨 session**）。目前 **2/3 樣本**，再累積 1 次達升格門檻。**升格時需用戶確認**（per CLAUDE_TEMPLATE Phase 5 升格機制）。
+→ 已升格 問題追蹤#007 [2026-05-05]（用戶於今日 session 確認升格 · 第 2 筆證據）
 
 ---
 
-## 升格候選追蹤 — #007 single-source 評估盲點
+## 2026-05-05 - [single-source 評估盲點] [intra-session 多 commit 後依賴表盲區]
+
+**Phase**: 階段 2-3 + 階段 3 + 方案 C 七 commit 完成後
+**failure_type**: judgment_failure（依賴表 walk 遺漏）
+**問題**：今日連續做了 7 個 commit（階段 1 + 2-1 + 2-2 + 2-3 批 1/2/3 + 階段 3 + 方案 C + learning-log），完成後沒主動跑 CLAUDE.md 依賴表第 11 列「版本變更要同步 3 處」檢查。兩個 README 版本歷史 entry 仍停在 2026-04-26 v6.3.x dogfooding-1 patch，repo 對外訊號失準。用戶問「README 奇怪嗎」時，我列了 6 個 H 假設（H1-H6 結構/順序/disclaimer/CHANGELOG/Hook 位置/子段順序）**全部沒命中真因**——直到用戶明確指出「我們有更新版本的記錄嗎」才意識到漏更新。
+**原因**：(1) 7 commit 跨多種類型（infrastructure / 文檔 / 壓縮 / 記錄）後，沒主動 walk 依賴表確認哪些列被觸發；(2) 對自己工作的 self-review 走「結構合理性」維度，沒走「依賴表機械式檢查」維度——前者主觀偏誤大，後者剛好是預防工具；(3) 用戶質疑後也沒先檢查依賴表，反而生成 6 個假設用「自己的視角」猜，再次落入 single-source 推論。
+**怎麼修的**：用戶第二次提示「指版本記錄」後立刻定位到依賴表第 11 列；補 2 個 README 版本歷史 entry（v6.3.x infrastructure-patch）涵蓋今日 7 commit；commit 7df0e03。
+**下次注意**：(1) 多 commit 工作完成時主動跑依賴表 walk——對每個改動位置查 CLAUDE.md 表所有列；(2) 用戶提示「奇怪」「不對」「漏了什麼」類質疑時，**先 walk 依賴表**再生成假設；(3) 同 session 內累積 commit 時設立檢查點：commit ≥ 3 後做一次 mid-session 依賴表 walk，避免最後一次性盲區。
+
+→ 已升格 問題追蹤#007 [2026-05-05]（用戶於今日 session 確認升格 · 第 3 筆證據 · 達門檻觸發升格）
+
+---
+
+## 升格紀錄 — #007 single-source 評估盲點 (✅ 已升格 2026-05-05)
 
 | # | 日期 | 事件 | 視角來源 |
 |---|------|------|---------|
 | 1 | 2026-05-04 | cc_recommand 漏看 5 bug，codex 補回 | 跨 LLM（cc → codex）|
-| 2 | 2026-05-05 | 接續執行 2026-05-04 計畫前未審查前提 | 跨 session（同一 LLM 不同時間）|
-| 3 | _未發生_ | _需累積第 3 次同根因_ | _待觀察_ |
+| 2 | 2026-05-05 早段 | 接續執行 2026-05-04 計畫前未審查前提 | 跨 session（同一 LLM 不同時間）|
+| 3 | 2026-05-05 晚段 | 7 commit 後沒跑依賴表 walk + 用戶質疑時 6 H 假設皆未命中真因 | intra-session（同一 LLM 同一 session）|
 
-**升格條件達成時動作**：
-- Phase 5 verifier 提示候選 → 主 agent AskUserQuestion 確認 → 寫入 `.claudedocs/records/問題追蹤.md` 「長期警惕模式」段（編號 #007）+ 兩條 learning-log 加註「→ 已升格 #007」
-- 升格後 architect Phase 1 必讀，預防做法寫入 #007 條目（建議：對「方法論評估 / 計畫前提」類認知性產出強制 cross-source 驗證或 Section 12.5 第 5 條反向質疑）
+**升格動作完成**：
+- ✅ `.claudedocs/records/問題追蹤.md` 加 #007 entry（5 段：模式 / 觸發情境 / 預防做法 / 檢測信號 / 歷史證據）
+- ✅ 3 條 learning-log 事件各加註「→ 已升格 問題追蹤#007」
+- ✅ architect Phase 1 從下次起必讀 #007 預防做法
 
-**目前狀態**：候選追蹤中，**禁止跳過第 3 次累積直接升格**（避免基於 2 樣本歸納的過度泛化偏誤）。
+**升格意義**：架構性盲點，跨「LLM / session / intra-session」三層皆已驗證。今後對「方法論評估 / 計畫前提 / 自評 / 多 commit 工作收尾」類產出，CLAUDE_TEMPLATE Phase 1 architect Step 0a 必須跑 cross-source 驗證 + 依賴表 walk 機械式檢查。
 
 ---
 
-最後修訂：2026-05-05（補 2 個 single-source 盲點事件 + #007 升格候選追蹤段）
+最後修訂：2026-05-05（升格 #007 single-source 評估盲點 · 第 3 樣本記入 + 3 條事件加升格 marker + 升格紀錄段更新）
+
+之前修訂：2026-05-05（補 2 個 single-source 盲點事件 + #007 升格候選追蹤段）
