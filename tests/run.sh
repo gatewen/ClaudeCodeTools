@@ -26,7 +26,7 @@ if command -v shellcheck >/dev/null 2>&1; then
     while IFS= read -r f; do SHELLCHECK_TARGETS+=("$f"); done < <(find "$REPO_ROOT/dev-closed-loop/hooks" -name '*.sh' -type f)
     while IFS= read -r f; do SHELLCHECK_TARGETS+=("$f"); done < <(find "$TESTS_DIR" -name '*.sh' -type f)
 
-    # SC1091: 動態 source path（如 $REPO_ROOT）shellcheck 無法 follow，只是 info 級別
+    # SC1091: 動態 source path（如 ${REPO_ROOT}）shellcheck 無法 follow，只是 info 級別
     if shellcheck --exclude=SC1091 "${SHELLCHECK_TARGETS[@]}"; then
         echo "✅ shellcheck PASS (${#SHELLCHECK_TARGETS[@]} files)"
     else

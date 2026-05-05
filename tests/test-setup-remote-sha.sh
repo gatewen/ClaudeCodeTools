@@ -90,7 +90,7 @@ if [ -f "$SHA_FILE" ]; then
         echo "  ✅ SHA 格式正確（40 hex）"
     else
         len=$(printf '%s' "$actual_sha" | wc -c | tr -d ' ')
-        echo "  ❌ SHA 格式無效：'$actual_sha'（長度 $len）"
+        echo "  ❌ SHA 格式無效：'${actual_sha}'（長度 ${len}）"
         FAIL=$((FAIL+1))
     fi
 fi
