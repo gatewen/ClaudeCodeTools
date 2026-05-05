@@ -52,6 +52,46 @@ curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh
 
 > **開發者？** 也可以用 `git clone https://github.com/gatewen/ClaudeCodeTools.git && cd ClaudeCodeTools && bash setup.sh`
 
+### 平台支援
+
+| 平台 | 支援等級 | 說明 |
+|------|---------|------|
+| **macOS** | ✅ 主要支援 | 開發 / 測試環境，每次發版前跑過完整 smoke 套件（`bash tests/run.sh`）|
+| **Linux** | ⚠️ Best effort | 大部分功能應可運作，但無 Linux 專屬測試。遇問題請開 issue |
+| **Windows** | ❌ 不直接支援 | 需透過 WSL2（在 WSL 內視為 Linux）。原生 cmd / PowerShell 不支援 |
+
+執行依賴：`bash 3.2+`（macOS 預設）/ `python3` / `git` / `curl`。
+
+### 🛡️ 關於 `curl | bash` 的安全考量
+
+直接 pipe 到 bash 表示**沒有事先檢視程式碼的機會**。如果信任度不足，建議改用以下其一：
+
+**方案 A（推薦）：先看再執行**
+
+```bash
+curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh -o /tmp/setup.sh
+less /tmp/setup.sh           # 看一下做了什麼
+bash /tmp/setup.sh
+```
+
+**方案 B：git clone 後本地安裝**
+
+```bash
+git clone https://github.com/gatewen/ClaudeCodeTools.git
+cd ClaudeCodeTools
+bash setup.sh                # 可先 less setup.sh
+```
+
+**方案 C：釘住特定 commit SHA**（極度謹慎場景）
+
+```bash
+SHA=$(curl -sL https://api.github.com/repos/gatewen/ClaudeCodeTools/commits/main | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//')
+echo "Pinning to ${SHA}"
+curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/${SHA}/setup.sh | bash
+```
+
+> setup.sh 約 350 行。主要動作：下載 tarball、解壓到 `~/.claude/cache/`、複製 1 個 markdown 檔到 `~/.claude/commands/dev/`、印驗證結果。**不**修改 PATH、不寫 cron、不裝額外軟體。
+
 ### 前置依賴
 
 閉環自帶 Agent 專家庫（`agents/` 9 檔 = 8 個 agent prompt + 1 個 README 索引），**不依賴外部工具**即可完整運作。Task agent（`code-simplifier` 等）是 Claude Code 內建功能。

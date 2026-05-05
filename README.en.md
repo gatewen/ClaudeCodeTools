@@ -26,6 +26,45 @@ Downloads to `~/.claude/cache/ClaudeCodeTools/` and deploys the `/dev:init-claud
 
 > Developers can also: `git clone https://github.com/gatewen/ClaudeCodeTools.git && cd ClaudeCodeTools && bash setup.sh`
 
+### Platform support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **macOS** | ✅ Primary | Dev / test environment. Full smoke suite (`bash tests/run.sh`) runs before each release |
+| **Linux** | ⚠️ Best effort | Most things should work; no Linux-specific tests. Open issues for any breakage |
+| **Windows** | ❌ Not directly supported | Use WSL2 (treated as Linux). Native cmd / PowerShell will not work |
+
+Runtime deps: `bash 3.2+` (macOS default) / `python3` / `git` / `curl`.
+
+### 🛡️ About `curl | bash`
+
+Piping directly to bash means **no chance to review the script first**. If you don't fully trust this repo, prefer one of:
+
+**Option A (recommended): inspect first**
+
+```bash
+curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh -o /tmp/setup.sh
+less /tmp/setup.sh
+bash /tmp/setup.sh
+```
+
+**Option B: clone, then install locally**
+
+```bash
+git clone https://github.com/gatewen/ClaudeCodeTools.git
+cd ClaudeCodeTools
+bash setup.sh
+```
+
+**Option C: pin to a specific commit SHA**
+
+```bash
+SHA=$(curl -sL https://api.github.com/repos/gatewen/ClaudeCodeTools/commits/main | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//')
+curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/${SHA}/setup.sh | bash
+```
+
+> `setup.sh` is ~350 lines. It downloads a tarball, extracts to `~/.claude/cache/`, copies one markdown file to `~/.claude/commands/dev/`, and prints validation results. It does **not** modify PATH, write cron jobs, or install additional software.
+
 ## Use
 
 In any project directory, open Claude Code and run:
