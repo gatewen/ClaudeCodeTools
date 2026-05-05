@@ -210,6 +210,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| **v6.3.x infrastructure-patch** | 公開發佈友善度提升 + dogfooding 帶出的回歸防線：(1) 新增 `tests/` 7 smoke 自動防回歸（cross-file 一致性 / hook 跨專案 marker 隔離 / setup.sh 遠端 SHA tracking · 39 sub-checks · 寬鬆模式 pre-commit）(2) README 加平台支援表（macOS 主要 / Linux best effort / Windows 需 WSL）+ 遠端 `curl` 安裝安全考量段（3 替代方案 + setup.sh 行為邊界透明告知）(3) CLAUDE_TEMPLATE Section 12/12.5/13 純壓縮 566→547 行回到預算 (4) learning-log 補 #007「single-source 評估盲點」候選追蹤 2/3 樣本 |
 | **v6.3.x dogfooding-1 patch** | 用方法論跑 1 微小 + 1 中型試煉後發現 6 個盲點，全部補上：微小任務不該無止境找 typo（加探索成本上限）/ Claude 在 token 不夠時要主動降級（不要等爆掉）/ 設計時的 BC 條件跟健康路徑要在同一抽象層次 / 跨平台測試環境不支援應 skip 不誤報 / KPI 累積 6 樣本達 v7 校準門檻 / 新增 v7 校準起點文件 |
 | **v6.3.0** | 加了 5 個對照範例（如「Claude 默默選一種解讀」「修 typo 順手 reformat 一堆」），讓 review 時可對照查 Claude 是否犯常見錯誤。部署的文檔從 12 個增加為 17 個 |
 | **v6.2.0** | 三個強化：(1) 用戶斷言「X 是 Y」當作後續行動前提時，Claude 會反問「我能查到的證據是 Z，要不要先確認」（避免基於錯誤前提行動）；(2) 加「失誤類型速查表」幫人快速判定錯誤是「流程沒走完」還是「判斷錯方向」；(3) 訂 3 個健康指標監測方法論運作（如同類失誤是否反覆出現） |
