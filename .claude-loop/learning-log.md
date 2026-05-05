@@ -199,3 +199,46 @@
 - 下次 dogfooding spec 自身須走精簡六步閉環（避免 §5.5 self-irony 重蹈）
 - §5.6 探索成本上限規則需在實戰中驗證有效性（dogfooding-2 必跑）
 - §8 5 個缺口至少補 3 個才能啟 v7
+
+---
+
+## 2026-05-04 - [single-source 評估盲點] [評分任務 · 非閉環]
+
+**Phase**: 評分任務（認知性產出，套用 Section 12 事實主張閘門）
+**failure_type**: judgment_failure
+**問題**：cc_recommand（同一 LLM 自評本專案）給 ClaudeCodeTools 的評分 83.8/100，三個扣分敘述完整且自評項挑得合理。但 codex_recommand（不同視角）對同一 codebase 評估時補上 5 個 cc_recommand **完全沒提到的**具體 bug：無 LICENSE / `/tmp/claude-*` marker 跨專案污染 / 依賴敘述矛盾 / 文檔數量三套說法 / `.DS_Store`。
+**原因**：single-LLM 自評的視角缺乏「外部紅隊」效應——cc_recommand 套用的 9 維評分框架是 LLM 自己選的，框架本身已經編碼了「對自己有利的盲區」。同時用同一 LLM 對同一專案評分時，它會把「未抓到的 bug」當成「不存在的 bug」，沒有獨立來源無法揭露。
+**怎麼修的**：用戶提供 codex_recommand → 4 階段執行（衛生修補 b86d34a / hook isolation 461c1cc / SHA tracking fa390e4 + 階段 2-3 tests/）→ 分數推到 86.5 並建立 7 smoke 防回歸。
+**下次注意**：對「方法論本身的評估」「自評」「review」類認知性產出，single-LLM 視角不夠，最好搭配 ≥ 1 個獨立來源（不同 LLM、人類、或同一 LLM 不同 session 的盲評）。Section 12 事實主張閘門對「我的方法論評分是 X」這類斷言應視為 B 級證據（單來源），標註「待 cross-source 驗證」。
+
+---
+
+## 2026-05-05 - [single-source 評估盲點] [接續執行計畫前的審查漏看]
+
+**Phase**: 階段 3 開工前（接續 2026-05-04 規劃）
+**failure_type**: judgment_failure
+**問題**：階段 3 原計畫（2026-05-04 寫）含「拆分 CLAUDE_TEMPLATE Section 12/13 至子檔」，動機寫「降低 onboarding 成本」。今日接續執行時我**直接準備按計畫做**，沒有重新審查前提。直到收集事實基礎時才發現：(a) Claude 不需 onboarding（每次都全讀）、(b) 人類 maintainer 大概率不讀 CLAUDE_TEMPLATE、(c) 認知驗證層的設計意圖是「主檔顯著呈現以提高 trigger 率」，拆出反向違背。
+**原因**：跨 session 接續執行時，預設信任「之前 session 寫的計畫」是高風險的 single-source 盲點——同一 LLM 在不同 session 寫的計畫對「下一個 session 的 LLM」來說仍是 single-source。沒有主動套用 architect Step 0a 對「計畫前提」做事實主張閘門驗證，等於跳過了對 prior planning 的審查。
+**怎麼修的**：開工前主動 ultrathink → 列 5 個替代方案 → 走 Push back（Section 12.5 變體 1 方案爭議）→ 用戶選方案 E + C → 純壓縮 -19 行 + 平台/curl|bash 文檔，避免動核心架構。
+**下次注意**：接續執行跨 session 計畫時，在開工前必須主動跑：(1) Step 0a 對「計畫的核心前提」做字面證據掃描——這個前提是基於什麼證據？(2) 主動引用 Section 12.5 第 5 條對待用戶事實前提的反向質疑機制——「用戶寫的計畫」也屬於需驗證的事實前提之一。
+**候選升格 #007**：與 2026-05-04 cc_recommand 事件同根因（**single-source 視角的系統性盲點，不論是跨 LLM 還是跨 session**）。目前 **2/3 樣本**，再累積 1 次達升格門檻。**升格時需用戶確認**（per CLAUDE_TEMPLATE Phase 5 升格機制）。
+
+---
+
+## 升格候選追蹤 — #007 single-source 評估盲點
+
+| # | 日期 | 事件 | 視角來源 |
+|---|------|------|---------|
+| 1 | 2026-05-04 | cc_recommand 漏看 5 bug，codex 補回 | 跨 LLM（cc → codex）|
+| 2 | 2026-05-05 | 接續執行 2026-05-04 計畫前未審查前提 | 跨 session（同一 LLM 不同時間）|
+| 3 | _未發生_ | _需累積第 3 次同根因_ | _待觀察_ |
+
+**升格條件達成時動作**：
+- Phase 5 verifier 提示候選 → 主 agent AskUserQuestion 確認 → 寫入 `.claudedocs/records/問題追蹤.md` 「長期警惕模式」段（編號 #007）+ 兩條 learning-log 加註「→ 已升格 #007」
+- 升格後 architect Phase 1 必讀，預防做法寫入 #007 條目（建議：對「方法論評估 / 計畫前提」類認知性產出強制 cross-source 驗證或 Section 12.5 第 5 條反向質疑）
+
+**目前狀態**：候選追蹤中，**禁止跳過第 3 次累積直接升格**（避免基於 2 樣本歸納的過度泛化偏誤）。
+
+---
+
+最後修訂：2026-05-05（補 2 個 single-source 盲點事件 + #007 升格候選追蹤段）
