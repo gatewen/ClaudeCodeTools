@@ -24,6 +24,12 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 - `dev-closed-loop/hooks/` — 6 個 Hook 腳本（修改前統一守衛 / 委派前因果鏈閘門 / 理解確認旗標 / 增量驗證 / 委派追蹤 / 學習日誌提醒），由 `deploy-hooks.sh` 一鍵部署到 `~/.claude/hooks/`。
 - `dev-closed-loop/deploy-hooks.sh` — Hook 部署腳本（複製 + 合併 settings.json + 驗證）。`dev-closed-loop/check-version.sh` — 版本檢查工具（快取/部署/遠端一次比完）。
 - `dev-closed-loop/design/` — 設計歷史（01-11）：v3 原始構想 → v4 重寫 → v5 認知驗證層 → v6 Karpathy 行為哲學 + 對照範例 + KPI。僅供參考。
+- `tests/` — 本地 smoke test 套件（**不部署到使用者專案**，maintainer 開發時用）。執行：`bash tests/run.sh`。包含 7 個 smoke：
+  - `run.sh`（Phase A shellcheck + Phase B 動態發現 `test-*.sh`）
+  - `lib/`（assert + fixtures 共用 helpers）
+  - 7 smoke：cross-file-consistency / setup-local / setup-remote-sha / deploy-hooks / hooks-isolation / hooks-exit-codes / bash-compat
+  - `install-pre-commit.sh`（一鍵安裝寬鬆模式 pre-commit hook）
+  - 設計細節見 `tests/README.md`
 
 ## 核心概念
 
@@ -84,6 +90,7 @@ v6.x 系列在五階段之上加了三層擴充：
 | `.claudedocs/examples/*.md` — anti-pattern 範例修改（K-07 主檔） | `.claudedocs/concepts/閉環核心理念.md`「Anti-Patterns Summary」段（K-16 對照表）· CLAUDE_TEMPLATE.md Section 0 4 原則對映表（若範例 Q1-Q4 對應變動） |
 | `.claudedocs/concepts/方法論運作指標.md` — KPI 指標 / 門檻 / 觸發條件變動（K-11 主檔） | `.claudedocs/records/問題追蹤.md`（升格觸發機制）· CLAUDE_TEMPLATE.md Phase 5 步驟 4.5（觀察項記入機制） |
 | 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 · 根 `README.md` 版本歷史 |
+| 「對外契約」常數變更（setup.sh 陣列數量、hook isolation 路徑 namespace、deploy-hooks settings.json keywords）| `tests/test-*.sh` 對應斷言（pre-commit 會自動抓到，但 commit 前最好先跑 `bash tests/run.sh` 確認）|
 
 **流程**：
 1. **查表** → 在回應中明確列出本次受影響的連動檔案清單
@@ -98,6 +105,7 @@ v6.x 系列在五階段之上加了三層擴充：
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。
 - `languages/` 目錄的語言 Skill 遵循 Phase 1-5 結構，新增語言時保持一致格式。
+- `tests/` 是 maintainer 開發工具，**不被 setup.sh 部署**也**不該出現在使用者專案**。執行：`bash tests/run.sh`（一鍵跑 shellcheck + 7 smoke）。可選：`bash tests/install-pre-commit.sh` 安裝寬鬆模式 pre-commit hook。
 
 ## 每日日誌（meta layer · 你跟 Claude 的協作脈絡）
 
