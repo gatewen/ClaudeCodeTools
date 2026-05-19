@@ -185,19 +185,18 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    2. 繼續在當前對話中升級（使用舊 Skill 定義，可能缺少新功能）
    ```
    - 用戶選 1 → 結束，提示「在目標專案目錄開啟新對話，執行 /dev:init-claude 即可升級」
-   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）→ 若 deployed 為 v5.x 自動觸發 Step 5 migration
+   - 用戶選 2 → 進入正常部署/升級流程（即 Step 0 起）→ 若 cache 對 deployed 版本提供結構化 migration block，自動觸發 Step 5 migration
 
-5. **v5.x → v6.0.0 Migration Flow（v6.0.0 新增）**：
+5. **Version-Aware Migration Flow（v6.0.0 引入，v6.3.x 通用化）**：
 
-   當部署的 CLAUDE.md 版本為 v5.x 且 cache 為 v6.x 時，自動執行此步驟（v6.0.0+ → v6.x 走原有 upgrade flow，跳過此步驟）。
+   當 cache 含結構化 migration block 匹配 `DEPLOYED_VER` 時，自動執行此步驟；無 match 視為非破壞性升級，跳過 5.3-5.5 回到原有部署流程。
 
-   **5.1 偵測 deployed version**：
+   **5.1 偵測 deployed version + 格式驗證**：
    ```bash
    DEPLOYED_VER=$(grep -oP 'closed-loop v\K[0-9]+\.[0-9]+\.[0-9]+' ./CLAUDE.md | head -1)
    ```
-   - `v5.*` → 進入 migration（5.2）
-   - `v6.0.0+` → 跳過（走原有 flow）
-   - 空值 / `v4.*` 或更舊 → **EH-1 未知版本**：警告 + AskUserQuestion 三選一（A 全替換 / C 手動 diff / Abort）
+   - 空值 / 非 `v{major}.{minor}.{patch}` semver 格式 → **EH-1 未知版本**：警告 + AskUserQuestion 三選一（A 全替換 / C 手動 diff / Abort）
+   - 格式正確 → 繼續 5.2（由 awk parser 動態判定是否有 migration path，不再 hard-code 版本範圍）
 
    **5.2 解析 cache 的 migration-notes**：
    ```bash
@@ -227,7 +226,11 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    ```
    解析出 `breaking-changes` / `required-actions` / `recommended-actions` / `anchors` 列表（含 `name` / `match` / `position`）。
    - 過濾規則：只印出含結構化 `from-version:` 欄位且該欄位 pattern 匹配 `DEPLOYED_VER` 的 block。散文格式的 migration notes（無 `from-version:` 欄位，如 v6.2 extensions）會被排除，避免污染後續 parser。
-   - 解析失敗（無 block 命中 / parser 抽不出欄位） → 觸發 **EH-1**。
+
+   **判定分支**（依 awk 輸出）：
+   - 輸出非空（≥ 1 個結構化 block） → 繼續 5.3 進入結構化 migration
+   - 輸出空 → 視為**非破壞性升級**（cache 無對應 `DEPLOYED_VER` 的結構化 breaking migration block）：告知用戶「ℹ️ v{DEPLOYED_VER} → v{CACHE_VER} 無結構化 breaking migration，將直接部署最新 CLAUDE_TEMPLATE 覆蓋」，跳過 5.3-5.5 回到原有部署流程
+   - 輸出非空但解析欄位失敗（awk 印了 block 但缺 `breaking-changes` / `anchors` 等必要欄位） → 觸發 **EH-1**
 
    **5.3 顯示摘要 + AskUserQuestion**：
    ```
