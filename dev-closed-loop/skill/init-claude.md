@@ -202,9 +202,32 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    **5.2 解析 cache 的 migration-notes**：
    ```bash
    CACHE_TEMPLATE="$HOME/.claude/cache/ClaudeCodeTools/dev-closed-loop/CLAUDE_TEMPLATE.md"
-   awk '/<!--$/{p=1; b=""; next} /^-->$/{if (p && b ~ /migration-notes/) print b; p=0} p {b=b"\n"$0}' "$CACHE_TEMPLATE"
+   awk -v dep="$DEPLOYED_VER" '
+     /<!--$/ { p=1; b=""; next }
+     /^-->$/ {
+       if (p && b ~ /migration-notes/) {
+         # 只接受含結構化 from-version 欄位的 block（過濾散文格式如 v6.2 extensions notes）
+         fv = ""
+         if (match(b, /from-version:[ \t]*[^\n]+/)) {
+           fv = substr(b, RSTART, RLENGTH)
+           sub(/^from-version:[ \t]*/, "", fv)
+         }
+         if (fv != "") {
+           # "v5.x" → "^v5\.[0-9]+(\.[0-9]+)?$"
+           pat = fv
+           gsub(/\./, "\\.", pat)
+           gsub(/x/, "[0-9]+", pat)
+           if (dep ~ ("^" pat "(\\.[0-9]+)?$")) print b
+         }
+       }
+       p=0
+     }
+     p { b=b"\n"$0 }
+   ' "$CACHE_TEMPLATE"
    ```
-   解析出 `breaking-changes` / `required-actions` / `recommended-actions` / `anchors` 列表（含 `name` / `match` / `position`）。解析失敗 → 觸發 **EH-1**。
+   解析出 `breaking-changes` / `required-actions` / `recommended-actions` / `anchors` 列表（含 `name` / `match` / `position`）。
+   - 過濾規則：只印出含結構化 `from-version:` 欄位且該欄位 pattern 匹配 `DEPLOYED_VER` 的 block。散文格式的 migration notes（無 `from-version:` 欄位，如 v6.2 extensions）會被排除，避免污染後續 parser。
+   - 解析失敗（無 block 命中 / parser 抽不出欄位） → 觸發 **EH-1**。
 
    **5.3 顯示摘要 + AskUserQuestion**：
    ```
