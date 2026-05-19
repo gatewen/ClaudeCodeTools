@@ -257,6 +257,75 @@
 
 ---
 
-最後修訂：2026-05-05（升格 #007 single-source 評估盲點 · 第 3 樣本記入 + 3 條事件加升格 marker + 升格紀錄段更新）
+## #007 升格後實戰實證 — 2026-05-19 補強計劃 Phase G self-review
 
-之前修訂：2026-05-05（補 2 個 single-source 盲點事件 + #007 升格候選追蹤段）
+**Phase**: 補強計劃 §13.5 Phase G「CLAUDE_TEMPLATE.md 行數優化」設計 self-review
+**failure_type**: judgment_failure（single-source 盲點實證）
+
+**問題**：對 Phase G 設計做自審找到 4 個 finding（B1 範圍縮小 / anchor 兼容性 / B2 部分壓 prose 保留 / Phase 4 補測 v5→v6.4 跨多版本），但漏看 3 個結構性盲點：
+
+| 盲點 | 嚴重度 | 內容 |
+|------|-------|------|
+| 跨版本 Skill 相容性 | 🔴 high | 已安裝 v6.3 Skill 用戶走「當前對話繼續升級」會讀不到 migration-notes |
+| 安全/品質規則「載入保證」維度 | 🔴 high | B1 把「外部輸入必驗證 / 敏感資料不寫死」移出主檔等於降級安全防線到「希望模型有讀」|
+| 現存 awk parser silent bug | 🟡 medium | 多 migration-notes 區塊共存時無版本過濾，當前已會同時輸出 v5→v6 + v6.2 |
+
+**原因**：同 LLM 同 session 自審本質是 single-source — 設計者視角 = 審查者視角，看不到「設計者沒主動檢查的維度」。我看 cross-reference 完整性，Codex 看「主檔 = always-read 保證」這個更深層維度；我假設新 cache+新 Skill 配對更新，沒考慮舊 Skill 跑新 cache 路徑。
+
+**怎麼修的**：用 Codex CLI 跑 `adversarial-review`（不同 LLM 視角 cross-source 驗證），verdict needs-attention · 抓到 2 high + 2 medium。Phase G 設計重設：B1 砍掉 / B3 砍掉 / A1 改「雙寫 + 版本化 schema parser + backward-compat stub」/ B2 保留 / Phase 3 強制做安全/回滾審查。詳見 `dev-closed-loop/design/13-autonomy-v2-reinforcement-plan.md` §13.5.12。
+
+**下次注意**：
+1. **cross-source review 是 hard requirement 不是 optional**：對「方法論修改的設計」「重大認知性產出」類產出，不能用「自審 N finding 已覆蓋」當理由跳過
+2. **自審範圍局限**：同 LLM 同 session 自審只能找「已知未知」的明顯 gap，找不到「未知未知」的結構性盲點
+3. **本次量化證據**：單視角漏看率 = 50%（4 個高/中等 finding 中，2 個 high 完全未被自審捕獲）
+4. **適用同類規則**：架構設計（v6.x 主檔變動）/ 方法論評估（如 `/sc:analyze` 自評）/ KPI 校準 / 行數預算重設 / 認知驗證層修改 等皆應強制 cross-source review
+
+**意義**：這是 #007 升格後**第一次實戰驗證**，量化證明 cross-source review 對結構性盲點的捕獲率（同 LLM 同 session 0/2，不同 LLM 2/2）。建議未來方法論修改類產出的 Phase 1b 設計快審加 cross-source 強制要求。
+
+---
+
+## #007 升格後實戰實證 #2 — 2026-05-19 Phase G v2 self-review
+
+**Phase**: 補強計劃 Phase G **v2** 重設方案 self-review（第 2 輪）
+**failure_type**: judgment_failure（#007 升格後第 2 次實證）
+
+**問題**：對 Phase G v1 被 Codex review 否決後，做了 v2 重設方案。v2 review pack 內 §4 explicit 列「我已想到的風險」4 條（雙寫 drift / stub sunset / 版本化複雜度 / fallback 優先級）。Codex 第 2 次 adversarial-review 仍 verdict needs-attention，抓到 3 個 finding：
+
+| Finding | 嚴重度 | v1 沒解決 / v2 新盲點 |
+|---------|-------|--------------------|
+| F1' Legacy stub 太簡（舊 Skill 還需 breaking-changes / required-actions / recommended-actions）| 🔴 high | **v1 F1 沒真解決** |
+| F2' v6.x cumulative migrations 觸發不到（init-claude.md Step 5 hard-coded v5.x · line 199 跳過 v6.0.0+）| 🔴 high | v2 新發現的架構盲點 |
+| F3' Parse-failure fallback 規則文檔自我矛盾（§2.1.2 vs §4.4 寫相反規則）| 🟡 medium | v2 新發現的文檔內部一致性盲點 |
+
+**自審 §4「我已想到的風險」對 Codex 3 finding 的命中**：
+- §4.3 vs F2'：方向接近但深度不足（我看「拓樸排序」表面，Codex 看「trigger 條件根本沒被觸發」根因）
+- §4.4 vs F3'：方向命中但**自相矛盾**（同份文件兩處寫法相反，沒回讀）
+- F1' 完全沒命中（沒去 grep init-claude.md 實際 awk 抓什麼欄位）
+
+**原因**（3 種盲點類型）：
+1. **「v1 finding 表面修正」陷阱**：以為「stub 保留 anchors」就修了 v1 F1，沒讀舊 Skill 實際讀取的欄位
+2. **「沒讀核心程式碼路徑」**：設計新 parser 但沒查 Step 5.1 trigger 邏輯（init-claude.md line 199 寫死 v5.x）
+3. **「文檔自我矛盾沒回讀」**：同份 review pack §2.1.2 vs §4.4 寫法相反，沒做自我一致性檢查
+
+**怎麼修的**：用戶採選項 D — **取消 Phase G 整體** + **拒絕候選 B**（B 級邊緣 66） + 只採納候選 A+E。最終 CLAUDE_TEMPLATE 547+28=575（緩衝 5 vs 580 預算 / 25 vs 600 上限）。awk parser silent bug + Step 5.1 trigger 改造留作後續獨立任務，與本補強計劃解耦。詳見 `dev-closed-loop/design/13-autonomy-v2-reinforcement-plan.md` §13.5.13/14。
+
+**下次注意**：
+1. **自審漏看率從 50% → 67% 第 2 次連續被 cross-source 拉回**：強烈訊號「結構性盲點」會反覆出現，**不能用「再做一輪自審」當解方**
+2. **「我已想到的風險」段是陷阱**：寫在文件裡的「風險表」反而讓人（包含設計者）認為「已 cover」，實際上 67% 漏看的還在
+3. **連續 2 次 cross-source review needs-attention = 設計範疇 mismatch**：當問題深度超出單次設計能掌握的範圍時，正確做法是「**降級 scope / 拆解獨立子任務 / 完全放棄**」，**不是再做 v3 設計**
+4. **適用同類規則**：當 cross-source review 連續 ≥ 2 次 needs-attention 時，設計者應主動降級 scope（不堅持做完），這應該寫進 CLAUDE_TEMPLATE.md 或候選 E 的 R-5 反向劃線範圍
+
+**累積證據**：
+- 同 LLM 同 session 自審：v1 50% 漏看率 / v2 67% 漏看率（平均 58%）
+- 不同 LLM cross-source：v1 抓到 2 high + 2 medium / v2 抓到 2 high + 1 medium
+- **連續 2 次 verdict needs-attention** — 第 2 次明示「Do not enter implementation」
+
+→ #007 升格後**第 2 次**實戰驗證（累積：實證 #1 v1 review + 實證 #2 v2 review）
+
+---
+
+最後修訂：2026-05-19（追加 #007 升格後第 2 次實戰實證 · Phase G v2 self-review · 漏看率 67% · 用戶選項 D 取消 Phase G）
+
+之前修訂：2026-05-19（追加 #007 升格後第一次實戰實證 · 補強計劃 Phase G self-review · 單視角漏看率 50%）
+
+更早修訂：2026-05-05（升格 #007 single-source 評估盲點 · 第 3 樣本記入 + 3 條事件加升格 marker + 升格紀錄段更新）
