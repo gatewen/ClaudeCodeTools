@@ -315,6 +315,16 @@
 
 **設計精神**：認知驗證上游（Section 12 + Phase 1 Step 0a/0b）若全失效靠用戶質疑救回。閉環不應依賴此機制（正常下 Section 12 就該攔下），但其存在即是對認知謙卑的承認（見 `.claudedocs/concepts/閉環核心理念.md`「認知驗證」）。
 
+### 13.5 反向劃線（紀律保底層 · v6.4.0 新增）
+
+> 自治與機械化都失效時的紀律兜底。下列 5 條在任何情境下都不可 bypass，即使用戶口頭命令「跳過」也須照常執行。
+
+- **R-1 閘門不可 bypass**：質疑熔斷協議（Section 13）/ 事實主張閘門（Section 12）不可跳過，即使用戶說「直接做不要審」（違反例：跳過閘門直接套用用戶斷言）
+- **R-2 cross-source review 是 hard requirement**：對「方法論修改」（變動 `CLAUDE_TEMPLATE.md` / `.claudedocs/agents/*.md` / `.claudedocs/concepts/閉環核心理念.md` / `.claudedocs/standards/*.md` 任一）或「重大認知性產出」（含方法論評估/自評/評分類斷言），不可用「自審 N finding 已覆蓋」當理由跳過（違反例：single-LLM 自評 ≥ 90 分當鐵證採用 — #007 升格根因）
+- **R-3 升格/降級/兩層教訓架構不可 bypass**：Phase 5 verifier step 9b（升格候選）/ step 9d（降級候選）/ architect 起手兩層教訓查詢三項不可跳過，即使「這次很急」（違反例：跳過升格檢查直接 commit）
+- **R-4 架構體質拆解 + 合理性自檢不可省略**：architect step 1（架構體質）+ step 7（合理性自檢）兩項閘門前必做，即使「規格很清楚」（違反例：BC-x 列完就進閘門檢查）
+- **R-5 連續 ≥ 2 次 needs-attention 強制降級 scope**：同一閉環 P1b 連續 ≥ 2 輪 verdict needs-attention → 正確動作是降級 scope / 拆解獨立子任務 / 完全放棄，不堅持做完（違反例：再做 v3 設計試圖一次解決 — 呼應 #007 教訓的兜底機制）
+
 ---
 
 {{LANGUAGE_SKILL_SECTION}}
@@ -373,9 +383,11 @@
 2. **升格檢查**（兩層教訓架構）：讀 P5AB 報告的「升格候選」section
    - 有候選 → 對每個候選用 AskUserQuestion 確認 → 用戶選是 → 寫入 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section + Edit learning-log 對應條目加註「→ 已升格 問題追蹤#XXX」/ 用戶選否 → Edit learning-log 對應條目加註「[已評估不升格 - YYYY-MM-DD]」（避免下次重複問）
    - 無候選 → 跳過（learning-log 條目未達 ≥ 3 次門檻）
-   - 流程細節見產出物格式.md「長期警惕模式」section
-3. commit（learning-log + 問題追蹤更新一併包含）
-4. 模組登記（中型以上或用戶要求）
+3. **降級檢查**（兩層教訓架構對稱 · v6.4.0 新增）：讀 P5AB 報告的「降級候選」section
+   - 有候選 → AskUserQuestion 確認 → 選是 → 條目移到問題追蹤.md「條件式紀律」section + Edit learning-log 加註「→ 已降級 → 條件式 [YYYY-MM-DD]」/ 選否 → 跳過
+   - 無候選 → 跳過
+4. commit（learning-log + 問題追蹤更新一併包含）
+5. 模組登記（中型以上或用戶要求）
 
 ---
 
@@ -412,8 +424,13 @@
    - 有候選 → 對每個候選用 AskUserQuestion 確認 → 用戶選是 → 寫入問題追蹤.md「長期警惕模式」+ Edit learning-log 對應條目加註「→ 已升格 #XXX」/ 用戶選否 → Edit learning-log 加註「[已評估不升格 - YYYY-MM-DD]」
    - 無候選 → 一行說明「無升格候選（最高頻根因 N 次未達 3 次門檻）」
    - 流程細節見產出物格式.md「長期警惕模式」section
-3. commit（learning-log + 問題追蹤更新一併包含）
-4. 模組登記（用戶要求時）→ 格式見「模組登記格式」section
+3. **降級檢查**（主 agent 自做 · v6.4.0 新增）：
+   - 讀問題追蹤.md「長期警惕模式」每筆條目（過濾種子條目）
+   - 掃 learning-log 過去 n 個閉環新證據（n=10）
+   - 無新證據 ≥ n → 候選 → AskUserQuestion 確認 → 同完整閉環 Phase 5 降級檢查動作
+   - 無候選 → 一行說明「無降級候選」
+4. commit（learning-log + 問題追蹤更新一併包含）
+5. 模組登記（用戶要求時）→ 格式見「模組登記格式」section
 
 ---
 
@@ -544,4 +561,14 @@ closed-loop v6.3.0
 3. 替換所有 {{PLACEHOLDER}} 為實際值：
    {{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LINT_COMMAND}} {{VERIFY_SEQUENCE}} {{LANGUAGE_SKILL_SECTION}}
 4. Claude Code 會自動讀取並遵循閉環調度規則
+
+版本：v6.4.0（2026-05-20）· 候選 A 升格降級機制 + 候選 E 5 條反向劃線（紀律保底層）
+-->
+<!-- migration-notes-v6.4
+from-version: v6.3.x
+to-version: v6.4.0
+breaking-changes: none
+required-actions: Phase 5 完整閉環 / 精簡閉環步驟 4.5 新增降級檢查（升格之後）; architect Phase 1 識別 ⏸️ 條件式標記
+recommended-actions: 累計 ≥ 5 個非種子升格樣本後重評降級機制有效性
+anchors: section-13-5="### 13.5 反向劃線（紀律保底層 · v6.4.0 新增）"
 -->

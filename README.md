@@ -210,6 +210,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| **v6.4.0** | 兩件加強：(1) 升格機制變對稱 — 跨閉環高頻問題升格成「永久警惕」後，若 10 個閉環沒新證據會自動降到「條件式紀律」（觸發條件命中才適用），降到無人問津 20 個閉環會 archive；條件式條目若 5 個閉環內 2 次命中會自動升回（防誤判降級）。意義：升格條目不再永久膨脹，方法論教訓清單會自我清理。(2) 5 條「反向劃線」（紀律保底層）— 當自治判斷 + 機械化都失效時，5 條規則任何情況下不可 bypass，包括「重大方法論修改強制 cross-source review」（呼應 #007 升格教訓：single-LLM 自評漏看率 50-67%）。意義：劃出「自治可繞、機械化可關，但這 5 條不行」的紅線 |
 | **v6.3.x infrastructure-patch** | 公開發佈友善度提升 + dogfooding 帶出的回歸防線：(1) 新增 `tests/` 7 smoke 自動防回歸（cross-file 一致性 / hook 跨專案 marker 隔離 / setup.sh 遠端 SHA tracking · 39 sub-checks · 寬鬆模式 pre-commit）(2) README 加平台支援表（macOS 主要 / Linux best effort / Windows 需 WSL）+ 遠端 `curl` 安裝安全考量段（3 替代方案 + setup.sh 行為邊界透明告知）(3) CLAUDE_TEMPLATE Section 12/12.5/13 純壓縮 566→547 行回到預算 (4) learning-log 補 #007「single-source 評估盲點」候選追蹤 2/3 樣本 |
 | **v6.3.x dogfooding-1 patch** | 用方法論跑 1 微小 + 1 中型試煉後發現 6 個盲點，全部補上：微小任務不該無止境找 typo（加探索成本上限）/ Claude 在 token 不夠時要主動降級（不要等爆掉）/ 設計時的 BC 條件跟健康路徑要在同一抽象層次 / 跨平台測試環境不支援應 skip 不誤報 / KPI 累積 6 樣本達 v7 校準門檻 / 新增 v7 校準起點文件 |
 | **v6.3.0** | 加了 5 個對照範例（如「Claude 默默選一種解讀」「修 typo 順手 reformat 一堆」），讓 review 時可對照查 Claude 是否犯常見錯誤。部署的文檔從 12 個增加為 17 個 |

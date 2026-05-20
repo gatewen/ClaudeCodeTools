@@ -181,8 +181,22 @@ version: 1.4
 
 **產出**：若有環境事實引用，在追溯報告中新增「事實前提追溯」section，並在 `.claude-loop/artifacts/` 下寫入 `P5-fact-claims.md`（格式為事實主張閘門表，見產出物格式.md）。
 
+**步驟 9d — 降級候選掃描（v6.4.0 新增 · 升格機制對稱）**
+
+掃描問題追蹤.md「長期警惕模式」每筆條目，找出「升格後失去現實證據」的降級候選 + 「降級後復發」的回升候選。**唯讀**，不直接寫入問題追蹤.md（由主 agent 在 Part C 用戶確認後執行）。
+
+執行步驟：
+1. 讀取 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section 每筆條目
+2. 過濾條目「升格自 N 筆 learning-log」N=0 或標「種子條目（外部來源）」者跳過（EH-3 範圍限縮）
+3. 對剩餘條目掃描 learning-log 過去 **n 個閉環**（n 值見問題追蹤.md「降級機制」section · 預設 10）是否有新證據（grep `→ 已升格 #XXX` 對應 entries 時間戳）
+4. 無新證據 ≥ n → A 級降級候選 / 無新證據 ≥ 2n → 完全 archive 候選
+5. 復發偵測：「條件式紀律」section 內條目在 **m 個閉環內**（m 值見同 section · 預設 5）被 learning-log 命中 ≥ 2 次 → 立即升回候選（EH-2 復發）
+6. 產出候選描述（條目 #XXX / 累積無證據閉環數 / 建議動作）給主 agent Part C 處理
+
+無候選時須在報告中明確寫「無降級候選（active 條目皆有近 n 閉環新證據 / 條件式條目無 m 內 ≥ 2 次命中）」。
+
 **步驟 10 — 撰寫報告**
-按 output_format 彙整所有結果（含步驟 9b 的升格候選 section + 步驟 9c 的事實前提追溯 section），寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
+按 output_format 彙整所有結果（含步驟 9b 升格候選 + 步驟 9c 事實前提追溯 + 步驟 9d 降級候選 三個 section），寫入 `.claude-loop/artifacts/P5AB-bidirectional-tracing.md`。
 </instructions>
 
 <output_format>

@@ -324,7 +324,63 @@
 
 ---
 
-最後修訂：2026-05-19（追加 #007 升格後第 2 次實戰實證 · Phase G v2 self-review · 漏看率 67% · 用戶選項 D 取消 Phase G）
+## 2026-05-20 - v6.4.0 milestone closure（候選 A+E 捆綁完整 5-Phase 閉環）
+
+**Phase**: 整個 v6.4.0 完整 5-Phase 閉環
+**failure_type**: 無 milestone-level（P1b 5 medium + P3 1 medium 皆 in-place 補修，無斷點觸發）
+
+**結果**：
+- handoff load 接續 → Phase 1 architect inline 產出 P1 設計規格（12 BC + 3 EH + 2 IF · 學習查詢 #006 + #007 雙命中）
+- 架構師對 §15.5 預設兩處精煉修正：BC-A3 step 9c → step 9d（避免與既有「事實前提追溯」衝突）/ BC-A6 step 6c-1 → 主 agent 步驟 1.a 子項（命名歸位）
+- P1b design-reviewer task agent → 0 high / 2 arch-risk（DR-1 緩衝邊界 / DR-2 YAGNI 邊緣）/ 5 medium / 3 low → 用戶 AskUserQuestion 決定 A 全量 + 4 medium 全補 + DR-5 復發機制改 m=5 ≥ 2 次
+- P2 implementer inline 實作 5 檔變動：CLAUDE_TEMPLATE 547→574（緩衝 6）/ 問題追蹤 158→193 / verifier 382→396 / architect 307→308 / 閉環核心理念 228→247 / 全 repo 淨 +96（預期 +85 超 11 行，主因 migration-notes 區塊先 13 行後壓 6 行）
+- 中間 #006 預防做法觸發點：CLAUDE_TEMPLATE 第一次寫到 581 破預算 1 行 → 應用 v6.2.0 R-1 經驗將 migration-notes 區塊 13 行 inline 壓到 6 行 → 574（緩衝 6 守住）
+- P3 code-reviewer task agent → 0 high / 2 arch-risk（沿 P1b DR-1/2）/ 1 medium（R-3 BC-E6 K-16 關係澄清缺）/ 2 low → R-3 in-place 補修 2 行
+- P4 tester：7/7 smoke PASS + grep 全 BC/EH/IF 命中
+- P5 verifier task agent → BC/EH/IF 對映率 17/17 = 100% / 0 孤兒變動 / step 9b 0 升格 / step 9c 不適用 / step 9d 0 降級候選（首次運作 self-irony 印證 DR-2 YAGNI 預測）/ R-5 未觸發
+
+**統計**：
+- DR-x 0h / 2 arch-risk / 5m / 3low → 5 medium 全 in-place 採納
+- R-x 0h / 2 arch-risk（沿 P1b）/ 1m → R-3 in-place 補修
+- 斷點觸發 0 / 行數預算守住（574/580 緩衝 6）
+- cross-source review = P1b sub-agent + 用戶人工 in-place 修正（符合 #007 預防做法 a + 規模 85 行可替代另跑 Codex 的設計判定）
+
+**沿用 #006 預防做法驗證**（v6.2.0 升格條目第 3 次實證）：
+- (a) 結構化區塊單獨估：migration-notes-v6.4 區塊估太樂觀（設計 0 行預估 → 實作展開 13 行 → 應用 v6.2.0 R-1 經驗壓回 6 行）—**部分失敗 → 部分補救**
+- (b) reviewer 主動 wc -l：design-reviewer 主動 wc -l 標 DR-1 arch-risk ✅
+- (c) 緩衝 ≥ 5 行硬規則：實作中 wc -l 觸發壓縮回 574 緩衝 6 守住 ✅
+
+**沿用 #007 預防做法驗證**（v6.4.0 升格後第 3 次實戰實證）：
+- (a) cross-source review hard requirement：P1b sub-agent 不同視角 + 用戶人工 in-place 修正 ✅
+- (b) 依賴表 walk：設計規格 「連動檔案依賴表 walk」section 7 列觸發完整 ✅
+- (c) 計畫前提字面證據掃描：架構師對 §15.5 預設兩處不一致主動精煉（step 9c 衝突 / step 6c-1 命名不存在）→ 證明 architect 起手主動審查預設前提的能力 ✅
+
+**#006 累積實證紀錄**（從 v6.2.0 升格起）：
+- 第 1 次：v6.3.0 對照範例庫（+5 examples · CLAUDE_TEMPLATE 增量 0 守住）
+- 第 2 次：v6.3.x infrastructure-patch（純壓縮 566→547 緩衝充足）
+- 第 3 次：v6.4.0 A+E 捆綁（574/580 緩衝 6 守住 · 過程中觸發 1 次壓縮重做）
+
+**#007 累積實證紀錄**（從 v6.2.0 → 含 #007 升格後跑的所有閉環）：
+- 第 1 次（升格實證 #1）：補強計劃 Phase G v1 self-review 漏看率 50%
+- 第 2 次（升格實證 #2）：補強計劃 Phase G v2 self-review 漏看率 67%（觸發 R-5 → 取消 Phase G）
+- 第 3 次（升格實證 #3）：v6.4.0 A+E 捆綁 cross-source review 成功應用（P1b sub-agent 抓 2 arch-risk + 5 medium，無連續 needs-attention，R-5 未觸發）
+
+**v6.4.0 首次運作 Self-Irony 觀察**（meta layer · 升格降級機制本身）：
+- 本閉環首次運作 step 9d 降級候選掃描，作用對象 = 0
+- P1b DR-2「YAGNI 邊緣」預測準確 — 升格機制當前實際可降級對象 = 0（#001-#005 EH-3 過濾 / #006+#007 升格時間 < n=10 閉環）
+- 自帶 self-irony：本閉環是「為了應對 #007 升格教訓」而採納候選 A+E 的，但 #007 本身就是「給尚未發生的問題提前準備機制」的反面教材（YAGNI）
+- 用戶決策（接受全量）優先於 reviewer 警告 — 紀錄此 trade-off 待 ≥ 5 個非種子升格樣本累積後重評
+
+**下次注意**：
+1. **結構化 metadata 區塊（migration-notes / anchors）的展開行數預估**：#006 已升格但本次仍踩到 → 預估時 metadata block 必須單獨估 6-15 行 inline 風格 / 15-25 行展開式風格
+2. **首次運作 self-irony 是 explicit 設計**：當新機制本身無作用對象時不應視為「失敗」— 是「待啟動」狀態。建議 v6.5.x+ 追蹤指標「step 9d 候選數」是否在 6 個月後 > 0
+3. **R-5 計數窗口開始計時**：本次 P1b 為「第 1 輪 needs-attention（即使 0 high 仍有 5 medium）」嗎？嚴格定義是「verdict needs-attention」即 LLM 自評 needs-attention 字串。本次 verdict 是「不觸發回退」非 needs-attention，所以未進 R-5 計數
+
+---
+
+最後修訂：2026-05-20（v6.4.0 milestone closure · 候選 A+E 捆綁完整 5-Phase 閉環 · #006 + #007 第 3 次實證 · step 9d 首次運作 self-irony 0 作用對象）
+
+之前修訂：2026-05-19（追加 #007 升格後第 2 次實戰實證 · Phase G v2 self-review · 漏看率 67% · 用戶選項 D 取消 Phase G）
 
 之前修訂：2026-05-19（追加 #007 升格後第一次實戰實證 · 補強計劃 Phase G self-review · 單視角漏看率 50%）
 

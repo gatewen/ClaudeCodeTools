@@ -1,283 +1,384 @@
-# Phase 5 Part AB — 雙向追溯報告（v6.0.0）
+# Phase 5 Part AB — 雙向追溯結果（v6.4.0 A+E 捆綁）
 
-> 角色：獨立自證審查者（v6.0.0 升級任務 · 唯讀模式）
-> 日期：2026-04-26
-> Branch：feature/v6.0.0-karpathy
-> 上游：P1-design-spec.md v3 + P1b 第 2 輪 + P3 / P4 報告 + 7 個 P2 改動檔案
-> 模式：路徑模式直接 Read 全部產出物，不依賴主 agent 轉述
+> 審查日期：2026-05-20
+> 審查對象：候選 A（升格降級機制 BC-A1~A6 + EH-1~3 + IF-1）+ 候選 E（5 條反向劃線 BC-E1~E6 + IF-2）
+> 依據：`.claudedocs/agents/verifier.md` v1.4 步驟 0-10（含 step 9b/9c/9d）
+> 範圍特性：純方法論紀律文檔變動，無程式碼，純 markdown
 
 ---
 
-## 摘要
+## PRD 追溯
 
-| 維度 | 結果 |
+N/A — 無 PRD（v6.4.0 為 design/13 補強計劃驅動，非 PRD 驅動）。
+
+---
+
+## 正向追溯表（步驟 1-3）
+
+### 候選 A — 升格降級機制
+
+| ID | 描述 | 驗證層級 | 實作（檔:行）| 測試（驗證方式）|
+|----|------|---------|-------------|---------------|
+| BC-A1 | 問題追蹤.md 降級機制 section | [testable] | ✅ `問題追蹤.md:35-51`（17 行 · 4 子段：觸發/動作/執行者/復發/EH-3 範圍限縮）| ✅ Phase 4 P4 grep 命中（`### 降級機制` head + n=10 + 2n=20 + m=5 全文字描述）|
+| BC-A2 | 條件式紀律 + 歷史條目 sections | [testable] | ✅ `問題追蹤.md:172-186`（13 行 · 兩 section 預設空 + L-2 注釋）| ✅ Phase 4 grep `## 條件式紀律` + `## 歷史條目` 兩 section head 命中 |
+| BC-A3 | verifier.md step 9d 降級候選掃描 | [testable] | ✅ `verifier.md:184-196`（13 行 · 6 步驟 + 唯讀屬性 + 無候選明示句）| ✅ Phase 4 grep `**步驟 9d` head + step 10 line 199 同步引用 9d |
+| BC-A4 | CLAUDE_TEMPLATE Phase 5 升格段對稱補降級 | [testable] | ✅ `CLAUDE_TEMPLATE.md:386-388`（3 行新增）+ 原 commit bullet 號碼 3→4 line 389 / 4→5 line 390 重編號 | ✅ Phase 4 grep `3. **降級檢查**` 含「兩層教訓架構對稱」+「v6.4.0 新增」標 |
+| BC-A5 | 精簡閉環步驟 4.5 對稱補降級 | [testable] | ✅ `CLAUDE_TEMPLATE.md:427-431`（5 行 · 主 agent 自做 · 種子過濾 + n=10 + AskUserQuestion）| ✅ Phase 4 grep `3. **降級檢查**（主 agent 自做` 命中 line 427 |
+| BC-A6 | architect 步驟 1.a ⏸️ 條件式標記識別 | [testable] | ✅ `architect.md:18`（單行 inline 子規則）| ✅ Phase 4 grep `**⏸️ 條件式標記識別**（v6.4.0 新增）` 命中；觸發條件邏輯 + 略過邏輯 + 🗄️ archived 一律略過齊全 |
+
+### 候選 E — 5 條反向劃線
+
+| ID | 描述 | 驗證層級 | 實作（檔:行）| 測試（驗證方式）|
+|----|------|---------|-------------|---------------|
+| BC-E1 | R-1 閘門不可 bypass | [testable] | ✅ `CLAUDE_TEMPLATE.md:322` | ✅ Phase 4 grep `**R-1 閘門不可 bypass**` + 引用 Section 12/13 + 違反例 inline |
+| BC-E2 | R-2 cross-source hard requirement | [testable] | ✅ `CLAUDE_TEMPLATE.md:323` | ✅ grep `**R-2 cross-source review` + 4 類檔案 explicit 列舉 + #007 升格根因引用 |
+| BC-E3 | R-3 升格/降級/兩層教訓不可 bypass | [testable] | ✅ `CLAUDE_TEMPLATE.md:324` | ✅ grep `**R-3 升格/降級/兩層教訓架構不可 bypass` + 三項 explicit 點名（step 9b / step 9d / architect 起手）|
+| BC-E4 | R-4 架構體質拆解 + 合理性自檢不可省略 | [testable] | ✅ `CLAUDE_TEMPLATE.md:325` | ✅ grep `**R-4 架構體質拆解` + architect step 1/step 7 引用 |
+| BC-E5 | R-5 連續 ≥ 2 次 needs-attention 強制降級 scope | [testable] | ✅ `CLAUDE_TEMPLATE.md:326` | ✅ grep `**R-5 連續 ≥ 2 次` + 「同一閉環 P1b 連續 ≥ 2 輪」計數窗口 + #007 教訓 inline 引用 |
+| BC-E6 | 閉環核心理念.md 升格降級概念段 + 紀律保底層 + 對映表 | [testable] | ✅ `閉環核心理念.md:226-244`（19 行 · 升格降級段 + 紀律保底層段 + 3 欄對映表 + 設計精神段 + K-16 關係澄清段）| ✅ Phase 4 grep 全部 5 段命中；P3 R-3 medium「K-16 關係澄清未實作」**已 in-place 補修**（line 244 `**與 K-16 對照表關係**` 命中）|
+
+### EH-x 錯誤處理
+
+| ID | 描述 | 驗證層級 | 實作位置 | 一致性 |
+|----|------|---------|---------|-------|
+| EH-1 | n 值（A 級 n=10 / archive 2n=20）為文字描述非常數 | [testable] | `問題追蹤.md:40-41` | ✅ 寫為設計層決策文字描述 · 非機械常數 |
+| EH-2 | 復發處理 m=5 個閉環 ≥ 2 次門檻 | [testable] | `問題追蹤.md:49` + `verifier.md:193` | ✅ m=5 / ≥2 次 / 無需用戶確認 / 過敏感原理 4 子項全寫入 |
+| EH-3 | 種子條目不適用降級 | [testable] | `問題追蹤.md:51` + `verifier.md:190` | ✅ 過濾邏輯（「升格自 N=0」+「種子條目（外部來源）」雙觸發條件）齊全 |
+
+### IF-x 介面契約
+
+| ID | 描述 | 一致性 |
+|----|------|-------|
+| IF-1 | 問題追蹤.md ↔ verifier.md n/m 值單一真理源 | ✅ verifier.md line 191「n 值見問題追蹤.md「降級機制」section · 預設 10」/ line 193「m 值見同 section · 預設 5」靜態文字引用 pattern（DR-7 採納）；verifier 不在 runtime 動態 grep |
+| IF-2 | CLAUDE_TEMPLATE Section 13.5 R-3 ↔ 升格/降級/兩層教訓三項 | ✅ R-3 line 324 explicit 點名「step 9b（升格候選）/ step 9d（降級候選）/ architect 起手兩層教訓查詢」三項；機械化指向到位 |
+
+**正向追溯統計**：12/12 BC-x ✅ · 3/3 EH-x ✅ · 2/2 IF-x ✅ · 共 **17/17 (100%)** 通過。
+
+---
+
+## 反向追溯（步驟 5-7）
+
+### 步驟 5 — 行為路徑枚舉
+
+**N/A — 純方法論紀律文檔變動**，無公開函式 / 無程式碼路徑。verifier.md `<edge_cases>` 未明確處理「純 markdown 變動」案，但對比 P3 line 64-83（結構安全/依賴方向/語言專屬審查全 N/A）已建立先例。
+
+替代執行：對 5 個修改檔案的「設計-實作對應」做反向 grep——「實作中有無未對映回設計的孤兒變動？」
+
+### 步驟 6 — 反向分析：實作端孤兒變動掃描
+
+| # | 實作位置（grep 來源）| 對應設計項 | 判定 |
+|---|---------------------|-----------|------|
+| 1 | `問題追蹤.md:35-51` 降級機制 section | BC-A1 | ✅ 已覆蓋 |
+| 2 | `問題追蹤.md:172-178` 條件式紀律 section | BC-A2 | ✅ 已覆蓋 |
+| 3 | `問題追蹤.md:180-186` 歷史條目 section | BC-A2 | ✅ 已覆蓋 |
+| 4 | `verifier.md:184-196` step 9d | BC-A3 | ✅ 已覆蓋 |
+| 5 | `verifier.md:198-199` step 10 同步引用 9d | BC-A3（連動修改）| ✅ 已覆蓋（step 10 文字改動是 BC-A3 必要連動，非孤兒）|
+| 6 | `CLAUDE_TEMPLATE.md:386-388` Phase 5 降級檢查 | BC-A4 | ✅ 已覆蓋 |
+| 7 | `CLAUDE_TEMPLATE.md:427-431` 精簡閉環降級檢查 | BC-A5 | ✅ 已覆蓋 |
+| 8 | `architect.md:18` ⏸️ 條件式標記識別 | BC-A6 | ✅ 已覆蓋 |
+| 9 | `CLAUDE_TEMPLATE.md:318-326` Section 13.5 R-1~R-5 | BC-E1~E5 | ✅ 已覆蓋 |
+| 10 | `閉環核心理念.md:226-228` 升格-降級機制段 | BC-E6（升格降級對稱部分）| ✅ 已覆蓋 |
+| 11 | `閉環核心理念.md:230-244` 紀律保底層段 + 對映表 + K-16 澄清 | BC-E6（紀律保底層部分 + P3 R-3 in-place 補修）| ✅ 已覆蓋 |
+
+**未覆蓋路徑**：0 / 11 條（0%）。**反向覆蓋率：100%。無孤兒變動。**
+
+**特別說明**：第 5 列 `verifier.md:198-199` step 10 文字「含步驟 9b 升格候選 + 步驟 9c 事實前提追溯 + 步驟 9d 降級候選 三個 section」是 BC-A3 的必要連動修改（step 10 必須同步引用新增的 step 9d），非孤兒；列出僅為明確「step 10 改動已被設計授權」。
+
+### 步驟 7 — 執行路徑追蹤
+
+純文檔變動無執行路徑可追蹤。挑最複雜的 3 個 BC-x 改追「跨檔引用一致性」：
+
+#### BC-A3 verifier.md step 9d ↔ 問題追蹤.md ↔ CLAUDE_TEMPLATE 多向引用鏈
+
+引用鏈：
+- `verifier.md:191` 「n 值見問題追蹤.md「降級機制」section · 預設 10」
+  → 指向 `問題追蹤.md:35` `### 降級機制` section head
+  → section 內 line 40「n = 10」line 41「2n = 20」文字描述 ✅
+- `verifier.md:193` 「m 值見同 section · 預設 5」
+  → 同段 line 49「m = 5」+「≥ 2 次」門檻 ✅
+- `verifier.md:199` step 10 「含步驟 9b + 步驟 9c + 步驟 9d 三個 section」寫入 `P5AB-bidirectional-tracing.md`
+  → 本報告即執行該契約 ✅
+
+**設計意圖一致性**：✅ IF-1「靜態文字引用 pattern」運作正確；驗證 verifier 跑 step 9d 時不需 runtime grep 問題追蹤.md 取 n/m 值。
+
+#### BC-A4 + BC-A5 升格/降級對稱性
+
+完整閉環 Phase 5：升格檢查 (line 383-385) → 降級檢查 (line 386-388) → commit (line 389)
+精簡閉環步驟 4.5：升格檢查 (line 421-426) → 降級檢查 (line 427-431) → commit (line 432)
+
+**對稱結構**：兩處皆同序列「升格 → 降級 → commit」，且降級皆走「AskUserQuestion 確認 → 移到條件式紀律 section + Edit learning-log」相同動作鏈。差異點：完整閉環走 verifier sub-agent 偵測，精簡閉環主 agent 自做（design 規格 line 421 explicit 標「跟完整閉環 Phase 5 的分工差異」）。✅ 設計意圖一致。
+
+#### BC-E6 閉環核心理念.md 多概念段疊加
+
+引用鏈：
+- line 226「## 升格-降級機制」← 對應 BC-A1/BC-A3（候選 A 連動）
+- line 230「## 紀律保底層」+ line 234-241 對映表 ← 對應 CLAUDE_TEMPLATE Section 13.5 R-1~R-5
+- line 244「與 K-16 對照表關係」← 對應 P1 設計規格 line 115 explicit 要求「K-07 examples 不觸發連動」（P3 R-3 in-place 補修補上）
+
+**設計意圖一致性**：✅ 三段概念段疊加無互相覆蓋；K-16 關係澄清段（line 244）成功消除「兩個對映表並存」的閱讀歧義。
+
+---
+
+## 檢核修復確認（步驟 4）
+
+### 4a — Phase 3 R-x 修復狀態
+
+| R-x | 嚴重度 | 設計對照 | 修復狀態 | 備註 |
+|-----|--------|---------|---------|------|
+| R-1 | arch-risk | P1b DR-1 緩衝邊界 | ⚠️ 仍存在（不阻擋 · 跨 Phase 持續追蹤）| 詳見 arch-risk 追蹤 |
+| R-2 | arch-risk | P1b DR-2 YAGNI 邊緣 | ⚠️ 仍存在（不阻擋 · 跨 Phase 持續追蹤）| 詳見 arch-risk 追蹤 |
+| R-3 | medium | BC-E6 「K-16 關係澄清未實作」設計-實作 drift | ✅ **已修**（`閉環核心理念.md:244`「**與 K-16 對照表關係**」段補入）| 用戶決策 in-place 補修而非接受 drift |
+| L-1 | low | BC-A1 17 行 vs 設計 12 行 | ✅ 接受（合理擴充含 EH-3 + 設計引言）| 不阻擋 |
+| L-2 | low | 閉環核心理念.md +19 vs 設計 +7 | ✅ 接受（合理擴充含對映表展開 + 設計精神段）| 不阻擋 |
+
+**所有 medium 已修復或記錄決策。0 high。** ✅
+
+### 4b — 語言指南追溯
+
+N/A — 純 markdown 文檔變動，無程式碼。Phase 3 報告 line 81-85「語言專屬審查 N/A · 依設計規格 line 145 明示」一致。
+
+### 4c — Phase 1b DR-x 修復確認
+
+| DR-x | 嚴重度 | 修復狀態 | 證據 |
+|------|--------|---------|------|
+| DR-1 | arch-risk | ⚠️ **仍存在**（不修正，跨 Phase 持續追蹤）| P3 R-1 確認延續 |
+| DR-2 | arch-risk | ⚠️ **仍存在**（用戶決策「接受全量 A」，跨 Phase 持續追蹤）| P3 R-2 確認延續 |
+| DR-3 | medium | ✅ **已 in-place 補修**（P1 line 233 補位置 + 對映表 3 欄結構 + K-16 關係澄清）| P1 修正紀錄 line 232 |
+| DR-4 | medium | ✅ **已 in-place 補修**（R-2 補機械化觸發條件 + R-5 補計數窗口 + R-5 補 #007 引用）| P1 修正紀錄 line 234 |
+| DR-5 | medium | ✅ **已 in-place 補修**（EH-2 改為 m=5 個閉環 ≥ 2 次命中）| P1 修正紀錄 line 235 |
+| DR-6 | medium | ✅ **已 in-place 補修**（BC-E1~E5 補 heading level `### 13.5` h3）| P1 修正紀錄 line 236 |
+| DR-7 | medium | ✅ **已 in-place 補修**（IF-1 補操作 pattern + n/m 值兩處同步要求）| P1 修正紀錄 line 237 |
+| L-1~L-4 | low | ✅ L-2 採納 / L-4 採納（違反例 inline）/ L-1/L-3 接受 | P3 R-1 line 121-122 確認 L-4 採納 |
+
+**5 個 medium 全部 in-place 補修。2 個 arch-risk 進入跨 Phase 持續追蹤。** ✅
+
+---
+
+## 交叉比對發現（步驟 8）
+
+| # | 來源 | 發現 | 影響 |
+|---|------|------|------|
+| 1 | 正向 ↔ 反向 | 正向追溯 17/17 ✅ ↔ 反向掃描 0 孤兒變動 | 一致 — 雙向追溯互相驗證設計-實作對齊 |
+| 2 | 正向 BC-A3 ↔ verifier.md:199 | step 10 文字「含步驟 9b + 9c + 9d 三 section」與 BC-A3「6 步驟」一致 | step 10 連動修改在 P3 line 36「step 10 已同步在 line 198-199 引用 9d」已記錄 |
+| 3 | 反向 line 11 ↔ P3 R-3 | 閉環核心理念.md line 244「與 K-16 對照表關係」存在 → BC-E6 完整實作 | P3 R-3 medium 已修復（in-place 補修成功）|
+| 4 | 設計 line 154 ↔ 實作終態 | 設計預估 CLAUDE_TEMPLATE 575 / 緩衝 5 vs 實作終態 574 / 緩衝 6 | 實作低於預估 1 行（BC-E1~E5 inline 違反例節省更多）→ DR-1 緩衝邊界稍有改善但仍在邊界區間 |
+| 5 | 設計 line 158 ↔ 實作淨增 | 設計預估全 repo 淨 +85 行 vs 實作淨增 96 行（27+35+14+1+19）| +11 行差，含閉環核心理念.md +19 vs 預估 +7（多 +12 含對映表展開 + 設計精神段 + K-16 澄清段，皆合理擴充）|
+| 6 | 反向覆蓋驗證 ↔ R-5 觸發判定 | P1b verdict「不觸發回退」≠ needs-attention，且 P3 verdict「不觸發斷點 A」≠ needs-attention | R-5「連續 ≥ 2 次 needs-attention」**未觸發**——本閉環走在正常路徑 |
+
+**交叉比對結論**：無矛盾發現。BC-A3 step 10 改動 + BC-E6 K-16 澄清段補修兩處皆有設計/補修依據，非孤兒變動。
+
+---
+
+## arch-risk 追蹤狀態（步驟 9）
+
+| 來源 | ID | 描述 | 當前狀態 | Phase 5 處置 |
+|------|-----|------|---------|--------------|
+| Phase 1b | DR-1 | CLAUDE_TEMPLATE 緩衝 5 行命中 #006 預防做法 (c)「緩衝 ≥ 5 行硬規則」下界 | ⚠️ **仍存在**（實作後緩衝 6，超過下界 1 行，但仍在邊界）| 列入跨 Phase 持續追蹤；v6.5.x 規劃時評估「反向劃線抽到 `.claudedocs/standards/reverse-discipline.md` 獨立檔」選項 |
+| Phase 1b | DR-2 | 升格機制大樣本未驗證即補對稱降級（YAGNI 邊緣），當前實際作用對象 = 0 | ⚠️ **仍存在**（用戶決策接受全量 A）| 列入跨 Phase 持續追蹤；等 ≥ 5 個非種子升格樣本累積後重評 |
+| Phase 3 | R-1 | DR-1 緩衝邊界追蹤項持續存在（沿 DR-1）| ⚠️ **仍存在** | 同 DR-1 處置 |
+| Phase 3 | R-2 | DR-2 YAGNI 邊緣追蹤項持續存在（沿 DR-2）| ⚠️ **仍存在** | 同 DR-2 處置 |
+
+**重要說明**：DR-1 + DR-2 **不是「未修正」**——是已 explicit 標明的 arch-risk 跨 Phase 知識追蹤項。P1b 用戶決策「接受全量 A 並記錄不阻擋」，本閉環不回退。Phase 5 verifier 的職責是把這 2 條 + Phase 3 對應 R-1/R-2 沿用條目納入「未來閉環重評清單」，避免遺忘。
+
+**新增 arch-risk**：0 條。本閉環無新發現的架構風險。
+
+---
+
+## 事實前提追溯（步驟 9c · v5.23.1）
+
+**Step 9c 不適用，無外部事實引用**。
+
+設計規格 line 16「種子 #001-#005 不適用（無 config / 環境事實 / 共用值）」+ P1b line 33「設計規格未引用任何環境事實斷言」+ P1 閘門檢查 line 203-204「字面證據掃描：不適用 / 共用值檢測：不適用」三方一致確認。
+
+本閉環全部 12 條 BC-x + 3 條 EH-x + 2 條 IF-x 皆屬「方法論紀律純邏輯設計」，無「服務 X 在 IP Y」「DB 在 Z 機器」「API 走 HTTPS」類環境事實斷言。
+
+**V-10 判定**：N/A。
+
+---
+
+## 升格候選掃描（步驟 9b · 兩層教訓架構支撐）
+
+### 掃描範圍
+
+讀取 `.claude-loop/learning-log.md` 全檔（332 行 · 共 8 個 `→ 已升格` marker + 多個 milestone closure / 升格實證條目）。
+
+### 已升格條目對照（問題追蹤.md「長期警惕模式」section）
+
+| 條目 | 升格日期 | 已升格根因 | learning-log 對應條目數 |
+|------|---------|-----------|------------------------|
+| #006 行數預算估算樂觀 | 2026-04-26 | 行數膨脹 / 緩衝不足 | 3 筆（line 21-26, 31-37, 86-91）+ 後續 v6.3.0 / dogfooding-1 驗證實證 |
+| #007 Single-Perspective Self-Review Blind Spot | 2026-05-05 | single-LLM 自評盲點 | 3 筆（line 207-214, 219-226, 230-239）+ 2 筆升格後實證（line 260-283, 287-323）|
+
+### 根因聚類（未升格條目）
+
+從 learning-log 第 1-332 行掃描，根因關鍵字分組：
+
+| 根因類型 | 累積次數 | 來源 |
+|---------|---------|------|
+| 結構化區塊估算（已升格 #006 涵蓋） | 已歸 #006 | 不重算 |
+| 跨 LLM 視角 / cross-source 漏看（已升格 #007 涵蓋） | 已歸 #007 | 不重算 |
+| 依賴表 walk 遺漏（已歸 #007 預防做法 (b)） | 已歸 #007 | 不重算 |
+| placeholder 部署生命週期視角檢查 | **1 次**（line 12-15 IF-1 anchor `{{PROJECT_NAME}}` placeholder 在部署時被替換）| 未達 ≥ 3 次門檻 |
+| DR 修正傳遞性 / 次生副作用 | **2 次**（line 29-35 v6.0.0 DR-3 → DR-1v2 / line 41-46 DR-1 → BC-4 by-design）+ v6.1/6.2/6.3 連續無新證據（line 71, 111, 139）→ 觀察項已正式結束 | 已正式結束（非升格候選）|
+| 探索成本失控（§5.6 dogfooding） | **1 次**（line 164-187）| 未達門檻；已在 CLAUDE_TEMPLATE Section 1.5 預防做法處理 |
+| spec self-irony（§5.5 DOGFOODING.md Y/N 反轉） | **1 次**（line 168）| 未達門檻 |
+
+### #006 累計實證紀錄（本閉環新增證據鏈追蹤）
+
+按 verifier 額外重點關注 #3 要求，追溯 #006 升格後實證證據鏈：
+
+| 證據 # | 日期 | 事件 | 結果 |
+|--------|------|------|------|
+| 升格觸發 1 | 2026-04-26 | v6.0.0 教訓 #2（575 緩衝 6）| 升格基礎 |
+| 升格觸發 2 | 2026-04-26 | v6.0.0 教訓 #3（550 緩衝 1）| 升格基礎 |
+| 升格觸發 3 | 2026-04-26 | v6.2.0 R-1（545 超 18 → 步驟 3 high 回退）| 升格基礎（達 ≥ 3 門檻）|
+| 升格後實證 1 | 2026-04-26 | v6.3.0 沿用預防做法成功（CLAUDE_TEMPLATE 增量 = 0，緩衝守住）| #006 第一次驗證有效 ✅（line 140）|
+| 升格後實證 2 | 2026-04-26 | dogfooding-1（CLAUDE_TEMPLATE 540→561 緩衝 19）沿用 (a)(b)(c) 全達標 | #006 第二次驗證有效（line 183）|
+| 升格後實證 3 | **2026-05-20**（本閉環）| **v6.4.0 P3 R-1 line 121-133 命中 #006 預防做法 (c) 邊界**——終態 574 緩衝 6，比預估 575 緩衝 5 多 1 行；P1b DR-1 + P3 R-1 全程引用 #006 預防做法做為審查依據；P2 實作端 BC-E1~E5 採 inline 違反例（L-4 採納）節省 11 行守住預算 | **#006 第三次驗證有效**（本閉環）✅ |
+
+**#006 累計實證**：3 筆升格基礎 + 3 筆升格後實證 = **共 6 筆證據**（升格後實證 #3 是本閉環新增）。
+
+**判定**：#006 升格機制持續發揮作用，無需降級。
+
+### #007 累計實證紀錄
+
+按同樣方法追溯 #007 升格後實證證據鏈：
+
+| 證據 # | 日期 | 事件 | 結果 |
+|--------|------|------|------|
+| 升格觸發 1 | 2026-05-04 | cc_recommand 83.8 漏看 5 bug，codex 補回（line 207-214）| 升格基礎 |
+| 升格觸發 2 | 2026-05-05 早段 | 接續執行 2026-05-04 計畫前未審查前提（line 219-226）| 升格基礎 |
+| 升格觸發 3 | 2026-05-05 晚段 | 7 commit 後沒跑依賴表 walk（line 230-239）| 升格基礎（達 ≥ 3 門檻）|
+| 升格後實證 1 | 2026-05-19 | 補強計劃 Phase G v1 self-review 漏看率 50%（line 260-283）| #007 第一次驗證有效 ✅ |
+| 升格後實證 2 | 2026-05-19 | Phase G v2 self-review 漏看率 67%（line 287-323）| #007 第二次驗證有效 ✅ |
+| 升格後實證 3 | **2026-05-20**（本閉環）| **v6.4.0 P1b 子 agent + 用戶人工 cross-check 兩層 cross-source review 機制（設計規格 line 15 explicit 引用 #007 預防做法 (a)）；P1b 0 high → 沒有觸發 R-5「連續 ≥ 2 次 needs-attention」**——cross-source review 預防做法成功應用 | **#007 第三次驗證有效**（本閉環）✅ — 屬「預防做法成功應用」而非「失敗實證」 |
+
+**#007 累計實證**：3 筆升格基礎 + 2 筆失敗實證 + 1 筆成功實證 = **共 6 筆證據**。
+
+### R-5 觸發判定
+
+按 verifier 重點關注 #7 要求檢查：
+
+- P1b verdict（`.claude-loop/artifacts/P1b-design-review.md` line 18）：「**判定：不觸發回退到 Phase 1**。0 high → 可進 Phase 2」
+- P3 verdict（`.claude-loop/artifacts/P3-quality.md` line 24）：「**判定**：不觸發斷點 A。可進 Phase 4」
+
+**判定結論**：本閉環 P1b 第 1 輪即「不觸發回退」，**非 needs-attention**。R-5「同一閉環 P1b 連續 ≥ 2 輪 verdict needs-attention」**未觸發**——本閉環走在 cross-source review 預防做法成功應用的路徑上，反而為 #007 預防做法增加正向實證。
+
+### 升格候選結論
+
+**0 個新升格候選**——learning-log 中未升格根因最高頻為「DR 修正傳遞性」(2 次但已正式結束於 v6.3.0)；其他單筆觀察項皆未達 ≥ 3 次門檻。
+
+**新增實證紀錄**（屬「實證追加」而非「新升格」）：
+- 為 **#006** 累積第 3 次升格後實證（v6.4.0 本閉環 #006 預防做法 (c) 邊界 + DR-1 跨 Phase 追蹤）
+- 為 **#007** 累積第 3 次升格後實證（v6.4.0 本閉環 cross-source review 預防做法成功應用，未觸發 R-5）
+
+主 agent Part C 應在 commit 後 Edit learning-log 為本次 v6.4.0 closure 新增 milestone entry，明標 #006 + #007 第 3 次實證。
+
+---
+
+## 降級候選掃描（步驟 9d · v6.4.0 新增 · 首次運作 ⚠️ self-irony 觀察）
+
+### 掃描範圍
+
+讀取 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section 全部 7 條條目（#001-#007）。降級機制 n=10 個閉環無新證據 → A 級降級候選 / 2n=20 → 完全 archive 候選。
+
+### 條目逐條判定
+
+| 條目 | 升格日期 | 升格自 N 筆 | EH-3 過濾 | 過去 n=10 閉環新證據 | 判定 |
+|------|---------|------------|----------|---------------------|------|
+| #001 絕對負面陳述需證據 | 2026-04-18 | 種子條目（外部 reel_core 案）| ✅ **跳過** | N/A | 種子條目，EH-3 範圍限縮 |
+| #002 Existence-vs-Routing 框架錯置 | 2026-04-18 | 種子條目（外部 reel_core 案）| ✅ **跳過** | N/A | 同上 |
+| #003 單線索 → 事實 | 2026-04-22 | 種子條目（外部 GS 誤判事件）| ✅ **跳過** | N/A | 同上 |
+| #004 忽視字面證據 | 2026-04-22 | 種子條目（外部 GS 誤判事件）| ✅ **跳過** | N/A | 同上 |
+| #005 共用值私有化 | 2026-04-22 | 種子條目（外部 GS 誤判事件）| ✅ **跳過** | N/A | 同上 |
+| #006 行數預算估算樂觀 | 2026-04-26（24 天前）| 升格自 3 筆 learning-log | ❌ 適用降級規則 | v6.3.0 / dogfooding-1 / v6.4.0（本閉環 P3 R-1）3 筆 + 升格基礎 3 筆 = **近 5 個閉環內持續有新證據** | ✅ **無降級候選**（active 條目持續有現實證據）|
+| #007 Single-Perspective Self-Review Blind Spot | 2026-05-05（15 天前）| 升格自 3 筆 learning-log | ❌ 適用降級規則 | Phase G v1 + v2（2026-05-19）+ 本閉環 cross-source review 預防做法應用 = **近 3 個閉環內持續有新證據** | ✅ **無降級候選**（active 條目持續有現實證據）|
+
+### 復發偵測（條件式紀律 section）
+
+讀取 `問題追蹤.md:172-178` 「## 條件式紀律」section → **目前無條目**（line 178「（目前無條目，待第一筆降級觸發後填入）」）。
+
+→ 無復發偵測對象。
+
+### 降級候選結論
+
+**0 個降級候選 · 0 個完全 archive 候選 · 0 個復發升回候選**。
+
+按 verifier.md step 9d 規範明示：「無降級候選（active 條目皆有近 n 閉環新證據 / 條件式條目無 m 內 ≥ 2 次命中）」。
+
+### ⚠️ Self-Irony 觀察（首次運作 meta 層）
+
+按 verifier 重點關注 #6 要求 explicit 標明：
+
+**本閉環首次運作降級機制（step 9d / BC-A3 / BC-A4 / BC-A5）**，且本次掃描的**作用對象 = 0**：
+- 種子條目 #001-#005 全被 EH-3 範圍限縮過濾
+- 非種子升格條目 #006 + #007 升格時間都太近（24 天 / 15 天 << n=10 閉環 ≈ 數月），且都持續有新證據
+- 條件式紀律 section 預設空 → 復發偵測無對象
+
+這 explicit 印證了 **P1b DR-2「YAGNI 邊緣」arch-risk 的擔憂**：「降級機制當前實際作用對象 = 0」+「+96 行為一個目前無作用對象的機制提前佈建」。
+
+**Meta 觀察**：
+1. **降級機制首次運作即「無作用對象」**——P3 R-2 line 138-148 + P1b DR-2 line 70-100 預測準確
+2. **但這不代表設計失敗**——機制本身結構穩固（種子條目過濾正確，n/m 門檻邏輯通暢，唯讀屬性遵守）
+3. **真正的考驗在未來**：等 ≥ 5 個非種子升格樣本累積後（最早 2026-07-26 起，按 v7 啟動條件累積時序估算），#006 / #007 + 後續升格條目才會開始進入 n=10 閉環門檻
+4. **本閉環應該 record 而非藏起來這個 meta 觀察**——「**首次運作即 0 作用**」是 #007 升格教訓「self-review 漏看率」對方法論本身的反向印證：降級機制不是「設計時直覺認為有用」（self-review），而是「等實證累積足夠樣本後才能判定是否值得 +96 行」（cross-source 等實證）
+
+主 agent Part C 應該在 commit message 或 README 版本歷史中 explicit 提及這個 self-irony，避免「永遠不會用到的功能默默存在」的技術債堆積。
+
+---
+
+## 總結
+
+### 量化指標
+
+| 指標 | 結果 |
 |------|------|
-| 正向追溯（13 ID） | 13 ✅ / 0 ❌ |
-| 反向分析（行為路徑） | 8 條全部對應到 BC-x，0 設計遺漏 / 0 冗餘 |
-| arch-risk 緩解（DR-2 / DR-3 / BC-4 by-design） | 3/3 確認緩解（細節見下方判定） |
-| Step 9c 事實前提（3 條主張） | 3 強 / 0 中 / 0 弱（詳見 P5-fact-claims.md） |
-| 跨 Phase 一致性（R-x = 0 high vs 反向 = 0 未覆蓋） | 一致，純文檔升級的特徵 |
-| 是否觸發回退？ | **❌ 不觸發**。所有檢查通過。 |
+| 正向追溯通過率 | **17/17 (100%)** — 12 BC-x + 3 EH-x + 2 IF-x 全部 ✅ |
+| 反向追溯孤兒變動 | **0/11 (0%)** — 所有實作變動皆對映回設計項 |
+| 反向覆蓋率 | **100%** |
+| arch-risk | **2 項仍存在**（DR-1 / DR-2，沿 Phase 3 R-1 / R-2，跨 Phase 持續追蹤）/ **0 新增** |
+| Phase 1b DR-x medium 修復 | **5/5 已 in-place 補修**（DR-3/4/5/6/7）|
+| Phase 3 R-x medium 修復 | **1/1 已 in-place 補修**（R-3 K-16 關係澄清）|
+| 事實前提追溯（V-10）| **不適用**（純邏輯設計，無環境事實引用）|
+| 升格候選 | **0 個新升格** + #006 / #007 各新增 1 筆實證（屬實證追加，非新升格）|
+| 降級候選 | **0 個降級** + 0 個 archive + 0 個復發升回 ⚠️ **首次運作即 0 作用對象**（self-irony · DR-2 預測準確）|
+| R-5 觸發判定 | **未觸發**（P1b verdict 不觸發回退，非 needs-attention）|
+
+### 整體判定
+
+✅ **通過 — 可進 Part C**
+
+依據：
+1. 正向追溯 100% + 反向覆蓋 100% → 設計-實作雙向對齊
+2. 5 個 medium DR-x + 1 個 medium R-x 全部 in-place 補修
+3. 2 個 arch-risk（DR-1 + DR-2）已明確標識為跨 Phase 持續追蹤項，非「未修正」
+4. 步驟 9c 不適用（純邏輯設計）
+5. 步驟 9b 無新升格 + 為 #006/#007 各新增 1 筆實證
+6. 步驟 9d 首次運作 0 作用對象，self-irony 已 explicit record（驗證 DR-2 預測準確）
+
+### 主 agent Part C 處置建議
+
+1. **commit 動作**：批准進 commit · 將 5 個修改檔案 + P1/P1b/P3/P5AB 4 個 artifacts 一併納入 commit
+2. **learning-log 更新**（Edit 而非 sub-agent）：
+   - 為本閉環新增 v6.4.0 milestone closure entry
+   - 在 entry 中 explicit 標 **#006 第 3 次實證**（DR-1 邊界 + P3 R-1）+ **#007 第 3 次實證**（cross-source review 預防做法成功應用）
+   - 為「降級機制首次運作 0 作用對象」the self-irony 寫入專段 record（避免技術債）
+3. **commit message 建議**：
+   - 主標：「v6.4.0：升格降級機制（候選 A）+ 5 條反向劃線 R-1~R-5（候選 E）」
+   - 內文需提及：A+E 捆綁 / 拒絕 B+G / Codex 雙輪 review 已記錄 / #006 + #007 第 3 次實證 / 降級機制首次運作 0 作用對象的 self-irony
+4. **版本同步檢查**（依 CLAUDE.md 第 11 列依賴表 walk）：3 處版本記錄必須一併更新
+   - CLAUDE_TEMPLATE.md 末尾註解
+   - dev-closed-loop/README.md 版本歷史
+   - 根 README.md 版本歷史
+5. **無回退觸發**：可直接進 Part C 升格/降級確認 + commit
+
+### 跨 Phase arch-risk 持續追蹤（傳遞給未來閉環）
+
+| arch-risk | 來源 | 重評時機 |
+|-----------|------|---------|
+| DR-1 / R-1 緩衝邊界 | P1b / P3 | v6.5.x 規劃時主動評估「反向劃線抽出獨立檔」選項 |
+| DR-2 / R-2 降級機制 YAGNI 邊緣 | P1b / P3 | 等 ≥ 5 個非種子升格樣本累積後（最早 2026-07-26 後）重評 |
 
 ---
 
-## 步驟 1 — 行為路徑枚舉
-
-v6.0.0 是純文檔 + Skill 邏輯升級，外部可觀察行為集中在：① 文檔讀取（CLAUDE.md / README）、② Skill 部署/升級流程、③ 主 agent runtime 行為（Section 0 / 12.5 觸發）。
-
-| # | 行為路徑 | 觸發者 | 對應 BC |
-|---|---------|--------|---------|
-| P1 | 用戶讀根 README → 看到 Karpathy 引用 + 跨產出物矛盾陳述 | 用戶 | BC-2 |
-| P2 | 用戶讀 dev-closed-loop/README → 看到 Trade-off 宣告 + Karpathy 引用 + v6.0.0 版本歷史條目 | 用戶 | BC-1 同步 + BC-2 同步 + BC-6 同步 |
-| P3 | Claude 讀 CLAUDE.md → Section 0 cross-cutting 4 問自檢觸發 | Claude（任一 Phase 內） | BC-3 |
-| P4 | 用戶或 Claude 命中 push back 5 條觸發場景 → 主 agent 輸出 ⚠️ 反對格式 | Claude | BC-7 |
-| P5a | 用戶執行 `/dev:init-claude upgrade`，cache=v6.0 / deploy=v5.x → 觸發 Step 5 migration flow | 用戶 + Skill | BC-4 + BC-5 |
-| P5b | Migration 策略 A 全替換 → 警告丟失客製化後覆蓋 | Skill | BC-5（5.4 A）|
-| P5c | Migration 策略 B 智能合併 → 解析 anchors 注入新 Section | Skill | BC-5（5.4 B）+ IF-1 |
-| P5d | anchor.match 找不到 → 自動降級策略 C | Skill | EH-2 |
-| P5e | 策略 C 手動 diff → 印出 diff | Skill | BC-5（5.4 C）|
-| P5f | 部署後驗收 grep `## 0` / `### 12.5` / `## ⚖️ Trade-off` 任一缺失 | Skill | BC-5 5.5 + EH-3 |
-| P6 | 用戶 grep CLAUDE_TEMPLATE 末尾「closed-loop v」→ 命中 v6.0.0 / 兩處 README 版本歷史頂列 v6.0.0 | 用戶 / 工具 | BC-6 |
-| P7 | Claude 進 Phase 1 讀「五階段閉環流程.md」→ 看到開頭警示行（Section 0 適用所有 Phase） | Claude | BC-3 連動 |
-| P8 | Claude 觸發事實主張閘門 → 讀產出物格式.md「Push back 輸出格式」section（Section 12 / 12.5 對稱） | Claude | BC-7 連動 |
-| P9 | Claude 讀「閉環核心理念.md」→ 看到「橫切自檢層」+「主動質疑」段（v6.0.0 新增） | Claude | BC-3 連動 + BC-7 連動 |
-| P10 | 偵測到非 v5.x / v6.x 版本（v4.x / 無標記）→ EH-1 警告 + AskUserQuestion 三選一 | Skill | EH-1 |
-
-**枚舉完整度檢查**：以上 10 條覆蓋 v6.0.0 引入的全部新行為。**無遺漏路徑**。
-
----
-
-## 步驟 2 — Part A 正向追溯（從設計 → 實作 → 驗證）
-
-逐項對映 P1-design-spec.md v3 的 BC-x / EH-x / IF-x 到 P2 實作精確位置：
-
-| ID | P1 設計位置（line） | P2 實作位置（file:line） | P3 / P4 驗收 | 標記 |
-|----|---------------------|------------------------|--------------|------|
-| **BC-1** Trade-off | P1 line 79-111 | `CLAUDE_TEMPLATE.md:3-22` (`## ⚖️ Trade-off 顯式宣告` 21 行) · `dev-closed-loop/README.md:15-17`（外部精簡版 Trade-off 段） | P3 R-2: 21 ≤ 30 ✅ · P4 Test 4: grep 命中 1 | ✅ |
-| **BC-2** README Karpathy | P1 line 115-136 | `README.md:5-15` (`## LLM 編碼的根本問題` + Karpathy URL) · `dev-closed-loop/README.md:3-13` 同步 | P3 R-7: 兩處標題 + URL 全命中 ✅ | ✅ |
-| **BC-3** Section 0 cross-cutting | P1 line 140-173 | `CLAUDE_TEMPLATE.md:36-54` (`## 0 四原則橫切自檢層`，4 個 Q + 對映表 4 列含 12.5) · 連動 `concepts/閉環核心理念.md:195-201`「橫切自檢層」段 · 連動 `process/五階段閉環流程.md:3` 開頭警示行 | P3 R-2: 20 ≤ 30 ✅ · P4 Test 4: grep `## 0 四原則橫切自檢層` 命中 1 · 自證複測 9 個 Q-token 命中（4 個獨立 + 5 個對映表/設計精神引用，與規格相符） | ✅ |
-| **BC-4** migration-notes 區塊 | P1 line 177-185 | `CLAUDE_TEMPLATE.md:470-499`（HTML comment 區塊 30 行，含 5 keys + 3 anchor objects） | P3 R-2: 30 vs 25 多 5 行（**by-design**，見步驟 6）· P4 Test 3: awk 抽出 5 keys ✅ | ✅（by-design） |
-| **BC-5** init-claude migration logic | P1 line 189-207 | `init-claude.md:190-245`（Step 5 v5.x→v6.0.0 Migration Flow，含 5.1 偵測 / 5.2 awk 解析 / 5.3 摘要 / 5.4 三策略 / 5.5 驗收，57 行） | P3 R-2: 57 ≤ 80 ✅ · P4 Test 7: 偵測邏輯 + Test 3: awk 解析 ✅ | ✅ |
-| **BC-6** 版本號三處 bump | P1 line 211-219 | `CLAUDE_TEMPLATE.md:502` `closed-loop v6.0.0` · `dev-closed-loop/README.md:114` 版本歷史 v6.0.0 條目（對外詳細版）· `README.md:151` 版本歷史 v6.0.0 條目（對內精簡版） | P3 R-1: 三處 v6.0.0 一致 ✅ | ✅ |
-| **BC-7** Section 12.5 Push back | P1 line 223-268 | `CLAUDE_TEMPLATE.md:253-279` (`### 12.5 Push Back 義務`，5 條觸發 + 輸出格式 + 設計精神 + 反模式，28 行) · 連動 `concepts/閉環核心理念.md:203-214`「主動質疑」段 · 連動 `standards/產出物格式.md:673-685`「Push back 輸出格式」section | P3 R-2: 28 ≤ 40 ✅ · P4 Test 4: grep `### 12.5 Push Back 義務` 命中 1 · 自證複測：5 條觸發場景齊全（含第 5 條「用戶事實前提待驗證」） | ✅ |
-| **EH-1** 未知版本偵測 | P1 line 274-285 | `init-claude.md:200-201`（5.1 空值/v4.x 分支「警告 + AskUserQuestion 三選一 A/C/Abort」） | P4 Test 7: 邏輯架構正常；P5 確認三選一含 Abort 防靜默覆蓋 | ✅ |
-| **EH-2** 錨點失敗自動降級 | P1 line 289-298 | `init-claude.md:233`（5.4 B 第 2 步：`找不到 → 觸發 EH-2 自動降級為策略 C`，含警告訊息） | P4 標明「未實測」（Phase 5 追溯範圍）；自證複測：邏輯路徑明確「降級為策略 C」非「fallback 到策略 A」，符合反模式禁令 | ✅ |
-| **EH-3** placeholder 未替換 | P1 line 302-308 | `init-claude.md:243`（5.5 `grep -c "{{" ./CLAUDE.md  # 應為 0` 報錯阻擋） | P4 Test 4: 部署驗收 grep 設計正確 | ✅ |
-| **EH-4** 依賴連動漏改 | P1 line 312-316 | P3 流程閘門（非 P2 實作項，由 P3 R-1 dependency 連動審查驗證） | P3 R-1：BC-3 三檔同步 ✅ + BC-7 兩檔同步 ✅ + BC-6 三處版本一致 ✅ | ✅ |
-| **EH-5** 行數預算超出 | P1 line 320-333 | P3 流程閘門（非 P2 實作項，由 P3 R-3 行數預算驗證） | P3 R-3：CLAUDE_TEMPLATE 510 ≤ 550，緩衝 40 行 ✅（DR-1v2 修正後拉至 ≥ 25 行瘦身要求） | ✅ |
-| **IF-1** migration-notes metadata | P1 line 339-395 | `CLAUDE_TEMPLATE.md:470-499` metadata 區塊 + `init-claude.md:202-235`（awk parser + anchors 迴圈） | P4 Test 2: 三 anchor.match 全在 fresh CLAUDE_TEMPLATE 命中 · P4 Test 3: 5 keys + anchors list of objects 完整可解析 · 自證複測：三 anchor.match 字串均無 `{{PLACEHOLDER}}`（DR-1 修正禁令滿足） | ✅ |
-
-**正向追溯結論**：13 ✅ / 0 ❌。每一項均能在 P2 改動的 7 個檔案中精確定位 file:line，無「設計但未實作」的缺漏。
-
----
-
-## 步驟 3 — Part B 反向分析（從實作 → 設計覆蓋度）
-
-對步驟 1 枚舉的 10 條外部行為路徑反推設計來源：
-
-| 路徑 | 實作落點 | 對應設計 ID | 判定 |
-|------|---------|------------|------|
-| P1 根 README Karpathy 引用 | `README.md:5-15` | BC-2 | 對應 |
-| P2 dev-closed-loop README Trade-off + Karpathy 同步 | `dev-closed-loop/README.md:3-17` | BC-1 同步 + BC-2 同步 + BC-6 v6.0.0 條目 | 對應 |
-| P3 Section 0 cross-cutting 4 問 | `CLAUDE_TEMPLATE.md:36-54` | BC-3 | 對應 |
-| P4 Push back 5 條觸發 + 輸出格式 | `CLAUDE_TEMPLATE.md:253-279` | BC-7 | 對應 |
-| P5a Migration flow 入口（5.1 偵測）| `init-claude.md:194-201` | BC-5（含 EH-1）| 對應 |
-| P5b 策略 A 全替換 | `init-claude.md:230` | BC-5 5.4 A | 對應 |
-| P5c 策略 B 智能合併 + IF-1 anchors | `init-claude.md:231-235` + `CLAUDE_TEMPLATE.md:489-498` | BC-5 5.4 B + IF-1 | 對應 |
-| P5d 錨點失敗降級 | `init-claude.md:233` | EH-2 | 對應 |
-| P5e 策略 C 手動 diff | `init-claude.md:236` | BC-5 5.4 C | 對應 |
-| P5f 部署驗收 grep | `init-claude.md:238-245` | BC-5 5.5 + EH-3 | 對應 |
-| P6 三處 v6.0.0 版本號 | `CLAUDE_TEMPLATE.md:502` + 兩處 README | BC-6 | 對應 |
-| P7 process/五階段閉環流程.md 開頭警示 | line 3 | BC-3 連動 | 對應 |
-| P8 standards/產出物格式.md「Push back 輸出格式」 | line 673-689 | BC-7 連動 | 對應 |
-| P9 concepts/閉環核心理念.md「橫切自檢層」+「主動質疑」 | line 195-214 | BC-3 連動 + BC-7 連動 | 對應 |
-| P10 EH-1 未知版本三選一 | `init-claude.md:200-201` | EH-1 | 對應 |
-
-**反向分析結論**：10 條行為路徑（細分至 P5a-P5f 共 15 條落點）**全部對應到 BC-x / EH-x / IF-x**。
-
-- 0 個 **設計遺漏**（無「實作有但設計未說」的隱性決策）
-- 0 個 **冗餘文檔段落**（無「P2 順手寫但 P1 沒要求」的 drive-by changes，與 P3 R-8 反模式偵測結果一致）
-
----
-
-## 步驟 4 — 交叉比對（正向 vs 反向）
-
-| 比對維度 | 結果 |
-|---------|------|
-| 正向 ❌ 數量 | 0 |
-| 反向「遺漏設計」數量 | 0 |
-| 反向「冗餘」數量 | 0 |
-| 兩向是否互補（即正向缺失 ↔ 反向冗餘）？ | N/A（兩邊皆 0，無互補關係需檢查） |
-| 是否有「正向 ✅ 但反向找不到對應路徑」？ | 否。所有 13 ID 都映射到至少 1 條外部行為路徑 |
-
-**結論**：v6.0.0 設計-實作 mapping 完美一一對應。Surgical 原則（Karpathy Q3）落實——P2 沒有越界。
-
----
-
-## 步驟 5 — 跨 Phase 一致性驗證
-
-按 CLAUDE_TEMPLATE Phase 5 Part C「⛔ 跨 Phase 一致性」要求比對：
-
-- **Phase 3 R-x 統計**：0 high · 0 arch-risk · 0 medium · 1 low（BC-4 30 行 vs 規格 25 行，by-design）
-- **Phase 5 反向分析未覆蓋路徑**：0 個
-
-判定：**R-x ≥ 3 但反向 = 0** 不成立（R-x=1 low）；**R-x = 0 但反向發現多** 不成立（反向=0）。**兩數相符**：v6.0.0 是純文檔升級，scope 由 P1 嚴格管控（7 個檔案明確列入「唯一檔案集合」），P2 嚴守 Surgical → P3 R-x 低 + P5 反向覆蓋完整 → 跨 Phase 自洽。
-
-**不要求重做反向，不要求 P3 重審**。
-
----
-
-## 步驟 6 — arch-risk / by-design 追蹤
-
-### DR-2（P1b v1 arch-risk）：K-17 chain 中間態不一致
-
-**P1b v1 提報**：BC-1→2→3→4→5→6 順序下，BC-4 寫 migration-notes 時 BC-7（K-04 Push back）尚未寫入，產生 migration-notes 聲明「Section 12.5 已新增」但實際結構未到位的中間態。
-
-**v3 修正**：
-1. P1 Section 10 line 455-461 加「⚠️ 執行順序硬規則」段，明確「K-17（BC-4/5/6）必須是 chain 最後三步」
-2. 執行順序表（line 462-472）重排為 BC-1 → BC-2 → BC-3 → **BC-7** → BC-4 → BC-5 → BC-6
-3. P1b 第 2 輪確認 cycle-free（BC-4 描述新結構需先有結構 BC-3/BC-7；BC-5 解析 anchors 需先有 BC-4；BC-6 版本 bump 不依賴他者）
-
-**P5 實際確認**：
-- BC-4 migration-notes line 477-479 列出 breaking-changes：「新增 Section 0 / 新增 Section 12.5 / 新增 Trade-off 段」——這 3 句必須在 BC-3 (Section 0) / BC-7 (Section 12.5) / BC-1 (Trade-off) 都實作後才會「真實」
-- 在當前 commit 候選的工作樹中：Section 0（line 36-54）✅ + Section 12.5（line 253-279）✅ + Trade-off（line 3-22）✅ + migration-notes（line 470-499）✅ — **同檔案的不同段落同時存在，無中間態問題**
-- git status 顯示 7 個檔案皆為「modified」未 commit，工作樹是原子單位 → BC-4 寫的內容跟實際結構自始一致，未產生中間態
-
-**緩解判定**：✅ **真消除**。執行順序硬規則 + cycle-free + 工作樹原子提交三重保證。
-
----
-
-### DR-3（P1b v1 arch-risk）：行數預算過薄
-
-**P1b v1 提報**：原預算 v5.23.1 (444) + 新增 (125) - 瘦身 (20) = 549 ≤ 550，緩衝僅 1 行 brittle。
-
-**v3 修正**（DR-3v2 採用 P1b 第 2 輪建議方案 1）：
-- 強制瘦身 ≥ 20 → ≥ 25 行
-- EH-5 上限 600 → 575
-- 預算目標 549 → 544，緩衝 6 行
-
-**P5 實際確認**：
-- 當前 CLAUDE_TEMPLATE.md 實際行數 **510**（P3 R-3 + 自證 wc -l 雙重確認）
-- 規格上限 550 → 緩衝 **40 行**（不是規劃的 6 行，遠超預期）
-- 為何更寬鬆？P3 R-3 解釋：「BC-x 各項都比上限有空間」（BC-1 21/30、BC-3 20/30、BC-4 30/25 多但其他都低、BC-7 28/40、BC-5 不在 CLAUDE_TEMPLATE 計）—— 實際淨增 66 行 vs 規劃 100 行
-
-**v6.1+ 膨脹空間判定**：
-- 510 → 575 還有 65 行空間（v6.1.0 K-02/K-03/K-05/K-06/K-08/K-16 規劃 6 條，design/08 line 67-72）
-- 風險點：v5.15 才從 606 → 361 瘦身過，若 v6.1+ 沒守住預算可能再走「膨脹 → 大瘦身」週期
-- 緩解：DR-3 立下的「執行順序表 Step 8 強制瘦身」紀律可延續到 v6.1+
-
-**緩解判定**：✅ **真消除（且超預期）**。實際緩衝 40 行 >> 規劃 6 行，v6.0.0 落地壓力遠低於預警值。但 v6.1.0 啟動前須重新評估累積膨脹趨勢。
-
----
-
-### BC-4 by-design（P3 R-1 low）：migration-notes 30 行 vs 規格 25 行
-
-**P3 提報理由**：
-1. DR-1 將 anchors 升級為 list of objects + position 後，3 個 anchor 各占 3 行 = 9 行
-2. 加上 5 keys 各自 2-3 行內容，總體比原預估多 5 行
-3. 功能性驗收全過（5 keys 完整、3 anchor.match 全 grep 命中、awk 解析正常）
-4. 若硬瘦身會降低可讀性、影響 init-claude.md Step 5.2 awk parser 對多行 YAML-like 結構的解析
-
-**P5 親自驗證**（步驟 4 的 awk 範圍 470-500 抽出實際內容）：
-- HTML comment wrapper 占 2 行（`<!--` 與 `-->`）
-- 註解標題 + 空行占 2 行
-- from-version / to-version 占 3 行（含空行）
-- breaking-changes（標題 + 3 條 + 空行）占 5 行
-- required-actions（標題 + 2 條 + 空行）占 4 行
-- recommended-actions（標題 + 2 條 + 空行）占 4 行
-- anchors（標題 + 3 個 object × 3 行）占 10 行
-- 總計：2+2+3+5+4+4+10 = **30 行**（與 P3 計數一致）
-
-**理論最低瘦身極限**：
-- anchors 改回 flat dict（如 `section-0: "## ⚠️ ..."`）→ 從 10 行 → 4 行（節省 6 行）但 **觸發 DR-1 反模式**（無 position 屬性 + 無 name），是 P1b v1 已被修正的 high 風險
-- 多條清單合併為單行（如 `breaking-changes: ["A", "B", "C"]`）→ 節省 3 行但破壞 init-claude.md 5.2 的 awk parser（按 `b ~ /migration-notes/` 多行字串模式匹配）
-
-**by-design 標記合理性**：
-- ✅ 5 行超出是 DR-1 高品質修正的**自然成本**（anchors 從 dict 升 list of objects）
-- ✅ 強行瘦身會引入新 bug（DR-1 已被修過的 placeholder anchor 風險）或 BC-5 parser 重寫
-- ✅ 510 / 550 總行數預算下 5 行絕對值對全檔無影響（< 1%）
-
-**判定**：✅ **by-design 標記合理**，建議保留。Phase 5 不要求 P2 修正。
-
----
-
-## 步驟 7 — Step 9c 事實前提追溯
-
-**v6.0.0 的 3 條核心事實主張詳細追溯見 `P5-fact-claims.md`**。本節摘要：
-
-| 主張 | 評級 |
-|------|------|
-| 「v6.0.0 是 major bump」 | 強（A 級結構性論證 + 原則性條件，反例通過） |
-| 「Karpathy 4 原則來自 forrestchang/andrej-karpathy-skills」 | 強（A 級字面引用 + URL，反例通過） |
-| 「v6.0.0 不偷 K-14 scope」 | 強（A 級 design/08 milestone 規劃 + BC-7 第 5 條輕量化標註，反例通過） |
-
-3 條全為 **強**，無弱證據主張需要處置。**不觸發回退**。
-
----
-
-## 升格候選（learning-log → 長期警惕模式）
-
-掃描本次 v6.0.0 所有 Phase 的事件，識別「達 ≥ 3 次需升格」的高頻問題模式：
-
-| 候選模式 | 出現次數 | 來源 | 是否升格 |
-|---------|---------|------|---------|
-| 「DR 修正引入新副作用（傳遞性）」 | 2（DR-1 → DR-2v2 / DR-3 → DR-1v2）| P1b v2 第 2 輪 | < 3，**不升格**，但建議 architect 在 v6.1+ 設計時主動檢查「修一個方向太緊」的次生風險 |
-| 「migration anchor 用 placeholder 字串」 | 1（DR-1）| P1b v1 high | < 3，**不升格**，已透過「anchor.match 禁止含 `{{PLACEHOLDER}}`」規則寫入 IF-1 規格 |
-| 「行數預算膨脹週期」 | 2（v5.15 606→361 / v6.0.0 444→510）| design/08 RISK-2 + P3 R-3 | < 3，但**建議 v6.1+ 啟動前重新評估**。若 v6.1.0 / v6.2.0 累積後 ≥ 3 次膨脹則升格 |
-| 「by-design 標記合理性需 Phase 5 二度確認」 | 1（BC-4）| P3 R-1 + P5 步驟 6 | < 3，**不升格** |
-
-**結論**：本次 v6.0.0 升級**無立即升格候選**（皆未達 ≥ 3 次門檻）。建議架構師（architect.md）在 v6.1.0 P1 設計前讀此節，主動檢查「DR 修正傳遞性」與「行數預算膨脹週期」兩個低頻但有累積趨勢的模式。
-
----
-
-## 提交前自檢
-
-| 自檢項 | 狀態 |
-|--------|------|
-| 13 個 ID 全部追溯到 file:line | ✅ |
-| 行為路徑枚舉覆蓋 v6.0.0 全部新增行為 | ✅（10 條，含 P5 6 子路徑）|
-| Part A 與 Part B 雙向比對完成 | ✅ |
-| 跨 Phase 一致性（R-x vs 反向）已驗證 | ✅ |
-| arch-risk / by-design 三條獨立判定 | ✅（全部 ✅ 緩解） |
-| Step 9c 事實前提追溯（強/中/弱）| ✅（3 強 / 0 弱，詳見 P5-fact-claims.md）|
-| 升格候選掃描完成 | ✅（0 立即候選，2 累積觀察項）|
-| 唯讀模式（未修改任何檔案） | ✅ |
-
----
-
-## 對 Phase 1-4 的回退判定
-
-**❌ 不觸發回退**。
-
-- 設計-實作一致性：✅（13/13 對應）
-- 測試覆蓋（部署驗證）：✅（P4 7/7 通過）
-- 檢核未修：✅（P3 0 high，1 low by-design 已合理化）
-- DR-x 處理狀態：✅（v1 7 條全到位，v2 3 條全採用）
-- 產出物完整性：✅（P1-design-spec / P1b / P3 / P4 全在 `.claude-loop/artifacts/`，本次新增 P5AB + P5-fact-claims）
-- 跨 Phase 一致性：✅（R-x = 1 low / 反向 = 0，純文檔升級特徵）
-
-**結論**：v6.0.0 雙向追溯通過，可進入 Phase 5 Part C（主 agent 整體評估 + commit）。
-
----
-
-## 審查者立場聲明
-
-本審查嚴格依 verifier.md「獨立自證審查者」規範執行：
-
-1. **不依賴主 agent 轉述**：路徑模式直接 Read 全部 5 個產出物（P1 / P1b / P3 / P4 / design/08）+ 7 個 P2 改動檔案
-2. **不知道開發過程的推理**：本審查只看設計結果與實作落點，不看 P2 implementer 的選擇理由
-3. **未修改任何檔案**：唯讀執行，僅產出本報告 + P5-fact-claims.md
-4. **親自 grep / awk 驗證關鍵事實**：CLAUDE_TEMPLATE.md 行數（510）/ 三 anchor.match 命中 / migration-notes 區塊內容 / Section 0 4 個 Q 完整性 / BC-7 5 條觸發場景齊全 / 三處 v6.0.0 版本號
-
-**對 v6.0.0 的整體判定**：
-
-> **v6.0.0 是本 repo 自 v5.x 系列以來執行最乾淨的 major bump**。設計-實作 mapping 13/13 完美對應，0 設計遺漏 + 0 冗餘 + 0 反模式。P1b 兩輪重審 + DR 修正全部到位。唯一的 by-design 標記（BC-4 30 vs 25 行）是 DR-1 高品質升級的合理代價，不是缺失。
-
-**留給 v6.1.0 設計階段的兩個觀察項**（非阻擋級）：
-
-1. **DR 修正傳遞性**：v6.0.0 兩次出現「修一個方向太緊→引入次生問題」（DR-1→DR-2v2 / DR-3→DR-1v2），建議 architect.md 在 P1 設計時加自檢「我這個修正會不會在另一個維度造成新限制？」
-2. **行數預算累積**：v6.0.0 510 行已用掉 v5.23.1 (444) + 66 行新增。v6.1+ 6 條 K-x 若無預算控制可能再次觸發 v5.15 級瘦身。建議 v6.1.0 P1 啟動前重新評估累積膨脹趨勢。
-
----
-
-最後修訂：2026-04-26（Phase 5 Part AB 雙向追溯完成 · 13 ✅ 0 ❌ · 不觸發回退 · 可進 Part C）
+最後修訂：2026-05-20（Phase 5 Part AB 雙向追溯 · v6.4.0 A+E 捆綁 · step 9d 首次運作）
