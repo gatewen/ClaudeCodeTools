@@ -378,7 +378,33 @@
 
 ---
 
-最後修訂：2026-05-20（v6.4.0 milestone closure · 候選 A+E 捆綁完整 5-Phase 閉環 · #006 + #007 第 3 次實證 · step 9d 首次運作 self-irony 0 作用對象）
+## 2026-05-21 · Task #1 + #2 後續修補（v6.4.0 milestone 後 follow-up）
+
+**Task #1 — CACHE_VER / DEPLOYED_VER 統一命名**（init-claude.md +6/-6）：
+- 6 處短形（2 template placeholder + 2 doc backtick + 1 shell var 宣告 + 1 awk -v 傳參）統一到長形，對齊 check-version.sh source of truth（test-setup-local.sh:99 對外契約斷言）
+- 7/7 smoke PASS
+
+**Task #2 — section-13-5 anchor 智能合併支援**（CLAUDE_TEMPLATE.md +6 行）：
+- v6.4 block anchors shorthand `section-13-5="..."` 轉結構化 list（含 `name` / `match` / `position`）以符合 Strategy B 文件契約（init-claude.md:227）
+- v6.0 block anchors 加 section-13-5 cascading entry（match `## 完整閉環（Phase 1-5）`, position before），支援 v5.x → v6.4 直接升級路徑（awk 只 emit 第一個 from-version 匹配 block，v5.x 用戶只觸發 v6.0 block，不加 cascading 就會缺 section 13.5）
+- Root cause 在資料端不在 Skill 端 — handoff 描述「Skill 端尚未掛接」實際是 CLAUDE_TEMPLATE 端 anchors 格式不符契約
+
+**#006「結構化 metadata 區塊行數估算樂觀」第 4 次實證**：
+- 預估 ~10 行（handoff），實際 +6 行落在估算內
+- 但忽略 580 預算邊界：CLAUDE_TEMPLATE 574 → 580 緩衝 6 → **0（DR-1 arch-risk 實現為負面）**
+- 用戶決策接受 580/580（設計完整性 > 短期緩衝），DR-1 升 severity 作 forcing function
+- **新教訓**：cascading 跨 block 有 multiplier 效應 — 同一 anchor 在 v6.0 + v6.4 兩 block 都登記 = +6 行（單 block 只 +3 行），下次估算要乘上 cascading multiplier
+
+**下次注意**：
+1. **DR-1 緩衝邊界已歸零**：下次任何 CLAUDE_TEMPLATE 新增前**必須先評估壓縮空間**，不能直接加；否則破預算
+2. **Cascading multiplier**：新增 anchor 估算時 = (anchor list 行數) × (覆蓋的 from-version block 數)
+3. **資料/程式碼定位辨識**：handoff 框架可能誤把資料端 bug 描述為程式碼端問題（本次 Task #2 即此情境），調查時不要被 framing 誤導，先做 root cause 定位
+
+---
+
+最後修訂：2026-05-21（Task #1/#2 後續修補 · CACHE_VER 統一命名 + section-13-5 anchor cascading · #006 第 4 次實證 · DR-1 緩衝歸零）
+
+之前修訂：2026-05-20（v6.4.0 milestone closure · 候選 A+E 捆綁完整 5-Phase 閉環 · #006 + #007 第 3 次實證 · step 9d 首次運作 self-irony 0 作用對象）
 
 之前修訂：2026-05-19（追加 #007 升格後第 2 次實戰實證 · Phase G v2 self-review · 漏看率 67% · 用戶選項 D 取消 Phase G）
 

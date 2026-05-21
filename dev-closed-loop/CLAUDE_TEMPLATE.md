@@ -540,6 +540,9 @@ anchors:
   - name: trade-off-section
     match: "## 語言設定"
     position: before
+  - name: section-13-5
+    match: "## 完整閉環（Phase 1-5）"
+    position: before
 -->
 
 <!--
@@ -570,5 +573,8 @@ to-version: v6.4.0
 breaking-changes: none
 required-actions: Phase 5 完整閉環 / 精簡閉環步驟 4.5 新增降級檢查（升格之後）; architect Phase 1 識別 ⏸️ 條件式標記
 recommended-actions: 累計 ≥ 5 個非種子升格樣本後重評降級機制有效性
-anchors: section-13-5="### 13.5 反向劃線（紀律保底層 · v6.4.0 新增）"
+anchors:
+  - name: section-13-5
+    match: "## 完整閉環（Phase 1-5）"
+    position: before
 -->
