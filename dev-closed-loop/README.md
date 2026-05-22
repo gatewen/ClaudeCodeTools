@@ -33,6 +33,7 @@
 | `.claudedocs/agents/` | Agent 專家庫（8 個專家 prompt），Phase 觸發時按需載入 |
 | `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
+| `skills/dev:handoff/` | 配套 Skill（跨 session 交接，由 setup.sh 部署到 `~/.claude/skills/dev:handoff/`，等價 `wt:handoff`） |
 | `hooks/` | 6 個 Hook 腳本（修改守衛、委派前閘門、理解確認、增量 lint、委派追蹤、學習日誌提醒） |
 | `deploy-hooks.sh` | 一鍵部署 Hook 系統（複製腳本 + 合併 settings.json + 驗證） |
 | `check-version.sh` | 版本檢查工具（快取/部署/遠端一次比完，輸出 key=value） |

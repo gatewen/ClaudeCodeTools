@@ -83,6 +83,57 @@ else
 fi
 
 # --------------------------------------------------
+# Check 5.5: dev:handoff Skill 部署到 $HOME/.claude/skills/dev:handoff/
+# --------------------------------------------------
+echo ""
+echo "Check 5.5: dev:handoff Skill 部署"
+HANDOFF_DIR="$TEST_HOME/.claude/skills/dev:handoff"
+HANDOFF_EXPECTED=(
+    "SKILL.md"
+    "references/path-resolution.md"
+    "references/conflict-resolution.md"
+    "references/save-mode.md"
+    "references/load-mode.md"
+    "references/templates.md"
+)
+HANDOFF_MISSING=0
+for f in "${HANDOFF_EXPECTED[@]}"; do
+    if [ ! -f "$HANDOFF_DIR/$f" ]; then
+        echo "  ❌ 缺少：$f"
+        HANDOFF_MISSING=$((HANDOFF_MISSING+1))
+    fi
+done
+if [ $HANDOFF_MISSING -eq 0 ]; then
+    echo "  ✅ dev:handoff Skill 6 個檔案全部部署落地"
+else
+    FAIL=$((FAIL+1))
+fi
+
+# dev:handoff 內容驗證：指令名稱無 /wt:handoff 殘留（preamble 提及 wt:handoff 等價關係是 intended）
+# 規則：「`/wt:handoff`」斜杠指令字串應全部替換為「`/dev:handoff`」；裸 `wt:handoff` namespace 引用允許保留
+HANDOFF_LEAK=0
+for f in "${HANDOFF_EXPECTED[@]}"; do
+    if [ -f "$HANDOFF_DIR/$f" ] && grep -q "/wt:handoff" "$HANDOFF_DIR/$f"; then
+        echo "  ❌ $f 仍有 /wt:handoff 指令殘留"
+        HANDOFF_LEAK=$((HANDOFF_LEAK+1))
+    fi
+done
+if [ $HANDOFF_LEAK -eq 0 ]; then
+    echo "  ✅ 所有檔案無 /wt:handoff 指令殘留"
+else
+    FAIL=$((FAIL+1))
+fi
+
+if [ -f "$HANDOFF_DIR/SKILL.md" ]; then
+    if grep -q "^name: dev:handoff$" "$HANDOFF_DIR/SKILL.md"; then
+        echo "  ✅ SKILL.md frontmatter name 正確"
+    else
+        echo "  ❌ SKILL.md frontmatter name 異常"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+# --------------------------------------------------
 # Check 6: 抽查 check-version.sh 對未部署狀態判定
 # --------------------------------------------------
 echo ""

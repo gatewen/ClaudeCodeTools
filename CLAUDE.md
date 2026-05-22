@@ -15,6 +15,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 - `setup.sh` — 安裝腳本（雙模式）。支援 `curl | bash` 遠端安裝和本地 `bash setup.sh`。遠端模式從 GitHub 下載 tarball 到 `~/.claude/cache/ClaudeCodeTools/`，本地模式直接從 repo 目錄安裝。將 Skill 部署到 `~/.claude/commands/dev/init-claude.md`（對應 `/dev:init-claude` 指令），過程中把 `{{REPO_PATH}}` 替換為來源路徑。
 - `dev-closed-loop/CLAUDE_TEMPLATE.md` — 核心產物。自包含的 CLAUDE.md 模板，含完整五階段閉環方法論。內有 `{{PLACEHOLDER}}` 變數，部署到專案時由 Skill 填入實際值。
 - `dev-closed-loop/skill/init-claude.md` — Skill 源碼。定義 `/dev:init-claude` 指令（專案偵測、互動確認、模板填充部署）。
+- `dev-closed-loop/skills/dev:handoff/` — 配套 Skill（v6.4.1 引入）。定義 `/dev:handoff` 跨 session 交接指令，由 setup.sh 一鍵部署到 `~/.claude/skills/dev:handoff/`。功能與用戶個人版 `wt:handoff` 等價（三層分工 / cwd 路徑判定 / auto_merge / TaskList 雙向同步），Phase 1 為逐字 fork，Phase 2 預留 methodology-aware 增強空間。
 - `dev-closed-loop/.claudedocs/` — 共 33 個檔，分布如下（給人類閱讀，部署時一併複製到目標專案）：
   - 11 份核心方法論文檔（concepts 2 + process 5 + standards 3 + records 1）
   - Agent 專家庫 `agents/` 9 檔（8 個 agent prompt + 1 個 README 索引）
@@ -87,6 +88,7 @@ v6.x 系列在五階段之上加了三層擴充：
 | `.claudedocs/agents/*.md` — agent 步驟 / 閘門 / severity 變更 | CLAUDE_TEMPLATE.md 對應 Phase 描述 · `.claudedocs/process/五階段閉環流程.md` · `.claudedocs/standards/Agent使用指南.md`（若調用方式變動） |
 | `.claudedocs/` — 檔案增刪 | `setup.sh`（驗證清單）· `.claudedocs/README.md` |
 | Hook 腳本增刪或行為變更 | `deploy-hooks.sh`（部署邏輯）· `init-claude.md`（Step 4b） |
+| `dev-closed-loop/skills/dev:handoff/*` — Skill 內容變更 | `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh`（部署落地斷言） |
 | `.claudedocs/examples/*.md` — anti-pattern 範例修改（K-07 主檔） | `.claudedocs/concepts/閉環核心理念.md`「Anti-Patterns Summary」段（K-16 對照表）· CLAUDE_TEMPLATE.md Section 0 4 原則對映表（若範例 Q1-Q4 對應變動） |
 | `.claudedocs/concepts/方法論運作指標.md` — KPI 指標 / 門檻 / 觸發條件變動（K-11 主檔） | `.claudedocs/records/問題追蹤.md`（升格觸發機制）· CLAUDE_TEMPLATE.md Phase 5 步驟 4.5（觀察項記入機制） |
 | 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 · 根 `README.md` 版本歷史 |
@@ -101,6 +103,7 @@ v6.x 系列在五階段之上加了三層擴充：
 
 - `CLAUDE_TEMPLATE.md` 必須保留所有 `{{PLACEHOLDER}}` 標記——它們在部署時才被替換。
 - `.claudedocs/` 目錄必須維持完整結構，setup.sh 分三類驗證：核心 17/17（= 11 核心 + 5 examples + 1 `.claudedocs/README.md`）+ agents 9/9（= 8 agent prompt + 1 README）+ languages 7/7（= 6 語言指南 + 1 README）。
+- `dev-closed-loop/skills/dev:handoff/` Skill 必須維持 6 檔結構（SKILL.md + 5 references），setup.sh 部署到 `~/.claude/skills/dev:handoff/`，由 test-setup-local.sh Check 5.5 驗證落地。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。

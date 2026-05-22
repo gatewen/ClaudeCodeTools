@@ -174,6 +174,27 @@ sed "s|{{REPO_PATH}}|${REPO_PATH_VALUE}|g" "$SKILL_SOURCE" > "$SKILL_TARGET"
 echo "✅ init-claude.md 已部署到 ${SKILL_TARGET}"
 
 # --------------------------------------------------
+# 3.5 部署 dev:handoff Skill（配套 Skill · 跨 session 交接）
+# --------------------------------------------------
+
+echo "--- 部署 dev:handoff Skill ---"
+
+SKILLS_DIR="$HOME/.claude/skills"
+HANDOFF_SKILL_SOURCE="$SOURCE_DIR/dev-closed-loop/skills/dev:handoff"
+HANDOFF_SKILL_TARGET="$SKILLS_DIR/dev:handoff"
+
+if [ ! -d "$HANDOFF_SKILL_SOURCE" ]; then
+    echo "❌ 找不到 dev:handoff Skill 源碼：${HANDOFF_SKILL_SOURCE}"
+    exit 1
+fi
+
+mkdir -p "$SKILLS_DIR"
+rm -rf "$HANDOFF_SKILL_TARGET"
+cp -r "$HANDOFF_SKILL_SOURCE" "$HANDOFF_SKILL_TARGET"
+
+echo "✅ dev:handoff 已部署到 ${HANDOFF_SKILL_TARGET}"
+
+# --------------------------------------------------
 # 4. 驗證
 # --------------------------------------------------
 
@@ -262,6 +283,29 @@ if $AGENT_OK; then
     echo "✅ Agent 專家庫完整（${AGENT_COUNT}/${#AGENT_FILES[@]}）"
 fi
 
+# 確認 dev:handoff Skill 完整
+HANDOFF_SKILL_FILES=(
+    "SKILL.md"
+    "references/path-resolution.md"
+    "references/conflict-resolution.md"
+    "references/save-mode.md"
+    "references/load-mode.md"
+    "references/templates.md"
+)
+HANDOFF_OK=true
+HANDOFF_COUNT=0
+for f in "${HANDOFF_SKILL_FILES[@]}"; do
+    if [ -f "$HANDOFF_SKILL_TARGET/$f" ]; then
+        HANDOFF_COUNT=$((HANDOFF_COUNT + 1))
+    else
+        echo "❌ 缺少 dev:handoff 檔案：$f"
+        HANDOFF_OK=false
+    fi
+done
+if $HANDOFF_OK; then
+    echo "✅ dev:handoff Skill 完整（${HANDOFF_COUNT}/${#HANDOFF_SKILL_FILES[@]}）"
+fi
+
 # 確認 languages 目錄完整
 LANG_FILES=(
     "languages/README.md"
@@ -335,6 +379,7 @@ echo "  ✅ 安裝完成"
 echo "================================================"
 echo ""
 echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署閉環。"
+echo "也可以用 /dev:handoff save / load 跨 session 交接（功能等價 wt:handoff）。"
 echo ""
 if [ "$INSTALL_MODE" = "local" ]; then
     echo "更新流程：git pull → bash setup.sh"
