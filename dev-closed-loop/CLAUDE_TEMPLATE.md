@@ -556,7 +556,7 @@ extensions: Section 1.5 探索成本上限 / 配額管理主動降級判定 / de
 -->
 
 <!--
-closed-loop v6.4.2
+closed-loop v6.5.0
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄
@@ -565,7 +565,7 @@ closed-loop v6.4.2
    {{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LINT_COMMAND}} {{VERIFY_SEQUENCE}} {{LANGUAGE_SKILL_SECTION}}
 4. Claude Code 會自動讀取並遵循閉環調度規則
 
-版本：v6.4.2（2026-05-23）· source-of-truth marker 三次漏改修救（涵蓋 v6.4.0 升格降級機制 + v6.4.1 dev:handoff fork）+ 依賴影響表強化
+版本：v6.5.0（2026-05-23）· 公開發佈友善度大躍進：新增 dev:overview Skill — 方法論視覺化介紹 HTML（self-contained · light/dark mode · 5 phase 流程圖 + 進階區 collapsible · 動態填當前部署狀態）
 -->
 <!-- migration-notes-v6.4
 from-version: v6.3.x

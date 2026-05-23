@@ -195,6 +195,25 @@ cp -r "$HANDOFF_SKILL_SOURCE" "$HANDOFF_SKILL_TARGET"
 echo "✅ dev:handoff 已部署到 ${HANDOFF_SKILL_TARGET}"
 
 # --------------------------------------------------
+# 3.6 部署 dev:overview Skill（配套 Skill · 方法論視覺化介紹）
+# --------------------------------------------------
+
+echo "--- 部署 dev:overview Skill ---"
+
+OVERVIEW_SKILL_SOURCE="$SOURCE_DIR/dev-closed-loop/skills/dev:overview"
+OVERVIEW_SKILL_TARGET="$SKILLS_DIR/dev:overview"
+
+if [ ! -d "$OVERVIEW_SKILL_SOURCE" ]; then
+    echo "❌ 找不到 dev:overview Skill 源碼：${OVERVIEW_SKILL_SOURCE}"
+    exit 1
+fi
+
+rm -rf "$OVERVIEW_SKILL_TARGET"
+cp -r "$OVERVIEW_SKILL_SOURCE" "$OVERVIEW_SKILL_TARGET"
+
+echo "✅ dev:overview 已部署到 ${OVERVIEW_SKILL_TARGET}"
+
+# --------------------------------------------------
 # 4. 驗證
 # --------------------------------------------------
 
@@ -306,6 +325,28 @@ if $HANDOFF_OK; then
     echo "✅ dev:handoff Skill 完整（${HANDOFF_COUNT}/${#HANDOFF_SKILL_FILES[@]}）"
 fi
 
+# 確認 dev:overview Skill 完整
+OVERVIEW_SKILL_FILES=(
+    "SKILL.md"
+    "references/content-spec.md"
+    "references/source-mapping.md"
+    "references/visual-guide.md"
+    "references/template.html"
+)
+OVERVIEW_OK=true
+OVERVIEW_COUNT=0
+for f in "${OVERVIEW_SKILL_FILES[@]}"; do
+    if [ -f "$OVERVIEW_SKILL_TARGET/$f" ]; then
+        OVERVIEW_COUNT=$((OVERVIEW_COUNT + 1))
+    else
+        echo "❌ 缺少 dev:overview 檔案：$f"
+        OVERVIEW_OK=false
+    fi
+done
+if $OVERVIEW_OK; then
+    echo "✅ dev:overview Skill 完整（${OVERVIEW_COUNT}/${#OVERVIEW_SKILL_FILES[@]}）"
+fi
+
 # 確認 languages 目錄完整
 LANG_FILES=(
     "languages/README.md"
@@ -380,6 +421,7 @@ echo "================================================"
 echo ""
 echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署閉環。"
 echo "也可以用 /dev:handoff save / load 跨 session 交接（功能等價 wt:handoff）。"
+echo "或執行 /dev:overview 產生方法論視覺化介紹 HTML（給人類看）。"
 echo ""
 if [ "$INSTALL_MODE" = "local" ]; then
     echo "更新流程：git pull → bash setup.sh"

@@ -134,6 +134,57 @@ if [ -f "$HANDOFF_DIR/SKILL.md" ]; then
 fi
 
 # --------------------------------------------------
+# Check 5.6: dev:overview Skill 部署到 $HOME/.claude/skills/dev:overview/
+# --------------------------------------------------
+echo ""
+echo "Check 5.6: dev:overview Skill 部署"
+OVERVIEW_DIR="$TEST_HOME/.claude/skills/dev:overview"
+OVERVIEW_EXPECTED=(
+    "SKILL.md"
+    "references/content-spec.md"
+    "references/source-mapping.md"
+    "references/visual-guide.md"
+    "references/template.html"
+)
+OVERVIEW_MISSING=0
+for f in "${OVERVIEW_EXPECTED[@]}"; do
+    if [ ! -f "$OVERVIEW_DIR/$f" ]; then
+        echo "  ❌ 缺少：$f"
+        OVERVIEW_MISSING=$((OVERVIEW_MISSING+1))
+    fi
+done
+if [ $OVERVIEW_MISSING -eq 0 ]; then
+    echo "  ✅ dev:overview Skill 5 個檔案全部部署落地"
+else
+    FAIL=$((FAIL+1))
+fi
+
+# 內容驗證：template.html 含關鍵 placeholder + light/dark CSS variables
+if [ -f "$OVERVIEW_DIR/references/template.html" ]; then
+    if grep -q "{{DEPLOYMENT_VERSION}}" "$OVERVIEW_DIR/references/template.html"; then
+        echo "  ✅ template.html 含 placeholder（未在部署時誤替換）"
+    else
+        echo "  ❌ template.html 缺少 {{DEPLOYMENT_VERSION}} placeholder"
+        FAIL=$((FAIL+1))
+    fi
+    if grep -q '\[data-theme="dark"\]' "$OVERVIEW_DIR/references/template.html"; then
+        echo "  ✅ template.html 含 light/dark mode CSS"
+    else
+        echo "  ❌ template.html 缺少 dark mode CSS"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+if [ -f "$OVERVIEW_DIR/SKILL.md" ]; then
+    if grep -q "^name: dev:overview$" "$OVERVIEW_DIR/SKILL.md"; then
+        echo "  ✅ SKILL.md frontmatter name 正確"
+    else
+        echo "  ❌ SKILL.md frontmatter name 異常"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+# --------------------------------------------------
 # Check 6: 抽查 check-version.sh 對未部署狀態判定
 # --------------------------------------------------
 echo ""
