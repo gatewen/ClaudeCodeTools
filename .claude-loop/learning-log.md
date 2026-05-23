@@ -402,7 +402,40 @@
 
 ---
 
-最後修訂：2026-05-21（Task #1/#2 後續修補 · CACHE_VER 統一命名 + section-13-5 anchor cascading · #006 第 4 次實證 · DR-1 緩衝歸零）
+## 2026-05-23 - [Release process 漏失] [maintainer · 跨三次 release]
+
+**Phase**: 不適用（不是閉環內事件，是 release infrastructure 失敗）
+**failure_type**: process_failure
+**問題**：CLAUDE_TEMPLATE.md 末尾 `closed-loop v` source-of-truth marker（line 559）三次連續漏改：
+- `5709516` v6.4.0（2026-05-20）— marker 仍 v6.3.0
+- `5a77d91` v6.4.0 follow-up（2026-05-21）— marker 仍 v6.3.0
+- `acad9fd` v6.4.1（2026-05-22）— marker 仍 v6.3.0
+
+**怎麼被發現**：用戶在其他專案跑 `/dev:init-claude upgrade` 時觀察「停留在 v6.3.0」反饋。我做事實鏈追蹤（cache mtime / GitHub raw / check-version.sh STATUS）才定位 root cause
+
+**原因**：CLAUDE_TEMPLATE.md 末尾**有兩個版本字串**：
+- line 559 `closed-loop v6.3.0`（**source-of-truth · check-version.sh 用 `grep -o 'closed-loop v[0-9.]*'` 抓的就是這行**）
+- line 568 `版本：v6.4.0（2026-05-20）...`（給人看的敘述行）
+
+依賴影響表「版本號」行只寫「CLAUDE_TEMPLATE.md 末尾註解」，沒明指要改哪一條。實作時容易誤把更醒目的敘述行（line 568）當成版本標記改了，line 559 的真正 marker 漏掉。**三次連續發生 = 系統性表達不精確，不是個別疏忽**
+
+**怎麼修的（v6.4.2 patch）**：
+1. line 559 marker 跳轉 v6.3.0 → v6.4.2（涵蓋 v6.4.0 + v6.4.1 全部變更）
+2. line 568 敘述行同步更新到 v6.4.2
+3. dev-closed-loop/README.md 補 v6.4.1 + v6.4.2 entry（v6.4.1 也之前漏補）
+4. 根 README.md 補 v6.4.2 entry
+5. CLAUDE.md 依賴影響表「版本號」行重寫，明指 source-of-truth marker 是 `closed-loop v` 那行（含 check-version.sh 抓取 pattern + 警告不要誤改敘述行）
+
+**下次注意**：
+1. **依賴影響表的精準度問題**：籠統描述（「末尾註解」「相關段落」「對應 phase」）會在多次 release 後被誤讀。涉及 grep/awk source-of-truth 的條目要明指**具體 line 內容 + 抓取 pattern**
+2. **影響傳播鏈**：marker 漏改 → GitHub raw 漏 → 用戶 cache check-version.sh 抓不到新版本 → STATUS=up_to_date → upgrade 流程靜默失敗（無錯誤訊息）。這種「靜默失敗」最危險，因為沒有 forcing function 暴露問題
+3. **不升格但觀察**：本次是「source-of-truth marker 漏改」具體失誤類型，是否會擴散到其他類型 marker（如 setup.sh EXPECTED_FILES 計數 / hook isolation namespace / migration block from-version 等）需觀察。**升格觀察門檻**：若再有 2 次類似失誤（其他類型 source-of-truth marker 漏改），則升格成「source-of-truth marker 同步紀律」永久警惕條目
+
+---
+
+最後修訂：2026-05-23（v6.4.2 patch · source-of-truth marker 三次漏改修救 + 依賴影響表「版本號」行強化 · 不升格 / 觀察是否擴散）
+
+之前修訂：2026-05-21（Task #1/#2 後續修補 · CACHE_VER 統一命名 + section-13-5 anchor cascading · #006 第 4 次實證 · DR-1 緩衝歸零）
 
 之前修訂：2026-05-20（v6.4.0 milestone closure · 候選 A+E 捆綁完整 5-Phase 閉環 · #006 + #007 第 3 次實證 · step 9d 首次運作 self-irony 0 作用對象）
 

@@ -91,7 +91,7 @@ v6.x 系列在五階段之上加了三層擴充：
 | `dev-closed-loop/skills/dev:handoff/*` — Skill 內容變更 | `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh`（部署落地斷言） |
 | `.claudedocs/examples/*.md` — anti-pattern 範例修改（K-07 主檔） | `.claudedocs/concepts/閉環核心理念.md`「Anti-Patterns Summary」段（K-16 對照表）· CLAUDE_TEMPLATE.md Section 0 4 原則對映表（若範例 Q1-Q4 對應變動） |
 | `.claudedocs/concepts/方法論運作指標.md` — KPI 指標 / 門檻 / 觸發條件變動（K-11 主檔） | `.claudedocs/records/問題追蹤.md`（升格觸發機制）· CLAUDE_TEMPLATE.md Phase 5 步驟 4.5（觀察項記入機制） |
-| 版本號 | CLAUDE_TEMPLATE.md 末尾註解 · `dev-closed-loop/README.md` 版本歷史 · 根 `README.md` 版本歷史 |
+| 版本號 | **CLAUDE_TEMPLATE.md 末尾 `closed-loop v` source-of-truth marker（check-version.sh 用 `grep -o 'closed-loop v[0-9.]*'` 抓的就是這行 · ⚠️ 不是「版本：vX.Y.Z（日期）...」敘述行，那是給人看的描述）** · CLAUDE_TEMPLATE.md 末尾敘述行（與 marker 同步避免認知混亂）· `dev-closed-loop/README.md` 版本歷史 · 根 `README.md` 版本歷史 |
 | 「對外契約」常數變更（setup.sh 陣列數量、hook isolation 路徑 namespace、deploy-hooks settings.json keywords）| `tests/test-*.sh` 對應斷言（pre-commit 會自動抓到，但 commit 前最好先跑 `bash tests/run.sh` 確認）|
 
 **流程**：
