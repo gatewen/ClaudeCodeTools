@@ -433,7 +433,83 @@
 
 ---
 
-最後修訂：2026-05-23（v6.4.2 patch · source-of-truth marker 三次漏改修救 + 依賴影響表「版本號」行強化 · 不升格 / 觀察是否擴散）
+## 2026-05-29 - [多輪 cross-source review 收斂模式 = 設計複雜度信號] [architect · v6.6.0 codemap Phase 1 PAUSED]
+
+**Phase**: Phase 1（多輪 architect 修訂 + 多輪 cross-source review）
+**failure_type**: judgment_failure
+**問題**：dev:codemap skill Phase 1 設計歷經 **5 rounds 架構師修訂** + **3 rounds codex cross-source review** 仍未端到端收斂。每輪 codex 抓到 high-severity 發現，每輪修訂解掉一些但引入新 stale / 矛盾 — 不是修訂技術問題，是**設計複雜度超過 prompt-skill 形式容量**。最終決定 PAUSE 而非繼續 Round 6。
+
+**怎麼被發現**：
+- Round 1 codex review：12 條 DR-XR（6 high）
+- Round 4 修訂後 Round 2 codex review：5 條新 DR-R4 high + 8+ 條矛盾
+- Round 5 reconcile 後 Round 3 codex review：5 條 high 未解 + 8 條新矛盾 + 9 處 stale 詞彙
+- 三輪累積後 pattern 清晰：「解掉一些、引入新的」收斂緩慢 → 邊際價值遞減 → 是設計層問題，不是修訂層問題
+
+**原因**：
+1. **Codex 從 Round 1 就明示信號**：「lightweight static-analysis subsystem masquerading as a prompt skill」。我（architect）當時把它當「需要修」的具體建議，沒當「形式不對」的根本信號
+2. **痛點驗證不充分就投入大設計**：codemap 基於「LLM 不可能讀完龐大代碼基」假設，但用戶沒具體 ≥ 50K LOC 專案在用閉環。在無實證痛點下做大設計 = 容易過度設計
+3. **單 LLM architect 自然會走向擴張**：每次 review 抓到問題，本能反應是「補規格」而非「縮 scope」。Confidence 分級、tree-sitter backend、quarantine state、9 個模組 — 都是補規格的累積，而非簡化
+4. **#007 機制 work，但需要更早回饋**：三輪 codex review 都 work，但前 2 輪 verdict「requires Round 5」「requires Round 6」是逐輪推進。沒有機制在第 1-2 輪 codex 警告複雜度時就觸發「考慮 scope retreat」決策
+
+**怎麼修的（PAUSE 決策）**：
+1. dev:codemap Phase 1 設計檔加 PAUSED header（含暫停理由 + 復活觸發條件 + 未解 5 條 high-severity 清單）
+2. 不進 Round 6 — 接受設計研究價值，不追求可實作規格
+3. 跨 thread 對照：2026-05-23 frozen 的「Project-level HTML 計劃層 sync」thread 痛點更具體，復活時建議優先處理該 thread
+4. 14-v6.6.0-codemap-skill.md commit 進歷史作為「設計研究」歸檔
+
+**下次注意**：
+1. **多輪 cross-source review 收斂模式作為複雜度信號**：當同份 Phase 1 spec 經 ≥ 2 輪 cross-source review 仍持續引入新 contradictions（不只解舊問題、還生新問題）→ 強信號「設計超出形式容量」。應觸發 AskUserQuestion 「是否考慮 scope retreat / 重新框架 / pause」，而非自動進下一輪修訂
+2. **早期 codex 警告要當形式信號而非具體建議**：codex 用「X masquerading as Y」「complexity not proportional」這類措辭時，是在說「形式不對」。下次架構師讀到此類批評，應該先考慮「是否該縮 scope / 改形式」而非「再補一輪細節」
+3. **痛點驗證閘門**：大型設計（≥ 5 模組 / ≥ 1000 行估算）啟動前須有具體痛點實證（≥ 1 真實場景描述）。無痛點實證的設計即使 codex 過了，也容易在實作後發現「沒人用」
+4. **不立即升格**：這次是 1 次具體經驗，需累積同類根因 ≥ 3 次 + 用戶確認才能升格。學習觀察條目 [observation candidate]，下次類似情境出現時記得 cross-reference
+
+---
+
+## 2026-05-29 - [Phase 1 規格 declarative tense theater 陷阱] [architect · v6.6.0 codemap Round 4]
+
+**Phase**: Phase 1（架構師寫設計規格）
+**failure_type**: process_failure
+**問題**：Round 4 修訂時，設計規格中用「**新增至 architect.md**」「**改 verifier.md 為 emit 候選**」「**依賴影響表 expanded**」等過去式 / 完成式語氣描述「Phase 2 將要做」的事，但實際 live methodology 檔案完全未改 → codex Round 2 一抓即破：「Claimed external prompt edits are not actually present; remain theater cross-source」(DR-R4-1 high)。
+
+**怎麼被發現**：codex 第二輪 cross-source review 主動跨檔搜尋 `architect.md` / `verifier.md` / `CLAUDE_TEMPLATE.md`，發現設計規格聲稱的修訂在實際檔案中**找不到對應內容**（grep Step 0d / codemap-integration / candidate emission 都是 0 命中）。
+
+**原因**：
+1. **Phase 界線模糊**：Phase 1 是「設計」、Phase 2 是「實作」。寫設計時用「已新增」「已改」是 architect 對自己腦中藍圖的描述，但讀者（codex / Phase 1b reviewer / 自己過幾天回看）會解讀為「實際完成的事」
+2. **語氣慣性**：人類寫文件慣用「我們做了 X」而非「我們將做 X」（更主動有力），但這在 Phase 1 規格內容易產生假象
+3. **無自檢機制**：Phase 1 閘門檢查項目中無「規格中聲稱的外部修訂是否真實存在」一項，所以這個陷阱不會被自動抓到
+
+**怎麼修的（Round 5 reconcile）**：
+1. 全文掃描，把「新增至 architect.md」改為「Phase 2 將新增至 architect.md」（未來式 / 計畫式）
+2. 實作規模估算表加開頭聲明「**為 Phase 2 implementer 將執行的修訂計畫，目前 live methodology 檔尚未動**」
+3. 設計決策 #13 明確記錄「為何 Round 5 純 spec reconcile 而非真改 live 檔」— Phase 階段紀律
+4. Phase 2 啟動條件明確列「真改 live methodology 檔」為 Phase 2 atomic 處理項
+
+**下次注意**：
+1. **Phase 1 規格寫作紀律**：涉及外部檔案修訂時，**強制用未來式 / 計畫式**（「將新增」「將改」「Phase 2 處理」），避免完成式 / 過去式造成「已完成」幻覺
+2. **規格內部一致性自檢**：Phase 1 閘門可加一項「規格中聲稱的外部修訂 grep 驗證」— 對每個「已新增至 X.md」陳述跑 `grep <新內容> X.md`，命中 0 → 改寫為未來式
+3. **不立即升格**：這次是 1 次具體經驗，需累積同類根因 ≥ 3 次 + 用戶確認才能升格。學習觀察條目 [observation candidate]
+
+## 2026-05-30 - [方法論 dogfood 對照實驗] [meta]
+
+**Phase**: 跨方法論驗證（非單一閉環執行）
+**failure_type**: methodology_efficacy_observation
+**緣起**：用戶要求對抗驗證「閉環能否產出高品質穩定代碼」+ 追問「correctness 不是全部，代碼質量/維護/修改因果鏈/事實求證怎麼測」。設計 **A–E 五型**對照實驗（A review 找植入 bug / B 從規格建小型訂位引擎 / C 從規格建大型重牽連試算表引擎 / D 改既有碼隱藏漣漪 / E 植入假前提）× 三臂（裸寫一次 / 裸寫+一次 Codex review / 完整閉環，臂2 機制隨階段：P3+5→P1+2→完整五階段→因果鏈影響分析→事實主張閘門）+ Codex 凍結的 held-out 測試評分。五型刻意涵蓋用戶四維度。
+**結果**：五場每次都**天花板三方平手**（A 5/5、B 16/16、C interlinked 28/28、D 漣漪 4/4、E 假前提 2/2），閉環成本 +40%～+590%（最高 6.9x）。每場前沿模型單次裸寫就做對：C 的所有跨模組不變式、D 自己做等價影響分析抓到隱藏的獨立重算、E 主動回報「需求與 data.go 矛盾」未盲信假前提。賭的「漂移/盲信」全沒出現。
+**結論**：單一前沿模型能在單一 context 可靠處理的任務（涵蓋 review/建小/建大牽連 ~900 行 4 模組/改碼漣漪/假前提，全四維度），閉環對**可量測結果**淨負。**核心洞察**：閉環把模型認真做事本來就會做的認知（讀全碼/影響分析/核對事實/枚舉邊界）外部化儀式化——價值在「人」（可追溯/稽核/跨 session/協作）非代碼正確性。**公平/鑑別力張力**：要測出增益得讓模型漏東西，但前沿模型認真讀過還會漏的要嘛不公平混淆、要嘛真超出單一 context。已寫入 CLAUDE_TEMPLATE「不適用情境 + A–E 價值定位校準」與 concepts/閉環核心理念.md「什麼時候用」。
+**過程亮點**：Codex 在 Stage C 覆核抓到 golden 5 個 latent bug（前導零誤收/循環全域優先未落實/數字文法過寬等），於污染實驗前修掉——「換外部視角」（#007 R-2）價值再次實證，且**非閉環五階段儀式**所提供。
+**下次注意**：
+1. 閉環價值論述須與「代碼正確性」脫鉤，改錨定「人類協作/可追溯/長時程防漂移」，並用對的指標（維護成本/交接成功率/稽核通過率）而非 correctness oracle 衡量
+2. 未否證 regime：超大型 / 長時程多 session / 規格真有歧義——若要再找價值邊界只剩這幾條
+3. 完整實驗可複現於 `sandbox/closed-loop-validation/`（gitignored；A/B/C 各含 SPEC/PLAN/FROZEN/oracle/arms/RESULTS）
+4. **不升格**：此為方法論層級的定位校準（已直接寫入主檔 + 人類文檔），非閉環執行中的根因模式；記為重大 dogfood 觀察 [observation]
+
+---
+
+最後修訂：2026-05-30（方法論 dogfood **A–E 五型**對照實驗 · 五場全三方平手（涵蓋正確性/質量維護/因果鏈/事實求證四維度）· 閉環對 in-context 任務可量測結果零增益、成本最高 7x · 核心洞察「外部化模型本來就會做的認知」· 校準補齊 A–E 寫入 CLAUDE_TEMPLATE + 核心理念 · 不升格／重大觀察）
+
+之前修訂：2026-05-29（v6.6.0 dev:codemap PAUSE 決策 · 兩條觀察條目記入：多輪 review 收斂模式作為複雜度信號 + Phase 1 declarative tense theater 陷阱 · 不升格 / 各 1 次累積中）
+
+之前修訂：2026-05-23（v6.4.2 patch · source-of-truth marker 三次漏改修救 + 依賴影響表「版本號」行強化 · 不升格 / 觀察是否擴散）
 
 之前修訂：2026-05-21（Task #1/#2 後續修補 · CACHE_VER 統一命名 + section-13-5 anchor cascading · #006 第 4 次實證 · DR-1 緩衝歸零）
 

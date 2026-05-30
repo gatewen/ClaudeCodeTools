@@ -15,3 +15,6 @@ codex_recommand.md
 
 # 簡報資產（大檔，不適合進 git）
 _slides/
+
+# 方法論驗證實驗 sandbox（本地測試 app + 各臂產出，不上傳）
+/sandbox/
