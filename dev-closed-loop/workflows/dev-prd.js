@@ -1,6 +1,6 @@
 export const meta = {
   name: 'dev-prd',
-  description: 'PRD / 需求探索 workflow（新能力，原方法論無 PRD 階段）：多角度需求探索 → judge-panel 候選 → 對抗驗證 → PRD 文件。事實求證確保需求前提不是憑空假設。',
+  description: 'PRD / 需求探索 workflow（新能力，原方法論無 PRD 階段）：多角度需求探索（problem/user/scope）→ 塑形候選（lean/complete）→ 對抗挑戰 → PRD 文件。事實求證確保需求前提不是憑空假設。',
   phases: [
     { title: 'Discover' },
     { title: 'Shape' },

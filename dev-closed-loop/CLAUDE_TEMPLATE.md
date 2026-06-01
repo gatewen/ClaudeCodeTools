@@ -9,11 +9,11 @@
 - PRD / 架構設計 / 大型任務多花時間在 workflow 編排與對抗驗證
 - 依賴 Claude Code Workflow 功能（付費方案 + v2.1.154+ · research preview）
 
-收益：
-- PRD / 架構設計用 judge-panel 多方案 + adversarial-verify（**設計意圖**是擴大覆蓋；vs 單一 agent 的實際增益未對照實測）
-- 修改類動作有因果鏈（依賴影響）+ 事實求證（認知驗證）雙層防禦
+設計上預期承擔的（注意：correctness 軸已實證零增益，下列價值錨在人軸·未量化證實）：
+- PRD / 架構設計用多方案 + adversarial-verify（**設計意圖**是擴大覆蓋；vs 單一 agent 的實際增益未對照實測）
+- 修改類動作有因果鏈（依賴影響）+ 事實求證（認知驗證）雙層防禦（人軸 proxy 未否證 ≠ 已證）
 - 失敗模式累積成「長期警惕模式」，跨 session 自動避開
-- workflow 不可用時仍有完整 fallback（承重核錨在 always-on hook + 本文字層）
+- workflow 不可用時走 fallback（因果鏈錨 always-on hook；事實求證/push back 為文字層，不對稱見 Section 14）
 
 > ⚖️ **價值定位校準（2026-05-30 A–E + Stage F + 06-01 人軸 proxy dogfood）**：對「前沿模型 × 單一 context × 機械可驗 correctness」，**五階 ritual 流水線零增益**（A–F 六場三方平手，note=一次外部 review=完整五階段同分，成本最高約裸寫 7x）。閉環把「模型認真做事本來就會做的認知」（讀全碼 / 影響分析 / 核對事實 / 枚舉邊界）外部化、儀式化——模型已在做，對它自己的 correctness 是淨成本。
 > **∴ v7.0.0 的設計回應**：把零增益的「流水線 ritual」交給 workflow（理論上省主 agent 逐 Phase 委派的 context；**但 workflow 編排 vs 五階的 token/品質從未對照實測**——且 workflow 對 correctness 大機率同樣零增益，A–F 已證該軸飽和，其價值定位同樣是「編排/覆蓋的人軸便利」而非 correctness 增益），只保留實證上承重的部分——
@@ -64,7 +64,7 @@
 | **微小** | < 50 行 · 單檔 · 設定調整 · 用戶說「快速修改」 | 直接執行（仍受 always-on hook 因果鏈護欄 + 事實求證文字層自律）|
 | **中型** | 單一函式/元件 · 1-3 檔 · < 300 行 | 輕量流程：設計自檢 → 實作 → 審查 → 測試 → 迷你追溯（可選開 `/dev-review`）|
 | **大型** | 新模組/功能 · (≥ 3 檔或 ≥ 300 行) 且多個交互子系統 | **開 workflow**：`/dev-design` → 實作 → `/dev-review` →（可選）`/dev-verify` |
-| **PRD / 架構設計** | 需求未定 / 多方案取捨 / 系統級設計 | **強制開 workflow**：`/dev-prd` 或 `/dev-design`（judge-panel + 對抗驗證）|
+| **PRD / 架構設計** | 需求未定 / 多方案取捨 / 系統級設計 | **強制開 workflow**：`/dev-prd`（探索→候選→挑戰）或 `/dev-design`（多方案 judge-panel + 對抗驗證）|
 
 > **何時開 workflow**：大型 / PRD / 架構設計 → 預設開。中型 → 可選。微小 → 不開。
 > **workflow 不可用時**（免費方案 / 舊版 / headless / preview 未啟用）→ 走 Section 14 退化路徑，承重核不受影響。
@@ -96,7 +96,7 @@ workflow agent / 委派子 agent 超時、空輸出、明顯不完整時：① �
 
 ## 承重核：修改類動作的雙層防禦
 
-> 這是本方法論**設計上**的承重假設（人軸 proxy 未否證，但主指標 correctness 仍平手；承重性若存在落在非-correctness 維度，尚未被正面量化證實——proxy 測的是 artifact 對接手者，非此 hook 本身）。**因果鏈錨在 always-on hook（workflow 不可用也在）；事實求證是文字層自律（無對應 hook，見 Section 11/12）。**
+> 這是本方法論**設計上**的承重假設（人軸 proxy 未否證，但主指標 correctness 仍平手；承重性若存在落在非-correctness 維度，尚未被正面量化證實——proxy 測的是 artifact 對接手者，非此機制本身）。**因果鏈錨在 always-on hook（workflow 不可用也在）；事實求證是文字層自律（無對應 hook，見 Section 11/12）。**
 
 ### 5. 領域偵測（修改/設計前自動判定）
 
@@ -232,16 +232,17 @@ workflow agent / 委派子 agent 超時、空輸出、明顯不完整時：① �
 
 | 指令 | 用途 | 結構 |
 |------|------|------|
-| `/dev-prd` | PRD / 需求探索 | 多角度需求探索 → judge-panel N 方案 → 對抗驗證 → PRD 文件 |
+| `/dev-prd` | PRD / 需求探索 | 多角度探索（problem/user/scope）→ 塑形候選（lean/complete）→ 對抗挑戰 → PRD 文件 |
 | `/dev-design` | 架構設計（取代舊 Phase 1+1b）| 多方案架構 → adversarial-verify 砍缺陷 → 設計規格（含 BC-x）|
 | `/dev-review` | 品質+安全審查（取代舊 Phase 3）| parallel(correctness / security / repro lens) → 對抗驗證 findings |
 | `/dev-verify` | 跨產出物自證（取代舊 Phase 5，可選）| 可枚舉項 adversarial-verify + 輕量 verifier 做反向遍歷（找死碼/未實作）|
 
 ### Workflow 內承重核注入（L2 強化）
 
-每個 workflow 的 agent prompt **內嵌**：
-- 修改類 agent → 因果鏈分析要求（呼叫者窮舉 + 影響決策）
-- 事實性 agent → 事實主張閘門（證據分級 + 反例檢查），且**反例由獨立 context skeptic 重做**（打破同源天花板）
+workflow 的 agent prompt 按性質**內嵌**承重核：
+- 修改類 agent（dev-design / dev-review / dev-verify）→ 因果鏈分析要求（呼叫者窮舉 + 影響決策）
+- 事實性 agent（含 dev-prd）→ 事實主張閘門（證據分級 + 反例檢查），且 dev-review 的**反例由獨立 context skeptic 重做**（打破同源天花板）
+- 註：dev-prd 不觸碼，只注入事實求證、不含因果鏈。
 
 ### Workflow agent prompt 素材庫
 
@@ -317,7 +318,7 @@ closed-loop v7.0.0
 3. 替換所有 {{PLACEHOLDER}}：{{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LANGUAGE_SKILL_SECTION}}
 4. 部署 hooks（deploy-hooks.sh）：承重核的 always-on 觸發層
 
-版本：v7.0.0（2026-06-01）· workflow-first 重構：五階流水線 ritual（A–F 實證零增益）交給原生 Workflow 編排（/dev-prd /dev-design /dev-review /dev-verify），CLAUDE.md 縮減約 42%（588→340 行），保留並重新定位承重核（因果鏈+事實求證·人軸 proxy 未否證）為三層架構：L1 always-on hook（fail-safe 地基）+ L2 workflow（預設首選編排）+ L3 文字層（退化路徑）。
+版本：v7.0.0（2026-06-01）· workflow-first 重構：五階流水線 ritual（A–F 實證零增益）交給原生 Workflow 編排（/dev-prd /dev-design /dev-review /dev-verify），CLAUDE.md 縮減約 42%（588→341 行），保留並重新定位承重核（因果鏈+事實求證·人軸 proxy 未否證）為三層架構：L1 always-on hook（fail-safe 地基）+ L2 workflow（預設首選編排）+ L3 文字層（退化路徑）。
 
 migration-notes (v6.5.0 → v7.0.0)
 breaking-changes:
