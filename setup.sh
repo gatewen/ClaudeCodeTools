@@ -214,6 +214,33 @@ cp -r "$OVERVIEW_SKILL_SOURCE" "$OVERVIEW_SKILL_TARGET"
 echo "✅ dev:overview 已部署到 ${OVERVIEW_SKILL_TARGET}"
 
 # --------------------------------------------------
+# 3.7 部署 workflow 腳本（v7.0.0 · workflow-first 編排）
+# --------------------------------------------------
+
+echo "--- 部署 workflow 腳本（dev-prd / dev-design / dev-review / dev-verify）---"
+
+WORKFLOWS_DIR="$HOME/.claude/workflows"
+WORKFLOWS_SOURCE="$SOURCE_DIR/dev-closed-loop/workflows"
+WORKFLOW_FILES=("dev-prd.js" "dev-design.js" "dev-review.js" "dev-verify.js")
+
+if [ ! -d "$WORKFLOWS_SOURCE" ]; then
+    echo "❌ 找不到 workflow 源碼目錄：${WORKFLOWS_SOURCE}"
+    exit 1
+fi
+
+mkdir -p "$WORKFLOWS_DIR"
+for wf in "${WORKFLOW_FILES[@]}"; do
+    if [ ! -f "$WORKFLOWS_SOURCE/$wf" ]; then
+        echo "❌ 缺少 workflow 腳本：${WORKFLOWS_SOURCE}/$wf"
+        exit 1
+    fi
+    cp "$WORKFLOWS_SOURCE/$wf" "$WORKFLOWS_DIR/$wf"
+done
+
+echo "✅ 4 個 workflow 腳本已部署到 ${WORKFLOWS_DIR}（/dev-prd /dev-design /dev-review /dev-verify）"
+echo "   ⚠️ workflow 需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用時方法論走退化路徑（CLAUDE.md Section 14）"
+
+# --------------------------------------------------
 # 4. 驗證
 # --------------------------------------------------
 
@@ -347,6 +374,21 @@ if $OVERVIEW_OK; then
     echo "✅ dev:overview Skill 完整（${OVERVIEW_COUNT}/${#OVERVIEW_SKILL_FILES[@]}）"
 fi
 
+# 確認 workflow 腳本完整（v7.0.0）
+WORKFLOW_OK=true
+WORKFLOW_COUNT=0
+for wf in "${WORKFLOW_FILES[@]}"; do
+    if [ -f "$WORKFLOWS_DIR/$wf" ]; then
+        WORKFLOW_COUNT=$((WORKFLOW_COUNT + 1))
+    else
+        echo "❌ 缺少 workflow 腳本：$wf"
+        WORKFLOW_OK=false
+    fi
+done
+if $WORKFLOW_OK; then
+    echo "✅ workflow 腳本完整（${WORKFLOW_COUNT}/${#WORKFLOW_FILES[@]}）"
+fi
+
 # 確認 languages 目錄完整
 LANG_FILES=(
     "languages/README.md"
@@ -419,9 +461,11 @@ echo "================================================"
 echo "  ✅ 安裝完成"
 echo "================================================"
 echo ""
-echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署閉環。"
+echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署閉環（v7.0.0 · workflow-first）。"
 echo "也可以用 /dev:handoff save / load 跨 session 交接（功能等價 wt:handoff）。"
 echo "或執行 /dev:overview 產生方法論視覺化介紹 HTML（給人類看）。"
+echo "大型/PRD/架構設計可用 workflow：/dev-prd /dev-design /dev-review /dev-verify"
+echo "  （需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用則走退化路徑）"
 echo ""
 if [ "$INSTALL_MODE" = "local" ]; then
     echo "更新流程：git pull → bash setup.sh"

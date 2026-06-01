@@ -24,6 +24,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
   - 語言指南 `languages/` 7 檔（6 語言指南：TS/Py/Go/Rust/C#/Bash + 1 個 README 索引）
   - `.claudedocs/README.md` 1 檔（總目錄導覽）
 - `dev-closed-loop/hooks/` — 6 個 Hook 腳本（修改前統一守衛 / 委派前因果鏈閘門 / 理解確認旗標 / 增量驗證 / 委派追蹤 / 學習日誌提醒），由 `deploy-hooks.sh` 一鍵部署到 `~/.claude/hooks/`。
+- `dev-closed-loop/workflows/` — 4 個 workflow 腳本（v7.0.0 引入）：`dev-prd.js`（PRD 探索→候選→挑戰）/ `dev-design.js`（架構多方案 judge-panel + 對抗驗證，取代舊 Phase 1+1b）/ `dev-review.js`（parallel 多視角審查 + 異源 skeptic 驗證，取代舊 Phase 3）/ `dev-verify.js`（正向 adversarial + 反向遍歷輕量 verifier，取代舊 Phase 5）。由 setup.sh 部署到 `~/.claude/workflows/` → `/dev-prd` `/dev-design` `/dev-review` `/dev-verify`（連字號 slash，非冒號）。承重核（因果鏈+事實求證）內嵌於各 agent prompt。⚠️ 需 Claude Code v2.1.154+ · 付費 · research preview。
 - `dev-closed-loop/deploy-hooks.sh` — Hook 部署腳本（複製 + 合併 settings.json + 驗證）。`dev-closed-loop/check-version.sh` — 版本檢查工具（快取/部署/遠端一次比完）。
 - `dev-closed-loop/design/` — 設計歷史（01-11）：v3 原始構想 → v4 重寫 → v5 認知驗證層 → v6 Karpathy 行為哲學 + 對照範例 + KPI。僅供參考。
 - `tests/` — 本地 smoke test 套件（**不部署到使用者專案**，maintainer 開發時用）。執行：`bash tests/run.sh`。包含 7 個 smoke：
@@ -91,6 +92,7 @@ v6.x 系列在五階段之上加了三層擴充：
 | Hook 腳本增刪或行為變更 | `deploy-hooks.sh`（部署邏輯）· `init-claude.md`（Step 4b） |
 | `dev-closed-loop/skills/dev:handoff/*` — Skill 內容變更 | `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh`（部署落地斷言） |
 | `dev-closed-loop/skills/dev:overview/*` — Skill 內容變更（template.html / SKILL.md / 4 references 任一）| `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh` Check 5.6（部署落地斷言 + placeholder 完整性 + dark mode CSS 存在）· 若 content-spec 改動同步看 source-mapping 對映是否還對 |
+| `dev-closed-loop/workflows/*.js` — workflow 腳本變更（v7.0.0）| `setup.sh`（3.7 部署段 + WORKFLOW_FILES 驗證清單）· CLAUDE_TEMPLATE.md「可用 workflow 表」+「承重核注入段」（指令名/結構/承重核必一致）· 若改 meta.name 連動 slash 指令名（連字號）· 主檔對該 workflow 的能力描述不可錯述（R-2 round2 教訓：dev-prd 曾誤稱 judge-panel） |
 | `.claudedocs/examples/*.md` — anti-pattern 範例修改（K-07 主檔） | `.claudedocs/concepts/閉環核心理念.md`「Anti-Patterns Summary」段（K-16 對照表）· CLAUDE_TEMPLATE.md Section 0 4 原則對映表（若範例 Q1-Q4 對應變動） |
 | `.claudedocs/concepts/方法論運作指標.md` — KPI 指標 / 門檻 / 觸發條件變動（K-11 主檔） | `.claudedocs/records/問題追蹤.md`（升格觸發機制）· CLAUDE_TEMPLATE.md Phase 5 步驟 4.5（觀察項記入機制） |
 | 版本號 | **CLAUDE_TEMPLATE.md 末尾 `closed-loop v` source-of-truth marker（check-version.sh 用 `grep -o 'closed-loop v[0-9.]*'` 抓的就是這行 · ⚠️ 不是「版本：vX.Y.Z（日期）...」敘述行，那是給人看的描述）** · CLAUDE_TEMPLATE.md 末尾敘述行（與 marker 同步避免認知混亂）· `dev-closed-loop/README.md` 版本歷史 · 根 `README.md` 版本歷史 |
