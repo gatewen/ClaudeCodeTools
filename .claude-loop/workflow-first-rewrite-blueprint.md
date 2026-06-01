@@ -112,6 +112,24 @@
 4. **版本號**：這是 breaking change，跳大版本（v7.0.0）？
 5. **CLAUDE.md 目標行數**：~250-300 可接受，還是要更激進砍到 ~150？
 
+## 7.5 R-2 審查後的修正（2026-06-01 · needs-attention 8 high）
+
+R-2 cross-source review 判 needs-attention，抓出 8 high（我自審只預見 1）。用戶選「先驗證 hook + 寫完 4 腳本再發完整 v7」。查證結果：
+
+| 議題 | 查證結果 | 證據 |
+|------|---------|------|
+| **H4 workflow 路徑 hook 觸發** | ✅ **會觸發**。workflow subagent 的 Write/Edit 觸發母 session PreToolUse hook，exit 2 有效阻擋。承重核在 L2 成立。 | A 級·官方 hooks+workflow 文件 |
+| **H3 `/dev:` vs `/dev-` 命名** | 🔴 **連字號**。`.js` 檔名衍生 `/dev-prd`，冒號命名空間只 plugin skills 保證。全檔 13 處 `/dev:prd` 須改 `/dev-prd`。 | A 級·官方命名規則表 |
+| H1 腳本不存在 | 必須先寫 4 支 .js + 進 setup.sh，主檔才能引用真實指令 | repo find 確認 0 個 |
+
+**施工順序修正**（先驗證承重梁再蓋房）：
+1. ✅ 驗證 H4（hook 觸發）+ H3（命名）
+2. 寫 4 支 workflow 腳本（dev-prd / dev-design / dev-review / dev-verify）.js → 部署到 .claude/workflows/
+3. 修主檔 8 high + medium：命名改連字號 / 事實求證移出 always-on（無 fact hook）/「實證承重」→「未否證」/「更省 token」加未實證標 / 孤兒 placeholder 移除 / 縮減比例據實(42%) / Section 編號修正（Q1-Q4 對映表 + Section 12 斷號）
+4. setup.sh 加 workflow 部署單元 + 驗證清單 + CLAUDE.md 依賴表新增行
+5. 重跑 R-2 審查主檔 → 過了才傳播 24 檔
+6. 傳播前跑 `bash tests/run.sh`
+
 ## 8. 預判（誠實登記）
 
 - 此重構是報告的**極大派 × 保留承重核**，比報告推薦的混合派更激進。報告對極大派的對抗裁決是 0.90 否證——但那是針對「連 always-on 紀律都換成 opt-in」的極大派。**本藍圖的 L1 hook 層保住了 always-on，化解了該否證的核心**（always-on 紀律沒被換掉，只有「編排」被換）。
