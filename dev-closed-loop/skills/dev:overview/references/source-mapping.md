@@ -71,7 +71,7 @@
 
 | Placeholder | Source |
 |------------|--------|
-| `{{HERO_TAGLINE}}` | 寫死在 template：「讓 Claude Code 跟你協作時走可追溯的五階段流程，不只把程式寫出來，還對自己的產出負責」 |
+| `{{HERO_TAGLINE}}` | 寫死在 template：「讓 Claude Code 跟你協作時，先把『改動會牽動誰』和『我信的事實是真的嗎』做扎實（承重核），大型任務再交給可追溯的 workflow 編排——不只把程式寫出來，還對自己的產出負責」（v7.0.0） |
 | `{{HERO_PROBLEM_LIST}}` | 寫死：見 content-spec.md Hero 區 |
 | `{{HERO_AUDIENCE_LIST}}` | 寫死：見 content-spec.md Hero 區 |
 | `{{HERO_DIFFERENCE_LIST}}` | 寫死：見 content-spec.md Hero 區 |

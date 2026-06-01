@@ -230,7 +230,7 @@ section + section {
 
 .phase-flow {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   align-items: stretch;
 }
@@ -250,7 +250,6 @@ section + section {
 .phase-card[data-phase="2"] { --phase-color: var(--phase-2); }
 .phase-card[data-phase="3"] { --phase-color: var(--phase-3); }
 .phase-card[data-phase="4"] { --phase-color: var(--phase-4); }
-.phase-card[data-phase="5"] { --phase-color: var(--phase-5); }
 
 .phase-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-elevated); }
 .phase-card:focus-visible { outline: 2px solid var(--phase-color); outline-offset: 2px; }
@@ -287,6 +286,19 @@ section + section {
 .phase-detail dt { font-weight: 600; color: var(--fg-muted); white-space: nowrap; }
 .phase-detail dd { color: var(--fg); }
 .phase-detail .deep-link { display: inline-block; margin-top: 0.6rem; font-size: 0.82rem; }
+
+/* §1 三層架構 banner + 承重核 callout（v7.0.0） */
+.layer-banner { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 1.5rem 0; text-align: left; }
+.layer-box { background: var(--card-bg); border: 1px solid var(--border); border-top: 4px solid var(--phase-color); border-radius: 10px; padding: 14px 16px; }
+.layer-box.l1 { --phase-color: var(--phase-2); }
+.layer-box.l2 { --phase-color: var(--phase-1); }
+.layer-box.l3 { --phase-color: var(--phase-4); }
+.layer-box strong { display: block; margin-bottom: 6px; font-size: 0.95rem; }
+.layer-box span { font-size: 0.85rem; color: var(--fg-muted); }
+.core-callout { background: var(--card-elevated); border: 1px solid var(--border); border-left: 4px solid var(--phase-3); border-radius: 8px; padding: 16px 18px; margin: 1.5rem 0; font-size: 0.92rem; text-align: left; }
+.core-callout > strong { font-size: 1rem; }
+.core-callout > div { margin-top: 0.6rem; }
+.core-callout .honesty { font-size: 0.85rem; color: var(--fg-muted); border-top: 1px dashed var(--border); padding-top: 0.6rem; }
 
 /* ─────────────── §2-§11 Advanced sections ─────────────── */
 .advanced-toolbar {
@@ -534,7 +546,7 @@ footer {
   .container { padding: 0 16px; }
   section { padding: 2rem 0; }
   #theme-toggle { top: 12px; right: 12px; width: 40px; height: 40px; }
-  .phase-flow, .hero-cards, .hero-principles, .deployment-grid, .cta-grid { grid-template-columns: 1fr; }
+  .phase-flow, .hero-cards, .hero-principles, .deployment-grid, .cta-grid, .layer-banner { grid-template-columns: 1fr; }
   .hero h1 { font-size: 1.8rem; }
 }
 
@@ -558,7 +570,7 @@ footer {
 <!-- ════════════════ Hero ════════════════ -->
 <section class="hero">
   <h1>🔄 開發設計閉環</h1>
-  <p class="tagline">讓 Claude Code 跟你協作時走可追溯的五階段流程，<br>不只把程式寫出來，還對自己的產出負責。</p>
+  <p class="tagline">讓 Claude Code 跟你協作時，先把「改動會牽動誰」和「我信的事實是真的嗎」做扎實（承重核），<br>大型任務再交給可追溯的 workflow 編排——不只把程式寫出來，還對自己的產出負責。</p>
 
   <div class="hero-cards">
     <div class="hero-card">
@@ -581,13 +593,13 @@ footer {
       <h3>跟普通 Claude 差在哪</h3>
       <div class="diff-row">
         <div><span style="color:var(--fg-muted)">普通：</span>需求 → 程式產出</div>
-        <div><strong>閉環：</strong>需求 → 規格 → 實作 → 審查 → 測試 → 對齊 → commit</div>
-        <div style="color:var(--fg-muted);font-size:0.85rem">六個產物全部互相對齊</div>
+        <div><strong>閉環：</strong>承重核（因果鏈＋事實求證）＋ 大型任務 workflow 編排（探索→設計→審查→自證）</div>
+        <div style="color:var(--fg-muted);font-size:0.85rem">產物互相對齊、改動可追溯</div>
       </div>
     </div>
   </div>
 
-  <p style="margin-top:1.8rem;color:var(--fg-muted)">動手前先過 4 個自問（橫切每個 Phase）：</p>
+  <p style="margin-top:1.8rem;color:var(--fg-muted)">動手前先過 4 個自問（橫切每個階段）：</p>
   <div class="hero-principles">
     <div class="principle"><span class="emoji">❓</span><div><div class="pname">Think</div><div class="pquestion">我假設了什麼？驗證過嗎？</div></div></div>
     <div class="principle"><span class="emoji">✂️</span><div><div class="pname">Simplicity</div><div class="pquestion">能更簡單嗎？</div></div></div>
@@ -607,10 +619,24 @@ footer {
   <!-- /DEPLOYMENT_CTA_STANDALONE -->
 </section>
 
-<!-- ════════════════ §1 五階段閉環（新手必看） ════════════════ -->
+<!-- ════════════════ §1 三層架構 + workflow（新手必看） ════════════════ -->
 <section class="phases-section">
-  <h2>§1 五階段閉環 · 核心</h2>
-  <p class="tagline">開發任務不是「直接寫程式」— 走五個專業角色一棒接一棒。每個角色只做一件事，產出可追溯給下一棒，最後一棒檢查大家對得起來。</p>
+  <h2>§1 三層架構 + workflow 編排 · 核心</h2>
+  <p class="tagline">v7.0.0 把方法論分三層：always-on hook（承重核地基，無論如何都跑）＋ workflow 編排（大型任務首選）＋ 文字層（workflow 不可用時的退化路徑）。小任務直接做，大任務才開編排——但「先想清楚牽動誰、事實對不對」這道承重核，連改一行都要做。</p>
+
+  <div class="layer-banner">
+    <div class="layer-box l1"><strong>L1 · always-on hook</strong><span>每次 Edit 都觸發：因果鏈閘門 ＋ 理解確認。workflow 有沒有都跑——承重核錨在這層，紀律才不會靜默歸零。</span></div>
+    <div class="layer-box l2"><strong>L2 · workflow（預設首選）</strong><span>大型 / PRD / 架構設計開：多 agent 編排 ＋ 對抗驗證，取代 v6.x 的五階強制流水線。</span></div>
+    <div class="layer-box l3"><strong>L3 · 文字層（退化路徑）</strong><span>workflow 不可用（免費 / 舊版 / 非 preview）時，主 agent inline 走事實求證 ＋ push back ＋ 設計→審查→自證。</span></div>
+  </div>
+
+  <div class="core-callout">
+    <strong>🏛️ 承重核：修改類動作的雙層防禦</strong>
+    <div>① <strong>因果鏈</strong>（依賴影響）：改任何函式前先 grep 誰呼叫它、逐一判斷要不要連動，呼叫者＝0 就停。② <strong>事實求證</strong>（認知驗證）：相信的「事實」要分證據級別、做反例檢查，弱證據不能當事實寫下去。</div>
+    <div class="honesty">⚠️ 誠實邊界（A–F dogfood 實證校準）：承重核對「前沿模型單次 correctness」<strong>零增益</strong>（模型本來就會做這些）；其價值錨在<strong>人</strong>（長期維護 / 稽核 / 交接 / 跨 session 防漂移）——人軸 proxy 未否證，但<strong>未量化證實</strong>。workflow 與五階的 token / 品質也<strong>從未對照實測</strong>。本方法論偏向「正確性與可追溯性 &gt; 速度」。</div>
+  </div>
+
+  <p class="tagline" style="margin-top:2rem">大型任務的 workflow 編排——一棒接一棒，產出可追溯：</p>
   <div class="phase-toolbar">
     <button onclick="toggleAllPhases()" id="phases-toggle-all">全部展開</button>
   </div>
@@ -618,75 +644,63 @@ footer {
 
     <article class="phase-card" data-phase="1" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
       <div class="phase-badge">1</div>
-      <h3>架構師</h3>
-      <p class="phase-action">設計</p>
+      <h3>/dev-prd</h3>
+      <p class="phase-action">需求探索</p>
       <div class="phase-detail" hidden>
         <dl>
-          <dt>做什麼</dt><dd>把需求「翻譯」成可驗證的設計規格（目標 → 行為條件 → 錯誤處理 → 介面契約）</dd>
-          <dt>產出</dt><dd>📄 <code>P1-design-spec.md</code></dd>
-          <dt>為什麼</dt><dd>避免「需求講不清楚就直接寫程式」— 後面 4 棒都靠這個規格對齊</dd>
+          <dt>做什麼</dt><dd>多角度探索需求（problem / user / scope）→ 塑形候選 → 對抗挑戰 → PRD 文件（不觸碼）</dd>
+          <dt>產出</dt><dd>📄 PRD（探索結論 + 候選取捨）</dd>
+          <dt>為什麼</dt><dd>避免「需求講不清楚就直接寫程式」— 需求未定 / 多方案取捨時強制開</dd>
         </dl>
-        <a class="deep-link" href=".claudedocs/agents/architect.md">↗ 深入：architect.md</a>
+        <a class="deep-link" href=".claudedocs/agents/requirements-analyst.md">↗ 素材：requirements-analyst.md</a>
       </div>
     </article>
 
     <article class="phase-card" data-phase="2" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
       <div class="phase-badge">2</div>
-      <h3>程式師</h3>
-      <p class="phase-action">實作</p>
+      <h3>/dev-design</h3>
+      <p class="phase-action">架構設計</p>
       <div class="phase-detail" hidden>
         <dl>
-          <dt>做什麼</dt><dd>忠實實作設計規格，過程強制簡化（不寫超出規格的功能）</dd>
-          <dt>產出</dt><dd>📁 程式碼 + 增量 lint pass</dd>
-          <dt>為什麼</dt><dd>避免「實作偏離設計」與「越寫越複雜」</dd>
+          <dt>做什麼</dt><dd>多方案架構 → adversarial-verify 砍缺陷 → 設計規格（含 BC-x）</dd>
+          <dt>產出</dt><dd>📄 設計規格（<code>.claude-loop/artifacts/</code>）</dd>
+          <dt>為什麼</dt><dd>取代 v6.x Phase 1+1b — 審查 agent 用新鮮眼光問「有更好做法嗎？」切斷設計偏見</dd>
         </dl>
-        <a class="deep-link" href=".claudedocs/agents/implementer.md">↗ 深入：implementer.md</a>
+        <a class="deep-link" href=".claudedocs/agents/architect.md">↗ 素材：architect.md + design-reviewer.md</a>
       </div>
     </article>
 
     <article class="phase-card" data-phase="3" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
       <div class="phase-badge">3</div>
-      <h3>檢核師</h3>
-      <p class="phase-action">審查</p>
+      <h3>/dev-review</h3>
+      <p class="phase-action">品質＋安全審查</p>
       <div class="phase-detail" hidden>
         <dl>
-          <dt>做什麼</dt><dd>多面向審查（設計一致性 / 結構安全 / 依賴方向 / 安全性）</dd>
-          <dt>產出</dt><dd>📄 <code>P3-quality.md</code></dd>
-          <dt>為什麼</dt><dd>抓「LLM 自己寫自己審」的盲點 — 用獨立 task agent 切斷主執行緒的偏見</dd>
+          <dt>做什麼</dt><dd>parallel 跑 correctness / security / repro 三視角 → 對抗驗證 findings（異源 skeptic 重做反例）</dd>
+          <dt>產出</dt><dd>📄 審查 findings（R-x severity）</dd>
+          <dt>為什麼</dt><dd>取代 v6.x Phase 3 — 抓「自己寫自己審」盲點；安全審查按場景決定（純本地可跳過）</dd>
         </dl>
-        <a class="deep-link" href=".claudedocs/agents/code-reviewer.md">↗ 深入：code-reviewer.md + security-reviewer.md</a>
+        <a class="deep-link" href=".claudedocs/agents/code-reviewer.md">↗ 素材：code-reviewer.md + security-reviewer.md</a>
       </div>
     </article>
 
     <article class="phase-card" data-phase="4" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
       <div class="phase-badge">4</div>
-      <h3>測試師</h3>
-      <p class="phase-action">驗證</p>
+      <h3>/dev-verify</h3>
+      <p class="phase-action">跨產出物自證（可選）</p>
       <div class="phase-detail" hidden>
         <dl>
-          <dt>做什麼</dt><dd>依設計規格設計測試並真的跑（不是「假設應該過」）</dd>
-          <dt>產出</dt><dd>📄 <code>P4-deployment-verification.md</code></dd>
-          <dt>為什麼</dt><dd>抓「測試假通過」— 跨平台環境不支援應 skip 不誤報、邊界條件覆蓋</dd>
+          <dt>做什麼</dt><dd>可枚舉項 adversarial-verify ＋ 輕量 verifier 反向遍歷（找死碼 / 未實作）；BC-x / R-x 雙向追溯</dd>
+          <dt>產出</dt><dd>📄 雙向追溯報告</dd>
+          <dt>為什麼</dt><dd>取代 v6.x Phase 5 — 抓「文字看起來對但對不起來」：設計講 A、實作做 B、測試測 C</dd>
         </dl>
-        <a class="deep-link" href=".claudedocs/agents/tester.md">↗ 深入：tester.md</a>
+        <a class="deep-link" href=".claudedocs/agents/verifier.md">↗ 素材：verifier.md</a>
       </div>
     </article>
 
-    <article class="phase-card" data-phase="5" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
-      <div class="phase-badge">5</div>
-      <h3>自證師</h3>
-      <p class="phase-action">對齊</p>
-      <div class="phase-detail" hidden>
-        <dl>
-          <dt>做什麼</dt><dd>比對 1-4 棒產出物有沒有矛盾（用 BC-x / EH-x / R-x 編號做精確雙向追溯）</dd>
-          <dt>產出</dt><dd>📄 <code>P5AB-bidirectional-tracing.md</code></dd>
-          <dt>為什麼</dt><dd>抓「文字看起來對但對不起來」的隱藏問題 — 設計講了 A 但實作做了 B、測試測了 C</dd>
-        </dl>
-        <a class="deep-link" href=".claudedocs/agents/verifier.md">↗ 深入：verifier.md</a>
-      </div>
-    </article>
 
   </div>
+  <p style="text-align:center;color:var(--fg-muted);font-size:0.88rem;margin-top:1.2rem">實作（寫程式）與測試由主 agent 承擔；微小任務直接做、不開編排。v6.x 五階 ↔ v7 對映見 <a href=".claudedocs/process/五階段閉環流程.md">process/五階段閉環流程.md</a>。</p>
 </section>
 
 <!-- ════════════════ §2-§11 進階區 ════════════════ -->
@@ -704,7 +718,7 @@ footer {
     <h4>三層防禦</h4>
     <ol>
       <li><strong>上游</strong>（Phase 1 Step 0a/0b）：<strong>字面證據掃描</strong> — 設計階段優先用 docstring / echo string 等字面證據，不靠推論</li>
-      <li><strong>中游</strong>（Section 12/13）：<strong>事實主張閘門 + 質疑熔斷協議</strong> — 任何「因為 X 所以 Y」要附 A 級（程式碼）/ B 級（commit history）證據；用戶說「OK」不能跨越事實質疑代價差</li>
+      <li><strong>中游</strong>（Section 11/12）：<strong>事實主張閘門 + 質疑熔斷協議</strong> — 任何「因為 X 所以 Y」要附 A 級（程式碼）/ B 級（commit history）證據；用戶說「OK」不能跨越事實質疑代價差</li>
       <li><strong>下游</strong>（Phase 1b Step 5c + Phase 5 Step 9c）：<strong>Falsification check + 事實前提追溯</strong> — design review 對引用的環境事實做反例提問；自證階段把所有事實主張記入 <code>P5-fact-claims.md</code></li>
     </ol>
     <svg class="diagram" viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三層防禦關係圖">
@@ -712,7 +726,7 @@ footer {
       <text x="100" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">上游 (Phase 1)</text>
       <text x="100" y="90" text-anchor="middle" font-family="sans-serif" font-size="11" fill="currentColor">字面證據掃描</text>
       <rect x="220" y="40" width="160" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
-      <text x="300" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">中游 (S12/13)</text>
+      <text x="300" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">中游 (S11/12)</text>
       <text x="300" y="90" text-anchor="middle" font-family="sans-serif" font-size="11" fill="currentColor">事實主張閘門</text>
       <rect x="420" y="40" width="160" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
       <text x="500" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">下游 (Phase 5)</text>
@@ -798,7 +812,7 @@ footer {
     <div class="why-box">
       <strong>為什麼</strong>：抓「自治可繞 + 機械化可關，遲早會繞到底」的紅線 — 劃出「自治 + 機械化都不能管的最後底線」
     </div>
-    <a class="deep-link" href="CLAUDE.md">↗ 深入：CLAUDE_TEMPLATE.md Section 13.5 反向劃線</a>
+    <a class="deep-link" href="CLAUDE.md">↗ 深入：CLAUDE.md Section 12.6 反向劃線</a>
   </div>
 </section>
 
@@ -831,7 +845,7 @@ footer {
     <div class="why-box">
       <strong>為什麼</strong>：防止「LLM 對用戶有求必應反而帶錯方向」— 對用戶有義務反對，不是有求必應
     </div>
-    <a class="deep-link" href="CLAUDE.md">↗ 深入：CLAUDE_TEMPLATE.md Section 0 + Section 12.5</a>
+    <a class="deep-link" href="CLAUDE.md">↗ 深入：CLAUDE.md Section 0 + Section 11.5</a>
   </div>
 </section>
 
@@ -865,7 +879,7 @@ footer {
     <h2><span class="num">§7</span> Agent 專家庫</h2>
     <span class="chevron">▼</span>
   </button>
-  <p class="section-tagline">5 階段 + Phase 1b 的角色由 8 個專用 agent prompt 擔綱，不靠通用 LLM。</p>
+  <p class="section-tagline">8 個專用 agent prompt 是 workflow 的 prompt 素材（也是退化路徑委派腳本），各聚焦一個審查維度，不靠通用 LLM 臨場發揮。</p>
   <div class="section-body" hidden>
     <table>
       <thead><tr><th>Agent</th><th>Phase</th><th>類型</th><th>特色</th></tr></thead>
@@ -881,9 +895,9 @@ footer {
       </tbody>
     </table>
     <div class="why-box">
-      <strong>為什麼</strong>：防止「一個通用 LLM 同時扮 5 個角色容易混淆」— 每個 phase 用專用 prompt 強化角色聚焦
+      <strong>為什麼</strong>：防止「一個通用 LLM 同時扮多個角色容易混淆」— 每個審查維度用專用 prompt 素材強化聚焦（v7 由 workflow 引用；workflow 不可用時退化路徑委派）
     </div>
-    <a class="deep-link" href=".claudedocs/agents/">↗ 深入：.claudedocs/agents/（含 README）</a>
+    <a class="deep-link" href=".claudedocs/agents/">↗ 素材：.claudedocs/agents/（含 README）</a>
   </div>
 </section>
 

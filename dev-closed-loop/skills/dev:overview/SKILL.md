@@ -1,6 +1,6 @@
 ---
 name: dev:overview
-description: Use when the user wants a visual / human-friendly overview of the dev-closed-loop methodology, especially as an onboarding aid for newcomers. Triggers include "/dev:overview", "/dev:overview gen", or phrases like "介紹方法論"、"閉環是什麼"、"方法論有什麼功能"、"給我看 overview"、"overview"、"介紹"、"幫我看一下這個方法論". Produces a self-contained HTML file with light/dark toggle, 5-phase visual flow, advanced-mechanism collapsible sections, and current-deployment status (if deployed). NOT for: editing methodology content (that's manual editing of CLAUDE_TEMPLATE.md), deploying methodology (that's /dev:init-claude), cross-session handoff (that's /dev:handoff).
+description: Use when the user wants a visual / human-friendly overview of the dev-closed-loop methodology, especially as an onboarding aid for newcomers. Triggers include "/dev:overview", "/dev:overview gen", or phrases like "介紹方法論"、"閉環是什麼"、"方法論有什麼功能"、"給我看 overview"、"overview"、"介紹"、"幫我看一下這個方法論". Produces a self-contained HTML file with light/dark toggle, three-layer-architecture + workflow visual flow, advanced-mechanism collapsible sections, and current-deployment status (if deployed). NOT for: editing methodology content (that's manual editing of CLAUDE_TEMPLATE.md), deploying methodology (that's /dev:init-claude), cross-session handoff (that's /dev:handoff).
 ---
 
 # dev:overview
@@ -121,7 +121,7 @@ grep -qE "closed-loop v[0-9]+\.[0-9]+\.[0-9]+" ./CLAUDE.md 2>/dev/null && echo "
 
 - **`references/content-spec.md`** — Hero + 11 sections + CTA + 部署狀態區的完整白話內容規格
 - **`references/source-mapping.md`** — `{{PLACEHOLDER}}` ↔ source file / 指令 完整對映表
-- **`references/visual-guide.md`** — 5 phase 兩套配色 / light-dark CSS variables / typography / 互動規範
+- **`references/visual-guide.md`** — 三層 / 4 workflow 卡片配色 / light-dark CSS variables / typography / 互動規範
 - **`references/template.html`** — self-contained HTML template（inline CSS/JS/SVG · 含 `{{PLACEHOLDER}}`）
 
 ## 交互語言

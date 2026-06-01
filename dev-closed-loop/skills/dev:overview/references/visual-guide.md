@@ -183,15 +183,17 @@ code, pre, .mono {
 
 ---
 
-## 4. Phase Card 元件（§1 五階段閉環）
+## 4. Phase Card 元件（§1 workflow 階段卡 · v7 三層架構）
+
+> v7.0.0：§1 核心改為「三層架構 banner（3 卡 L1/L2/L3）+ 承重核 callout（含誠實邊界）+ 4 個 workflow 階段卡」。卡片元件 CSS 沿用，`data-phase` 1-4 對映 4 個 workflow 配色（`--phase-5` rose 仍用於 §7 verifier 的 phase-chip）。
 
 ```html
 <article class="phase-card" data-phase="1" tabindex="0">
   <div class="phase-badge">1</div>
-  <h3>架構師</h3>
-  <p class="phase-action">設計</p>
+  <h3>/dev-prd</h3>
+  <p class="phase-action">需求探索</p>
   <div class="phase-detail" hidden>
-    <!-- 點擊後展開：做什麼 / 產出 / 為什麼 / 深入連結 -->
+    <!-- 點擊後展開：做什麼 / 產出 / 為什麼 / ↗ 素材連結 -->
   </div>
 </article>
 ```

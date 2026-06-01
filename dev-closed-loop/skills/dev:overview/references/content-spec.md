@@ -16,8 +16,8 @@ dev:overview HTML 的所有「給人類看」的文案。Template.html 渲染這
 ### Tagline（醒目大標）
 
 > **「開發設計閉環」（Closed-Loop）**
-> 讓 Claude Code 跟你協作時走可追溯的五階段流程，
-> 不只把程式寫出來，還對自己的產出負責。
+> 讓 Claude Code 跟你協作時，先把「改動會牽動誰」和「我信的事實是真的嗎」做扎實（承重核），
+> 大型任務再交給可追溯的 workflow 編排——不只把程式寫出來，還對自己的產出負責。
 
 ### 三卡並排（解決什麼問題 / 給誰用 / 跟普通 Claude 差在哪）
 
@@ -40,11 +40,11 @@ dev:overview HTML 的所有「給人類看」的文案。Template.html 渲染這
 
 > **普通**：描述需求 → 程式產出
 >
-> **閉環**：需求 → 規格 → 實作 → 審查 → 測試 → 對齊 → commit（**六個產物全部互相對齊**）
+> **閉環**：承重核（因果鏈＋事實求證）＋ 大型任務 workflow 編排（探索→設計→審查→自證）（**產物互相對齊、改動可追溯**）
 
 ### 4 原則橫切（Hero 底部）
 
-> 動手前先過 4 個自問（橫切每個 Phase）：
+> 動手前先過 4 個自問（橫切每個階段）：
 >
 > - ❓ **Think** — 我假設了什麼？驗證過嗎？
 > - ✂️ **Simplicity** — 能更簡單嗎？
@@ -67,66 +67,71 @@ dev:overview HTML 的所有「給人類看」的文案。Template.html 渲染這
 
 ---
 
-## §1 五階段閉環（核心 · 預設展開）
+## §1 三層架構 + workflow 編排（核心 · 預設展開）
 
 ### Tagline
 
-> 開發任務不是「直接寫程式」— 走五個專業角色一棒接一棒。每個角色只做一件事，產出可追溯給下一棒，最後一棒檢查大家對得起來。
+> v7.0.0 把方法論分三層：always-on hook（承重核地基，無論如何都跑）＋ workflow 編排（大型任務首選）＋ 文字層（workflow 不可用時的退化路徑）。小任務直接做，大任務才開編排——但「先想清楚牽動誰、事實對不對」這道承重核，連改一行都要做。
 
-### 5 個 Phase 卡片內容
+### 三層架構 banner（標題下方 · 3 卡）
 
-每個 phase 卡片預設顯示「編號 + 角色 + 動作」（精簡）；點擊展開「做什麼 / 產出 / 為什麼 / ↗ 深入」。
+| 層 | 是什麼 | 何時跑 |
+|----|--------|--------|
+| L1 · always-on hook | 因果鏈閘門 + 理解確認 | 每次 Edit，workflow 有沒有都跑（承重核錨點，紀律不靜默歸零）|
+| L2 · workflow（預設首選）| `/dev-prd` `/dev-design` `/dev-review` `/dev-verify` 多 agent 編排 + 對抗驗證 | 大型 / PRD / 架構設計（取代 v6.x 五階強制流水線）|
+| L3 · 文字層（退化路徑）| 事實求證 + push back + 設計→審查→自證 | workflow 不可用（免費/舊版/非 preview）時主 agent inline |
 
-#### Phase 1 · 架構師 · 設計（indigo）
+### 承重核 callout（含誠實邊界 · banner 下方）
 
-| 欄位 | 內容 |
-|------|------|
-| 做什麼 | 把需求「翻譯」成可驗證的設計規格（目標 → 行為條件 → 錯誤處理 → 介面契約） |
-| 產出 | 📄 `P1-design-spec.md` |
-| 為什麼 | 避免「需求講不清楚就直接寫程式」的常見坑 — 後面 4 棒都靠這個規格對齊 |
-| ↗ 深入 | `.claudedocs/agents/architect.md` |
+> 🏛️ **承重核：修改類動作的雙層防禦** — ① 因果鏈（grep 呼叫者、逐一判斷連動、=0 就停）② 事實求證（證據分級 + 反例檢查，弱證據不能當事實）。
+>
+> ⚠️ **誠實邊界**：A–F dogfood 實證對「前沿模型單次 correctness」**零增益**（模型本來就會做）；價值錨在**人**（維護/稽核/交接/跨 session 防漂移）——人軸 proxy 未否證但**未量化證實**；workflow 與五階的 token/品質**從未對照實測**。本方法論偏向「正確性與可追溯性 > 速度」。
 
-#### Phase 2 · 程式師 · 實作（emerald）
+### 4 個 workflow 階段卡片內容
 
-| 欄位 | 內容 |
-|------|------|
-| 做什麼 | 忠實實作設計規格，過程強制簡化（不寫超出規格的功能） |
-| 產出 | 📁 程式碼 + 增量 lint pass |
-| 為什麼 | 避免「實作偏離設計」與「越寫越複雜」 |
-| ↗ 深入 | `.claudedocs/agents/implementer.md` |
+每個卡片預設顯示「編號 + 指令 + 動作」（精簡）；點擊展開「做什麼 / 產出 / 為什麼 / ↗ 素材」。實作（寫程式）與測試由主 agent 承擔，不另立卡片。
 
-#### Phase 3 · 檢核師 · 審查（violet）
+#### 1 · /dev-prd · 需求探索（indigo）
 
 | 欄位 | 內容 |
 |------|------|
-| 做什麼 | 多面向審查（設計一致性 / 結構安全 / 依賴方向 / 安全性） |
-| 產出 | 📄 `P3-quality.md` |
-| 為什麼 | 抓「LLM 自己寫自己審」的盲點 — 用獨立 task agent 切斷主執行緒的偏見 |
-| ↗ 深入 | `.claudedocs/agents/code-reviewer.md` + `security-reviewer.md` |
+| 做什麼 | 多角度探索需求（problem / user / scope）→ 塑形候選 → 對抗挑戰 → PRD 文件（不觸碼） |
+| 產出 | 📄 PRD（探索結論 + 候選取捨） |
+| 為什麼 | 避免「需求講不清楚就直接寫程式」— 需求未定 / 多方案取捨時強制開 |
+| ↗ 素材 | `.claudedocs/agents/requirements-analyst.md` |
 
-#### Phase 4 · 測試師 · 驗證（amber）
-
-| 欄位 | 內容 |
-|------|------|
-| 做什麼 | 依設計規格設計測試並真的跑（不是「假設應該過」） |
-| 產出 | 📄 `P4-deployment-verification.md` |
-| 為什麼 | 抓「測試假通過」— 跨平台環境不支援應 skip 不誤報、邊界條件覆蓋 |
-| ↗ 深入 | `.claudedocs/agents/tester.md` |
-
-#### Phase 5 · 自證師 · 對齊（rose）
+#### 2 · /dev-design · 架構設計（emerald）
 
 | 欄位 | 內容 |
 |------|------|
-| 做什麼 | 比對 1-4 棒產出物有沒有矛盾（用 BC-x / EH-x / R-x 編號做精確雙向追溯） |
-| 產出 | 📄 `P5AB-bidirectional-tracing.md` |
-| 為什麼 | 抓「文字看起來對但對不起來」的隱藏問題 — 設計講了 A 但實作做了 B、測試測了 C |
-| ↗ 深入 | `.claudedocs/agents/verifier.md` |
+| 做什麼 | 多方案架構 → adversarial-verify 砍缺陷 → 設計規格（含 BC-x） |
+| 產出 | 📄 設計規格（`.claude-loop/artifacts/`） |
+| 為什麼 | 取代 v6.x Phase 1+1b — 審查 agent 用新鮮眼光問「有更好做法嗎？」切斷設計偏見 |
+| ↗ 素材 | `.claudedocs/agents/architect.md` + `design-reviewer.md` |
+
+#### 3 · /dev-review · 品質＋安全審查（violet）
+
+| 欄位 | 內容 |
+|------|------|
+| 做什麼 | parallel 跑 correctness / security / repro 三視角 → 對抗驗證 findings（異源 skeptic 重做反例） |
+| 產出 | 📄 審查 findings（R-x severity） |
+| 為什麼 | 取代 v6.x Phase 3 — 抓「自己寫自己審」盲點；安全審查按場景決定（純本地可跳過） |
+| ↗ 素材 | `.claudedocs/agents/code-reviewer.md` + `security-reviewer.md` |
+
+#### 4 · /dev-verify · 跨產出物自證（可選 · amber）
+
+| 欄位 | 內容 |
+|------|------|
+| 做什麼 | 可枚舉項 adversarial-verify + 輕量 verifier 反向遍歷（找死碼 / 未實作）；BC-x / R-x 雙向追溯 |
+| 產出 | 📄 雙向追溯報告 |
+| 為什麼 | 取代 v6.x Phase 5 — 抓「文字看起來對但對不起來」：設計講 A、實作做 B、測試測 C |
+| ↗ 素材 | `.claudedocs/agents/verifier.md` |
 
 ### 視覺特色
 
-- 5 個卡片水平排列，箭頭 → 連接（純視覺不可點）
+- 4 個 workflow 卡片水平排列，箭頭 → 連接（純視覺不可點）；標題下方另有三層 banner（3 卡）+ 承重核 callout
 - 每卡用對應 phase 色 border-top
-- 「全部展開」按鈕展開 5 個 phase 細節
+- 「全部展開」按鈕展開 4 個 workflow 階段細節
 - 點任一卡片只展開該卡，其他自動收回
 
 ---
@@ -142,7 +147,7 @@ dev:overview HTML 的所有「給人類看」的文案。Template.html 渲染這
 **三層防禦**：
 
 1. **上游**（Phase 1 Step 0a/0b）：**字面證據掃描** — 設計階段優先用 docstring / echo string 等字面證據，不靠推論
-2. **中游**（Section 12/13）：**事實主張閘門 + 質疑熔斷協議** — 任何「因為 X 所以 Y」要附 A 級（程式碼）/ B 級（commit history）證據；用戶說「OK」不能跨越事實質疑代價差
+2. **中游**（Section 11/12）：**事實主張閘門 + 質疑熔斷協議** — 任何「因為 X 所以 Y」要附 A 級（程式碼）/ B 級（commit history）證據；用戶說「OK」不能跨越事實質疑代價差
 3. **下游**（Phase 1b Step 5c + Phase 5 Step 9c）：**Falsification check + 事實前提追溯** — design review 對引用的環境事實做反例提問；自證階段把所有事實主張記入 P5-fact-claims.md
 
 ### 為什麼
@@ -214,7 +219,7 @@ dev:overview HTML 的所有「給人類看」的文案。Template.html 渲染這
 
 ### ↗ 深入
 
-`CLAUDE_TEMPLATE.md` Section 13.5 反向劃線
+`CLAUDE.md` Section 12.6 反向劃線
 
 ### 視覺特色
 
@@ -227,7 +232,7 @@ dev:overview HTML 的所有「給人類看」的文案。Template.html 渲染這
 
 ### Tagline
 
-> Karpathy 4 原則橫切每個 Phase + Push back 義務（5 種情境主動反對用戶）。
+> Karpathy 4 原則橫切每個階段 + Push back 義務（5 種情境主動反對用戶）。
 
 ### Detail · 4 原則展開
 
@@ -254,7 +259,7 @@ Claude 在這 5 種情境會主動反對用戶：
 
 ### ↗ 深入
 
-`CLAUDE_TEMPLATE.md` Section 0 + Section 12.5
+`CLAUDE.md` Section 0 + Section 11.5
 
 ---
 
@@ -293,7 +298,7 @@ Claude 在這 5 種情境會主動反對用戶：
 
 ### Tagline
 
-> 5 階段 + Phase 1b 的角色由 8 個專用 agent prompt 擔綱，不靠通用 LLM。
+> 8 個專用 agent prompt 是 workflow 的 prompt 素材（也是退化路徑委派腳本），各聚焦一個審查維度，不靠通用 LLM 臨場發揮。
 
 ### Detail · 8 個 agents
 
@@ -310,7 +315,7 @@ Claude 在這 5 種情境會主動反對用戶：
 
 ### 為什麼
 
-> 防止「一個通用 LLM 同時扮 5 個角色容易混淆」 — 每個 phase 用專用 prompt 強化角色聚焦
+> 防止「一個通用 LLM 同時扮多個角色容易混淆」 — 每個審查維度用專用 prompt 素材強化聚焦（v7 由 workflow 引用；workflow 不可用時退化路徑委派）
 
 ### ↗ 深入
 
