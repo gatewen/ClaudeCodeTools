@@ -23,6 +23,8 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
 版本檢查：{{REPO_PATH}}/dev-closed-loop/check-version.sh
 ```
 
+> **v7.0.0 workflow 說明**：v7 的四個 workflow 腳本（`/dev-prd` `/dev-design` `/dev-review` `/dev-verify`）由 **setup.sh 全域部署到 `~/.claude/workflows/`**，不由本 skill per-project 部署——workflow 是 Claude Code 原生功能，全域註冊即所有專案可用。本 skill 只部署專案層的 CLAUDE.md + `.claudedocs/` + hooks（含 agent 素材庫，供 workflow 引用）。workflow 需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用時方法論走 CLAUDE.md Section 14 退化路徑，承重核（always-on hook）不受影響。
+
 ---
 
 ## ⛔ 模式分流（最優先，在執行任何步驟前必須完成）
@@ -72,6 +74,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
    | Placeholder 殘留 | Grep CLAUDE.md 中的 `{{` | 無 = ✅，有 = ❌ 列出殘留 |
    | 快取/來源目錄 | `{{REPO_PATH}}/dev-closed-loop/` 是否存在 | 有 = ✅，無 = ⚠️ 來源不可達 |
    | 閉環狀態目錄 | `.claude-loop/` 是否存在 | 有 = ℹ️ 存在，無 = — 未啟用（正常） |
+   | Workflow 腳本（全域·可選）| `ls ~/.claude/workflows/dev-prd.js dev-design.js dev-review.js dev-verify.js` | 4/4 = ✅ 全域可用，部分/無 = ℹ️ 未部署（走 Section 14 退化路徑，屬正常）|
 
 4. **⛔ 可升級偵測（禁止跳過）**：
    此步驟是 status 模式的核心功能之一，**即使前面的健康檢查全部通過也必須執行**。不執行此步驟就等於沒有完成 status 檢查。
@@ -109,6 +112,7 @@ Hook 腳本：{{REPO_PATH}}/dev-closed-loop/hooks/
   ✅ Hook 配置（6/6）
   ✅ 無 Placeholder 殘留
   — .claude-loop/ 未啟用
+  ℹ️ Workflow（全域）：/dev-prd /dev-design /dev-review /dev-verify  [或] — 未部署（走退化路徑，正常）
 
 升級：✅ 已是最新版本
   [或] 🔄 可升級：v5.7.0 → v5.8.0。執行 /dev:init-claude upgrade 升級

@@ -1,6 +1,8 @@
 # Agent 專家庫
 
-閉環方法論的 8 個專家 agent prompt，涵蓋 Phase 1-5 全流程。
+閉環方法論的 8 個專家 agent prompt。
+
+> **v7.0.0 定位**：v7 起這些 prompt 是 **workflow agent 的素材來源**（供 `/dev-design` `/dev-review` `/dev-verify` 等腳本引用），以及 workflow 不可用時退化路徑（CLAUDE.md Section 14）委派的腳本。下方「Phase 1-5 / task·inline 調度」為 **v6.x 編排用語**，v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**不再走「主 agent 逐 Phase 委派」強制流水線；核心素材全保留。**
 
 ## 設計方法論
 
@@ -80,4 +82,5 @@ version: 1.0
 
 ---
 
-最後修訂：2026-03-28
+最後修訂：2026-06-01（v7.0.0 對齊：頂部加 v7 定位 — agent 專家庫重新定位為 workflow prompt 素材庫 + 退化路徑委派腳本；Phase→workflow 對映）
+之前修訂：2026-03-28

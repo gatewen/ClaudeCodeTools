@@ -8,6 +8,8 @@ output: ".claude-loop/artifacts/P1b-design-review.md"
 version: 1.3
 ---
 
+> **v7.0.0 定位**：本檔是 **workflow agent prompt 與退化路徑委派的素材來源**（審查維度 / BC-x 系統 / 攻擊向量 / severity 定義 / input_contract），供 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用，或 workflow 不可用時（CLAUDE.md Section 14 退化路徑）主 agent inline / Task 委派時參考。下方 frontmatter 與內文的「Phase X / 主 agent 讀檔委派」為 **v6.x 編排用語**——v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**核心素材 v7 全保留，不再走「主 agent 逐 Phase 委派」的強制流水線。**
+
 ## 調用方式
 
 **類型**：task（獨立子 agent，不繼承主對話 context）
@@ -140,7 +142,7 @@ version: 1.3
 2. **證據等級檢查**：該事實是否有 A 級來源（字面證據：檔名 token、docstring、echo/print 字串、官方文檔）？
    - **有 A 級** → 通過，設計規格應已標注「事實前提：強證據，來源 {檔:行}」
    - **僅 B 級**（推論 / 間接關聯 / 歷史慣例）→ DR-x **medium**「事實前提僅 B 級證據，建議 Phase 1 補驗證或明確標注推論風險」
-   - **反例未通過或證據不足** → DR-x **high**「事實前提可能錯誤，建議 Phase 1 用事實主張閘門（CLAUDE.md Section 12）重新驗證」
+   - **反例未通過或證據不足** → DR-x **high**「事實前提可能錯誤，建議 Phase 1 用事實主張閘門（CLAUDE.md Section 11）重新驗證」
 
 3. **共用值檢測回溯**：若事實涉及 config value（IP / URL / 路徑 / 埠號），確認 Phase 1 Step 0b 共用值檢測已執行。未執行且 value 涉及多個 entry → DR-x **medium**「共用值檢測未做，可能有私有化誤判（見問題追蹤 #005）」。
 

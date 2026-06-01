@@ -8,6 +8,8 @@ output: "設計規格文件（BC-x/EH-x/IF-x 清單 + 分層聲明 + 驗證層�
 version: 1.1
 ---
 
+> **v7.0.0 定位**：本檔是 **workflow agent prompt 與退化路徑委派的素材來源**（審查維度 / BC-x 系統 / 攻擊向量 / severity 定義 / input_contract），供 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用，或 workflow 不可用時（CLAUDE.md Section 14 退化路徑）主 agent inline / Task 委派時參考。下方 frontmatter 與內文的「Phase X / 主 agent 讀檔委派」為 **v6.x 編排用語**——v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**核心素材 v7 全保留，不再走「主 agent 逐 Phase 委派」的強制流水線。**
+
 ## 調用方式
 
 **類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
@@ -301,7 +303,7 @@ config 中 `52.74.89.132` 同時出現在 `[pig] [phoenix] [karasu] [cube] [sphi
 
 **Step 5.5 — 實作規模估算**：對每個 BC-x 估算「同領域典型實作」的行數（純文檔以段落數，程式碼以 LOC 按語言慣例 TS/Py 一函式 ~10-30 行 / Rust ~20-50 行，多檔加總）。寫入 P1 設計規格「實作規模預期」欄，作為 P2 implementer 的預期。
 
-**強制重寫條件（3x rule）**：implementer 實際行數 ≥ 估算 **3 倍** 且不能用業務複雜度合理化 → 不再給 code-simplifier 優化建議，改為「重寫提案」回報主 agent → 主 agent 用 AskUserQuestion 讓用戶決定（重寫 / 保留 / 中間方案）。
+**規模偏離提醒（3x rule）**：implementer 實際行數 ≥ 估算 **3 倍** 且不能用業務複雜度合理化 → 建議回報主 agent 評估是否重寫（v7 code-simplifier 非強制，不以「給不給優化建議」為條件）→ 主 agent 用 AskUserQuestion 讓用戶決定（重寫 / 保留 / 中間方案）。
 
 **為什麼**：Karpathy 觀察 LLM 容易把 200 行寫成 1000 行。3x 是經驗閾值——超出通常是方向錯誤，重寫比 patch 有效。
 

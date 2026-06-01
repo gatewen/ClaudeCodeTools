@@ -8,6 +8,8 @@ output: ".claude-loop/artifacts/P5AB-bidirectional-tracing.md"
 version: 1.4
 ---
 
+> **v7.0.0 定位**：本檔是 **workflow agent prompt 與退化路徑委派的素材來源**（審查維度 / BC-x 系統 / 攻擊向量 / severity 定義 / input_contract），供 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用，或 workflow 不可用時（CLAUDE.md Section 14 退化路徑）主 agent inline / Task 委派時參考。下方 frontmatter 與內文的「Phase X / 主 agent 讀檔委派」為 **v6.x 編排用語**——v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**核心素材 v7 全保留，不再走「主 agent 逐 Phase 委派」的強制流水線。**
+
 ## 調用方式
 
 **類型**：task（獨立子 agent，不繼承主對話 context）
@@ -158,7 +160,7 @@ version: 1.4
 
 **步驟 9c — 事實前提追溯（v5.23.1 新增）**
 
-檢查設計規格引用的環境事實是否有足夠證據。這是 Phase 1b Step 5c Falsification Check 的下游把關——即使 Phase 1b 通過，若期間對事實前提處理不夠嚴謹，Phase 5 需補抓。也是認知驗證層三層防禦的下游救濟（見 CLAUDE.md Section 12）。
+檢查設計規格引用的環境事實是否有足夠證據。這是 Phase 1b Step 5c Falsification Check 的下游把關——即使 Phase 1b 通過，若期間對事實前提處理不夠嚴謹，Phase 5 需補抓。也是認知驗證層三層防禦的下游救濟（見 CLAUDE.md Section 11 事實主張閘門）。
 
 執行步驟：
 
@@ -177,7 +179,7 @@ version: 1.4
 | 無環境事實引用 | V-10 skipped | 在報告標「純邏輯設計，Step 9c 不適用」 |
 | 所有事實 A 級 + 反例通過 + 共用值檢查通過 | V-10 ✅ | 通過 |
 | 有事實僅 B 級（反例通過但證據弱） | V-10 ⚠️ medium | 記錄，不阻擋，建議 Phase 1 補 evidence_level 標注 |
-| 有事實反例未通過 / 共用值誤判 | V-10 **high** | ❌ 回退 Phase 1，用事實主張閘門（CLAUDE.md Section 12）重新驗證 |
+| 有事實反例未通過 / 共用值誤判 | V-10 **high** | ❌ 回退 Phase 1，用事實主張閘門（CLAUDE.md Section 11）重新驗證 |
 
 **產出**：若有環境事實引用，在追溯報告中新增「事實前提追溯」section，並在 `.claude-loop/artifacts/` 下寫入 `P5-fact-claims.md`（格式為事實主張閘門表，見產出物格式.md）。
 

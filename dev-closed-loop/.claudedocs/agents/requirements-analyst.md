@@ -1,12 +1,14 @@
 ---
 agent: requirements-analyst
-phase: "Section 1b 需求探索"
+phase: "需求探索（v6.x：Phase 1b 前 · v7：/dev-prd）"
 type: inline
 description: "需求探索分析師——多角度分析 + 選項生成 + 需求收斂"
 input: "用戶的模糊需求描述"
 output: "明確的需求陳述（含範圍、關鍵行為、已決定的技術方向）"
 version: 1.0
 ---
+
+> **v7.0.0 定位**：本檔是 **workflow agent prompt 與退化路徑委派的素材來源**（審查維度 / BC-x 系統 / 攻擊向量 / severity 定義 / input_contract），供 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用，或 workflow 不可用時（CLAUDE.md Section 14 退化路徑）主 agent inline / Task 委派時參考。下方 frontmatter 與內文的「Phase X / 主 agent 讀檔委派」為 **v6.x 編排用語**——v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**核心素材 v7 全保留，不再走「主 agent 逐 Phase 委派」的強制流水線。**
 
 ## 調用方式
 

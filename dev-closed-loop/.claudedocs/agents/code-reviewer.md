@@ -8,6 +8,8 @@ output: ".claude-loop/artifacts/P3-quality-review.md"
 version: 1.1
 ---
 
+> **v7.0.0 定位**：本檔是 **workflow agent prompt 與退化路徑委派的素材來源**（審查維度 / BC-x 系統 / 攻擊向量 / severity 定義 / input_contract），供 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用，或 workflow 不可用時（CLAUDE.md Section 14 退化路徑）主 agent inline / Task 委派時參考。下方 frontmatter 與內文的「Phase X / 主 agent 讀檔委派」為 **v6.x 編排用語**——v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**核心素材 v7 全保留，不再走「主 agent 逐 Phase 委派」的強制流水線。**
+
 ## 調用方式
 
 **類型**：task（獨立子 agent，不繼承主對話 context）
@@ -223,5 +225,5 @@ BC-1 說「驗證輸入」，程式碼有個 validateInput() → ✅。
 
 **❌ 把 pre-existing dead code 標 R-x 缺失**（v6.1.0 新增 · Karpathy 學習）：
 看到 dead code 就標 R-x medium 要求清理。
-→ 理由：CLAUDE_TEMPLATE Section 11.5 的 dead code 立場是「pre-existing dead code 提及不動」。除非用戶明確要求清理或它是改動造成的 orphan，否則 reviewer 應在報告中**提及但不算 R-x 缺失**。
+→ 理由：CLAUDE.md Section 10.5 的 dead code 立場是「pre-existing dead code 提及不動」。除非用戶明確要求清理或它是改動造成的 orphan，否則 reviewer 應在報告中**提及但不算 R-x 缺失**。
 </anti_patterns>

@@ -8,6 +8,10 @@ output: "實作程式碼 + code-simplifier 優化後的最終版本"
 version: 1.0
 ---
 
+> **v7.0.0 定位**：本檔是 **workflow agent prompt 與退化路徑委派的素材來源**（審查維度 / BC-x 系統 / 攻擊向量 / severity 定義 / input_contract），供 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用，或 workflow 不可用時（CLAUDE.md Section 14 退化路徑）主 agent inline / Task 委派時參考。下方 frontmatter 與內文的「Phase X / 主 agent 讀檔委派」為 **v6.x 編排用語**——v7 對映：需求探索→`/dev-prd`、Phase 1+1b→`/dev-design`、Phase 3→`/dev-review`、Phase 5→`/dev-verify`、Phase 2 實作 / Phase 4 測試→主 agent。**核心素材 v7 全保留，不再走「主 agent 逐 Phase 委派」的強制流水線。**
+>
+> ⚠️ **code-simplifier 在 v7 非強制**：下方步驟 5 / 步驟 6 閘門 / constraints 的「code-simplifier 觸發·不可跳過」為 v6.x；v7.0.0 起簡化責任由 CLAUDE.md Section 0 Q2（Simplicity 橫切自檢）+ `/dev-review` 承擔，code-simplifier 是建議而非閘門。
+
 ## 調用方式
 
 **類型**：inline（主 agent 讀取本文件按指引執行，保有對話 context）
@@ -96,7 +100,7 @@ version: 1.0
 - [ ] 每個 BC-x 有對應實作
 - [ ] 每個 EH-x 有對應實作
 - [ ] IF-x 簽名與契約一致
-- [ ] code-simplifier 已執行
+- [ ] （v7 建議）已做 Section 0 Q2 Simplicity 自檢（code-simplifier v7 非強制）
 全部 ✅ → 可進入 Phase 3。
 </instructions>
 
@@ -132,7 +136,7 @@ Phase 2 實作完成：
 1. **設計是標準**：實作必須忠實反映設計。覺得設計有問題 → 停下來回報，不要自己改
 2. **禁止 scope creep**：不加設計中沒有的功能，不「順手」重構不相關的程式碼
 3. **增量驗證**：每檔 lint，不攢到最後
-4. **code-simplifier 不可跳過**：除非用戶明確說「不要優化」「照搬就好」
+4. **code-simplifier 為建議（v7 非強制）**：簡化責任由 Section 0 Q2 + `/dev-review` 承擔；用戶說「不要優化」「照搬就好」則直接略過
 5. **code-simplifier 不改行為**：優化的是實作方式，不是功能規格
 6. **單次回應不寫完所有檔案**：按步驟逐檔寫，每步 2-3 個檔案或 ~300 行
 </constraints>
@@ -171,7 +175,7 @@ Phase 2 實作完成：
 在一個回應中寫完 1000 行程式碼。
 → 理由：增量驗證的前提是逐步寫。一次寫完就失去了早期捕獲錯誤的機會。
 
-**❌ 跳過 code-simplifier**：
-「程式碼已經很乾淨了，不需要優化。」
-→ 理由：你寫的程式碼有「自己看自己」的偏見。code-simplifier 提供獨立視角。
+**❌ 完全略過 simplicity 檢查**：
+「程式碼已經很乾淨了，不需要任何檢查。」
+→ 理由：你寫的程式碼有「自己看自己」的偏見。v7 雖不強制 code-simplifier，但 Section 0 Q2 Simplicity 橫切自檢仍要做；複雜時可選跑 code-simplifier / `/dev-review` 取得獨立視角。
 </anti_patterns>
