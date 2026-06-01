@@ -1,31 +1,35 @@
 # Agent 使用指南
 
+## v7.0.0 定位（先讀這段）
+
+v7.0.0 起，`.claudedocs/agents/*.md` 的角色從「主 agent 逐 Phase 讀檔委派的執行腳本」改為 **workflow agent prompt 的素材來源**（審查維度 / BC-x 系統 / 攻擊向量清單），由 workflow 腳本（`/dev-design` `/dev-review` `/dev-verify` 等）引用。**不再走「主 agent 讀 architect.md → inline 執行 → Task 委派 design-reviewer」這套 v6.x 手工調度。**
+
+本文件描述的「各 Phase Agent 調度」因此有兩個身分：
+- **v6.x 歷史**：理解 workflow 在做什麼的對應。
+- **v7 退化路徑（Section 14）**：workflow 不可用（免費 / 舊版 / headless / preview 未啟用）時，主 agent 確實會 inline 走設計→實作→審查→測試→追溯、用 Task 工具委派子 agent——此時本文件的調度說明仍適用。
+
 ## 這份文件的定位
 
-CLAUDE.md 裡已經寫了每個 Phase 該調用哪個 Agent 和約束條件。
-這份文件是補充說明：**為什麼這樣選、什麼情況該換、Agent 之間怎麼配合。**
-
-如果你只想知道「該用什麼」，看 CLAUDE.md 的閉環調度規則就夠了。
-這份是給想理解選擇邏輯的人看的。
+補充說明：**為什麼這樣選、什麼情況該換、Agent 之間怎麼配合。** 想理解選擇邏輯的人看這份；只想知道現行「該用什麼」看 CLAUDE.md 三層架構 + Workflow 編排層。
 
 ---
 
-## Agent 專家庫（v5.14.0 新增）
+## Agent 專家庫（v5.14.0 引入 · v7.0.0 轉為 workflow 素材庫）
 
-`.claudedocs/agents/` 目錄包含 8 個專家 agent prompt，覆蓋 Phase 1-5 全流程。每個 prompt 基於 **prompt-engineer-agentic v4.1** 三層架構設計（Foundation → Structure → Execution），是閉環方法論的完整能力，無需任何外部依賴。
+`.claudedocs/agents/` 目錄包含 8 個專家 agent prompt，每個基於 **prompt-engineer-agentic v4.1** 三層架構設計（Foundation → Structure → Execution）。v7.0.0 起它們是 **workflow 腳本引用的 prompt 素材**（也供退化路徑委派時用），無需任何外部依賴。
 
-| Agent | Phase | 類型 | 用途 |
-|-------|-------|------|------|
-| requirements-analyst | Section 1b | inline | 需求探索（多角度分析+選項生成） |
-| architect | Phase 1 | inline | 設計規格產出（BC-x/EH-x/IF-x） |
-| design-reviewer | Phase 1b | task | 設計審查（挑戰式+架構體質+分層） |
-| implementer | Phase 2 | inline | 按設計規格實作+增量驗證 |
-| code-reviewer | Phase 3 | task | 品質審查（設計一致性+結構安全） |
-| security-reviewer | Phase 3 | task | 安全審查（輸入驗證/注入/認證/暴露） |
-| tester | Phase 4 | inline | BC-x/EH-x 覆蓋測試+實際執行 |
-| verifier | Phase 5 | task | 雙向追溯+交叉比對+arch-risk 追蹤 |
+| Agent | v6.x Phase | v7 對應 workflow | 素材內容 |
+|-------|-----------|-----------------|---------|
+| requirements-analyst | 需求探索（1b 前） | `/dev-prd` | 多角度分析 + 選項生成 |
+| architect | Phase 1 | `/dev-design`（設計階段）| 設計規格產出（BC-x，EH-x/IF-x 按需 inline）|
+| design-reviewer | Phase 1b | `/dev-design`（adversarial-verify）| 設計審查（挑戰式 + 架構體質 + 分層）|
+| implementer | Phase 2 | 主 agent 實作 / 退化路徑 | 按設計規格實作 + 增量驗證 |
+| code-reviewer | Phase 3 | `/dev-review`（correctness lens）| 品質審查（設計一致性 + 結構安全）|
+| security-reviewer | Phase 3 | `/dev-review`（security lens）| 安全審查（輸入驗證/注入/認證/暴露）|
+| tester | Phase 4 | 主 agent 測試 / dev-review repro lens | BC-x 覆蓋測試 + 實際執行 |
+| verifier | Phase 5 | `/dev-verify`（可選）| 雙向追溯 + 交叉比對 + arch-risk 追蹤 |
 
-**使用方式**：見 `.claudedocs/agents/README.md`。
+**使用方式**：見 `.claudedocs/agents/README.md`。v7 大型/PRD/架構設計優先開 workflow；workflow 不可用時，主 agent 按下方各 Phase 調度說明 inline/Task 走退化路徑。
 
 ---
 
@@ -54,26 +58,26 @@ CLAUDE.md 裡已經寫了每個 Phase 該調用哪個 Agent 和約束條件。
 
 ### Phase 2：程序設計師 💻（`implementer.md` · inline）
 
-主 agent 讀取 `implementer.md` 後按指引逐檔實作。核心約束：嚴格按設計規格、增量 lint 驗證、完成後觸發 Task `code-simplifier`。
+主 agent 讀取 `implementer.md` 後按指引逐檔實作。核心約束：嚴格按設計規格、增量 lint 驗證、（v7 建議非強制）視情況觸發 Task `code-simplifier`。
 
-### Phase 2 → 3 之間：code-simplifier 強制優化 🔧
+### Phase 2 → 3 之間：code-simplifier 優化 🔧（v6.x 強制 · v7 不再強制）
 
 AI 產生程式碼時有個常見問題：**照搬舊碼**。`code-simplifier` 是 Task agent，專門做三件事：
 1. **清晰度（Clarity）**：讓程式碼一看就懂
 2. **一致性（Consistency）**：跟專案風格對齊
 3. **可維護性（Maintainability）**：去除不必要的複雜度
 
+> ⚠️ **v7 變更**：v6.x 把 code-simplifier 當 Phase 2 後**強制閘門**；v7.0.0 改為建議——簡化責任由 Section 0 Q2（Simplicity 橫切自檢）+ `/dev-review` 承擔，不再是不可跳過的閘門。下表規則在你選擇執行 code-simplifier 時仍適用。
+
 **為什麼是 Task agent？**
 純程式碼層面的工作，不需要看閉環上下文。獨立判斷避免「自己審自己」的偏見。
 
 | 規則 | 為什麼 | 違反的後果 |
 |------|--------|-----------|
-| 禁止照搬舊碼 | AI 容易偷懶複製貼上，但舊碼可能有技術債 | Phase 3 的檢核師會標 R-x 要求返工 |
+| 禁止照搬舊碼 | AI 容易偷懶複製貼上，但舊碼可能有技術債 | `/dev-review` 會標 R-x 要求返工 |
 | 三面向必須審查 | 只看「能不能跑」不夠，要看「好不好維護」 | 長期技術債累積 |
-| 不能改設計行為 | 簡化的是「實作方式」不是「功能規格」 | 破壞跟 Phase 1 的一致性 |
+| 不能改設計行為 | 簡化的是「實作方式」不是「功能規格」 | 破壞跟設計的一致性 |
 | 用戶說保留就保留 | 有時候舊碼有特殊原因要保留 | — |
-
-跳過條件：用戶明確說「保留原始碼」「不要優化」。除此之外，沒有例外。
 
 ### Phase 3：檢核師 🔍（`code-reviewer.md` + `security-reviewer.md` · task）
 
@@ -143,12 +147,12 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 | 錯誤 | 為什麼是錯的 | 正確做法 |
 |------|------------|---------|
 | Phase 1 讀了 `implementer.md` | implementer 是寫程式碼的，不是做設計的 | 讀 `architect.md` |
-| Phase 2 完成後跳過 code-simplifier | AI 產生的程式碼可能照搬舊碼或冗長不一致 | 強制調用 code-simplifier 再進 Phase 3 |
+| 實作後完全略過 simplicity 檢查 | AI 產生的程式碼可能照搬舊碼或冗長不一致（v7 雖不強制 code-simplifier，但 Q2 橫切自檢仍要做）| Section 0 Q2 自檢 + 視情況跑 code-simplifier / `/dev-review` |
 | code-simplifier 改了功能行為 | 它只能簡化實作方式，不能改設計規格 | prompt 明確寫「不改變功能行為」 |
-| Phase 3 的 code-reviewer 沒給設計規格 | 它會做一般 review 但不會檢查設計一致性 | 按 `<input_contract>` 帶上設計規格 |
-| Phase 4 只寫測試沒跑 | 沒有實際執行的測試報告是假的 | 一定要用 Bash 跑 |
-| Phase 5 Part C 用 Task agent | 會漏看對話裡的產出物上下文 | Part C 由主 agent 在對話中執行 |
-| 每個 Phase 都開 `--ultrathink` | Phase 2 寫程式碼不需要深度推理 | Phase 1 和 5 才需要 |
+| `/dev-review` 的 code-reviewer 沒給設計規格 | 它會做一般 review 但不會檢查設計一致性 | 按 `<input_contract>` 帶上設計規格 |
+| 寫了測試沒跑 | 沒有實際執行的測試報告是假的 | 一定要用 Bash 跑 |
+| 自證（`/dev-verify` Part C / 退化路徑彙整）用獨立 context 跑最終彙整 | 會漏看對話裡的產出物上下文 | 最終彙整由主 agent 在對話中執行 |
+| 簡單任務也開重編排 | 微小/中型不需要 workflow | 按 Section 1 任務等級選編排 |
 
 ---
 
@@ -160,7 +164,7 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 
 ### 為什麼要用外部 Skills
 
-閉環的 Agent 專家庫已覆蓋全流程。但在某些場景下，社群 Skills 可以提供更專門化的能力：
+閉環的 Agent 專家庫對映各階段審查維度。但在某些場景下，社群 Skills 可以提供更專門化的能力：
 
 - Phase 1：更好的架構決策記錄工具
 - Phase 3：語言專屬的 code review 規則
@@ -234,4 +238,5 @@ claude-mem 不是 Agent，是 MCP 插件，但與上下文傳遞有關。
 
 ---
 
-最後修訂：2026-03-28（v5.14.0 Agent 專家庫重寫）
+最後修訂：2026-06-01（v7.0.0 workflow-first 對齊：agent 專家庫重新定位為「workflow prompt 素材庫」+ 退化路徑委派；Agent 表加 v7 workflow 對映欄；code-simplifier 由強制閘門降為建議；常見錯誤表對齊 v7；ID 主軸 BC-x）
+之前修訂：2026-03-28（v5.14.0 Agent 專家庫重寫）
