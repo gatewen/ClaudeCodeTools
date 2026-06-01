@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>開發設計閉環 · Overview</title>
+
+<script>
+(function() {
+  var saved = localStorage.getItem('dev-overview-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+</script>
+
+<style>
+/* ─────────────── CSS variables ─────────────── */
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --fg-muted: #525252;
+  --card-bg: #fafafa;
+  --card-elevated: #ffffff;
+  --border: #e5e5e5;
+  --link: #2563eb;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.12);
+  --phase-1: #4f46e5;
+  --phase-2: #059669;
+  --phase-3: #7c3aed;
+  --phase-4: #d97706;
+  --phase-5: #e11d48;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --fg: #f5f5f5;
+  --fg-muted: #a3a3a3;
+  --card-bg: #1a1a1a;
+  --card-elevated: #242424;
+  --border: #2a2a2a;
+  --link: #60a5fa;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.5);
+  --phase-1: #a5b4fc;
+  --phase-2: #6ee7b7;
+  --phase-3: #c4b5fd;
+  --phase-4: #fcd34d;
+  --phase-5: #fda4af;
+}
+
+/* ─────────────── Reset & base ─────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+code, pre, .mono {
+  font-family: "SF Mono", Menlo, Consolas, Monaco, "Courier New", monospace;
+}
+
+h1, h2, h3 { line-height: 1.3; font-weight: 600; }
+h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.2; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.125rem; }
+
+p { margin: 0.5rem 0; }
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+a:hover { opacity: 0.75; text-decoration: underline; }
+
+ul { padding-left: 1.5rem; }
+li { margin: 0.3rem 0; }
+
+button { font-family: inherit; cursor: pointer; }
+
+/* ─────────────── Layout ─────────────── */
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  padding: 3rem 0;
+}
+
+section + section {
+  border-top: 1px solid var(--border);
+}
+
+/* ─────────────── Theme toggle ─────────────── */
+#theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-elevated);
+  color: var(--fg);
+  font-size: 20px;
+  z-index: 100;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+}
+#theme-toggle:hover {
+  transform: scale(1.08);
+  box-shadow: var(--shadow-elevated);
+}
+#theme-toggle:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+/* ─────────────── Hero ─────────────── */
+.hero {
+  text-align: center;
+  padding: 5rem 0 3rem;
+}
+.hero h1 {
+  background: linear-gradient(135deg, var(--phase-1), var(--phase-3), var(--phase-5));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+.hero .tagline {
+  font-size: 1.2rem;
+  color: var(--fg-muted);
+  max-width: 720px;
+  margin: 0 auto 2rem;
+}
+
+.hero-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 2rem 0;
+  text-align: left;
+}
+.hero-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 18px;
+}
+.hero-card h3 {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted);
+}
+.hero-card ul { padding-left: 1.1rem; font-size: 0.95rem; }
+.hero-card p { font-size: 0.95rem; }
+.hero-card .diff-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+.hero-card .diff-row strong { color: var(--phase-3); }
+
+.hero-principles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 2.5rem;
+  text-align: left;
+}
+.principle {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.principle .emoji { font-size: 1.4rem; }
+.principle .pname { font-weight: 600; font-size: 0.95rem; }
+.principle .pquestion { color: var(--fg-muted); font-size: 0.82rem; line-height: 1.4; }
+
+.hero-cta {
+  margin-top: 2rem;
+  padding: 1.2rem 1.5rem;
+  background: var(--card-bg);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+.hero-cta.deployed { border-color: var(--phase-2); color: var(--phase-2); }
+
+/* ─────────────── §1 Phases ─────────────── */
+.phases-section h2 { text-align: center; margin-bottom: 0.5rem; }
+.phases-section .tagline {
+  text-align: center;
+  color: var(--fg-muted);
+  max-width: 720px;
+  margin: 0 auto 2rem;
+}
+
+.phase-toolbar {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.phase-toolbar button {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--fg);
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+.phase-toolbar button:hover { background: var(--card-elevated); }
+
+.phase-flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.phase-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-top: 4px solid var(--phase-color);
+  border-radius: 10px;
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  outline: none;
+}
+.phase-card[data-phase="1"] { --phase-color: var(--phase-1); }
+.phase-card[data-phase="2"] { --phase-color: var(--phase-2); }
+.phase-card[data-phase="3"] { --phase-color: var(--phase-3); }
+.phase-card[data-phase="4"] { --phase-color: var(--phase-4); }
+.phase-card[data-phase="5"] { --phase-color: var(--phase-5); }
+
+.phase-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-elevated); }
+.phase-card:focus-visible { outline: 2px solid var(--phase-color); outline-offset: 2px; }
+.phase-card[aria-expanded="true"] { box-shadow: var(--shadow-elevated); background: var(--card-elevated); }
+
+.phase-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--phase-color);
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.6rem;
+}
+.phase-card h3 { margin: 0.2rem 0; }
+.phase-action {
+  color: var(--phase-color);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.phase-detail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.88rem;
+  text-align: left;
+}
+.phase-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+.phase-detail dt { font-weight: 600; color: var(--fg-muted); white-space: nowrap; }
+.phase-detail dd { color: var(--fg); }
+.phase-detail .deep-link { display: inline-block; margin-top: 0.6rem; font-size: 0.82rem; }
+
+/* ─────────────── §2-§11 Advanced sections ─────────────── */
+.advanced-toolbar {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+.advanced-toolbar button {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--fg);
+  padding: 8px 18px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+}
+.advanced-toolbar button:hover { background: var(--card-elevated); }
+
+.advanced {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  padding: 18px 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.section-header:hover { background: var(--card-elevated); }
+.section-header:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+.section-header h2 { font-size: 1.25rem; margin: 0; }
+.section-header h2 .num {
+  color: var(--fg-muted);
+  font-weight: 500;
+  margin-right: 6px;
+}
+.section-header .chevron {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  transition: transform 0.2s ease;
+}
+.section-header[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+.section-tagline {
+  padding: 0 20px 16px;
+  color: var(--fg-muted);
+  font-size: 0.95rem;
+}
+
+.section-body {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+.section-body h4 {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.section-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.88rem;
+}
+.section-body th, .section-body td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.section-body th {
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: var(--card-elevated);
+}
+.section-body .why-box {
+  margin-top: 1rem;
+  padding: 12px 14px;
+  background: var(--card-elevated);
+  border-left: 3px solid var(--phase-4);
+  border-radius: 4px;
+  font-size: 0.92rem;
+}
+.section-body .deep-link { display: inline-block; margin-top: 0.8rem; font-size: 0.85rem; }
+
+/* SVG diagrams */
+.diagram {
+  display: block;
+  margin: 1rem auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Phase chips inline */
+.phase-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  margin-right: 4px;
+}
+.phase-chip[data-phase="1"] { background: var(--phase-1); }
+.phase-chip[data-phase="2"] { background: var(--phase-2); }
+.phase-chip[data-phase="3"] { background: var(--phase-3); }
+.phase-chip[data-phase="4"] { background: var(--phase-4); }
+.phase-chip[data-phase="5"] { background: var(--phase-5); }
+
+/* Lock list (§4) */
+.lock-list {
+  display: grid;
+  gap: 10px;
+  margin: 1rem 0;
+}
+.lock-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--card-elevated);
+  border-left: 3px solid var(--phase-5);
+  border-radius: 4px;
+}
+.lock-item .icon { font-size: 1.3rem; }
+.lock-item .text strong { display: block; margin-bottom: 2px; }
+.lock-item .text small { color: var(--fg-muted); font-size: 0.85rem; }
+
+/* ─────────────── Deployment status ─────────────── */
+.deployment {
+  background: var(--card-bg);
+  border: 2px solid var(--phase-2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+.deployment h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+.deployment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.deployment-group h4 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted);
+  margin-bottom: 0.6rem;
+}
+.deployment-group .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.92rem;
+}
+.deployment-group .row .label { color: var(--fg-muted); }
+.deployment-group .row .value { font-weight: 500; }
+.deployment-group .status {
+  margin-top: 0.5rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.status.ok { background: rgba(5, 150, 105, 0.1); color: var(--phase-2); }
+.status.warn { background: rgba(217, 119, 6, 0.1); color: var(--phase-4); }
+.status.upgrade { background: rgba(79, 70, 229, 0.1); color: var(--phase-1); }
+
+/* ─────────────── CTA ─────────────── */
+.cta-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  margin: 2rem 0;
+}
+.cta-section h2 { margin-bottom: 1rem; text-align: center; }
+.cta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 1rem 0;
+}
+.cta-item {
+  padding: 12px 14px;
+  background: var(--card-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+.cta-item strong { display: block; color: var(--phase-1); margin-bottom: 4px; }
+.cta-section pre {
+  background: var(--card-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  margin: 0.6rem 0;
+}
+.cta-external {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+/* ─────────────── Footer ─────────────── */
+footer {
+  text-align: center;
+  padding: 2rem 0;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
+/* ─────────────── Responsive ─────────────── */
+@media (max-width: 900px) {
+  .phase-flow { grid-template-columns: repeat(2, 1fr); }
+  .hero-cards, .hero-principles, .deployment-grid, .cta-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .container { padding: 0 16px; }
+  section { padding: 2rem 0; }
+  #theme-toggle { top: 12px; right: 12px; width: 40px; height: 40px; }
+  .phase-flow, .hero-cards, .hero-principles, .deployment-grid, .cta-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 1.8rem; }
+}
+
+/* ─────────────── Accessibility ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<button id="theme-toggle" onclick="toggleTheme()" aria-label="切換到 dark mode">🌙</button>
+
+<div class="container">
+
+<!-- ════════════════ Hero ════════════════ -->
+<section class="hero">
+  <h1>🔄 開發設計閉環</h1>
+  <p class="tagline">讓 Claude Code 跟你協作時走可追溯的五階段流程，<br>不只把程式寫出來，還對自己的產出負責。</p>
+
+  <div class="hero-cards">
+    <div class="hero-card">
+      <h3>解決什麼問題</h3>
+      <ul>
+        <li>需求講不清楚就直接寫</li>
+        <li>實作偏離原本設計</li>
+        <li>自己審自己看不見盲點</li>
+        <li>測試假通過</li>
+        <li>文件跟程式對不上</li>
+        <li>換 session 就失憶</li>
+      </ul>
+    </div>
+    <div class="hero-card">
+      <h3>給誰用</h3>
+      <p>想要 LLM 協作有<strong>品質保證</strong>、<strong>產出可追溯</strong>、<strong>跨 session 不失憶</strong>的工程師。</p>
+      <p style="margin-top:0.8rem;color:var(--fg-muted);font-size:0.85rem">不適合「快速拋棄式 prototype」「一次性 hack」。</p>
+    </div>
+    <div class="hero-card">
+      <h3>跟普通 Claude 差在哪</h3>
+      <div class="diff-row">
+        <div><span style="color:var(--fg-muted)">普通：</span>需求 → 程式產出</div>
+        <div><strong>閉環：</strong>需求 → 規格 → 實作 → 審查 → 測試 → 對齊 → commit</div>
+        <div style="color:var(--fg-muted);font-size:0.85rem">六個產物全部互相對齊</div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:1.8rem;color:var(--fg-muted)">動手前先過 4 個自問（橫切每個 Phase）：</p>
+  <div class="hero-principles">
+    <div class="principle"><span class="emoji">❓</span><div><div class="pname">Think</div><div class="pquestion">我假設了什麼？驗證過嗎？</div></div></div>
+    <div class="principle"><span class="emoji">✂️</span><div><div class="pname">Simplicity</div><div class="pquestion">能更簡單嗎？</div></div></div>
+    <div class="principle"><span class="emoji">🎯</span><div><div class="pname">Surgical</div><div class="pquestion">只動了該動的嗎？</div></div></div>
+    <div class="principle"><span class="emoji">✅</span><div><div class="pname">Goal</div><div class="pquestion">成功的可驗證標準是什麼？</div></div></div>
+  </div>
+
+  <div class="hero-cta deployed">✓ 你已部署閉環！往下滑看當前狀態 + 進階機制 →</div>
+
+</section>
+
+<!-- ════════════════ §1 五階段閉環（新手必看） ════════════════ -->
+<section class="phases-section">
+  <h2>§1 五階段閉環 · 核心</h2>
+  <p class="tagline">開發任務不是「直接寫程式」— 走五個專業角色一棒接一棒。每個角色只做一件事，產出可追溯給下一棒，最後一棒檢查大家對得起來。</p>
+  <div class="phase-toolbar">
+    <button onclick="toggleAllPhases()" id="phases-toggle-all">全部展開</button>
+  </div>
+  <div class="phase-flow">
+
+    <article class="phase-card" data-phase="1" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
+      <div class="phase-badge">1</div>
+      <h3>架構師</h3>
+      <p class="phase-action">設計</p>
+      <div class="phase-detail" hidden>
+        <dl>
+          <dt>做什麼</dt><dd>把需求「翻譯」成可驗證的設計規格（目標 → 行為條件 → 錯誤處理 → 介面契約）</dd>
+          <dt>產出</dt><dd>📄 <code>P1-design-spec.md</code></dd>
+          <dt>為什麼</dt><dd>避免「需求講不清楚就直接寫程式」— 後面 4 棒都靠這個規格對齊</dd>
+        </dl>
+        <a class="deep-link" href=".claudedocs/agents/architect.md">↗ 深入：architect.md</a>
+      </div>
+    </article>
+
+    <article class="phase-card" data-phase="2" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
+      <div class="phase-badge">2</div>
+      <h3>程式師</h3>
+      <p class="phase-action">實作</p>
+      <div class="phase-detail" hidden>
+        <dl>
+          <dt>做什麼</dt><dd>忠實實作設計規格，過程強制簡化（不寫超出規格的功能）</dd>
+          <dt>產出</dt><dd>📁 程式碼 + 增量 lint pass</dd>
+          <dt>為什麼</dt><dd>避免「實作偏離設計」與「越寫越複雜」</dd>
+        </dl>
+        <a class="deep-link" href=".claudedocs/agents/implementer.md">↗ 深入：implementer.md</a>
+      </div>
+    </article>
+
+    <article class="phase-card" data-phase="3" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
+      <div class="phase-badge">3</div>
+      <h3>檢核師</h3>
+      <p class="phase-action">審查</p>
+      <div class="phase-detail" hidden>
+        <dl>
+          <dt>做什麼</dt><dd>多面向審查（設計一致性 / 結構安全 / 依賴方向 / 安全性）</dd>
+          <dt>產出</dt><dd>📄 <code>P3-quality.md</code></dd>
+          <dt>為什麼</dt><dd>抓「LLM 自己寫自己審」的盲點 — 用獨立 task agent 切斷主執行緒的偏見</dd>
+        </dl>
+        <a class="deep-link" href=".claudedocs/agents/code-reviewer.md">↗ 深入：code-reviewer.md + security-reviewer.md</a>
+      </div>
+    </article>
+
+    <article class="phase-card" data-phase="4" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
+      <div class="phase-badge">4</div>
+      <h3>測試師</h3>
+      <p class="phase-action">驗證</p>
+      <div class="phase-detail" hidden>
+        <dl>
+          <dt>做什麼</dt><dd>依設計規格設計測試並真的跑（不是「假設應該過」）</dd>
+          <dt>產出</dt><dd>📄 <code>P4-deployment-verification.md</code></dd>
+          <dt>為什麼</dt><dd>抓「測試假通過」— 跨平台環境不支援應 skip 不誤報、邊界條件覆蓋</dd>
+        </dl>
+        <a class="deep-link" href=".claudedocs/agents/tester.md">↗ 深入：tester.md</a>
+      </div>
+    </article>
+
+    <article class="phase-card" data-phase="5" tabindex="0" aria-expanded="false" onclick="togglePhase(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhase(this);}">
+      <div class="phase-badge">5</div>
+      <h3>自證師</h3>
+      <p class="phase-action">對齊</p>
+      <div class="phase-detail" hidden>
+        <dl>
+          <dt>做什麼</dt><dd>比對 1-4 棒產出物有沒有矛盾（用 BC-x / EH-x / R-x 編號做精確雙向追溯）</dd>
+          <dt>產出</dt><dd>📄 <code>P5AB-bidirectional-tracing.md</code></dd>
+          <dt>為什麼</dt><dd>抓「文字看起來對但對不起來」的隱藏問題 — 設計講了 A 但實作做了 B、測試測了 C</dd>
+        </dl>
+        <a class="deep-link" href=".claudedocs/agents/verifier.md">↗ 深入：verifier.md</a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ════════════════ §2-§11 進階區 ════════════════ -->
+<div class="advanced-toolbar">
+  <button onclick="toggleAllAdvanced()" id="adv-toggle-all">全部展開進階機制</button>
+</div>
+
+<section class="advanced" id="section-2">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§2</span> 認知驗證層</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">Claude 容易把「推論」當「事實」。閉環在 3 個位置強制查證。</p>
+  <div class="section-body" hidden>
+    <h4>三層防禦</h4>
+    <ol>
+      <li><strong>上游</strong>（Phase 1 Step 0a/0b）：<strong>字面證據掃描</strong> — 設計階段優先用 docstring / echo string 等字面證據，不靠推論</li>
+      <li><strong>中游</strong>（Section 12/13）：<strong>事實主張閘門 + 質疑熔斷協議</strong> — 任何「因為 X 所以 Y」要附 A 級（程式碼）/ B 級（commit history）證據；用戶說「OK」不能跨越事實質疑代價差</li>
+      <li><strong>下游</strong>（Phase 1b Step 5c + Phase 5 Step 9c）：<strong>Falsification check + 事實前提追溯</strong> — design review 對引用的環境事實做反例提問；自證階段把所有事實主張記入 <code>P5-fact-claims.md</code></li>
+    </ol>
+    <svg class="diagram" viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="三層防禦關係圖">
+      <rect x="20" y="40" width="160" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="100" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">上游 (Phase 1)</text>
+      <text x="100" y="90" text-anchor="middle" font-family="sans-serif" font-size="11" fill="currentColor">字面證據掃描</text>
+      <rect x="220" y="40" width="160" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="300" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">中游 (S12/13)</text>
+      <text x="300" y="90" text-anchor="middle" font-family="sans-serif" font-size="11" fill="currentColor">事實主張閘門</text>
+      <rect x="420" y="40" width="160" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="500" y="70" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="currentColor">下游 (Phase 5)</text>
+      <text x="500" y="90" text-anchor="middle" font-family="sans-serif" font-size="11" fill="currentColor">事實前提追溯</text>
+      <line x1="180" y1="70" x2="220" y2="70" stroke="currentColor" stroke-width="2" stroke-dasharray="4"/>
+      <line x1="380" y1="70" x2="420" y2="70" stroke="currentColor" stroke-width="2" stroke-dasharray="4"/>
+      <polygon points="216,70 210,66 210,74" fill="currentColor"/>
+      <polygon points="416,70 410,66 410,74" fill="currentColor"/>
+    </svg>
+    <div class="why-box">
+      <strong>為什麼</strong>：防止「LLM 一句『因為 X 所以 Y』就推下去，但 X 是猜的」
+    </div>
+    <a class="deep-link" href=".claudedocs/concepts/閉環核心理念.md">↗ 深入：concepts/閉環核心理念.md §「認知驗證」</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-3">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§3</span> 升格降級機制</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">同類失誤累積 3 次自動升格成「永久警惕」；無人問津 10 個閉環自動降級。</p>
+  <div class="section-body" hidden>
+    <h4>升格（v5.22 引入）</h4>
+    <ul>
+      <li><code>learning-log.md</code>（短期 · session 內）累積事件</li>
+      <li>同類根因 ≥ 3 次 → verifier Phase 5 步驟 9b 偵測候選</li>
+      <li>主 agent 跟用戶確認 → 寫入 <code>問題追蹤.md</code>「永久警惕模式」</li>
+      <li>之後 architect Phase 1 強制必讀</li>
+    </ul>
+    <h4>降級（v6.4.0 加的對稱機制）</h4>
+    <ul>
+      <li>升格後 10 個閉環無新證據 → ⏸️ 條件式紀律（觸發條件命中才適用）</li>
+      <li>20 個閉環無人問津 → 🗄️ archive</li>
+      <li><strong>防誤判</strong>：條件式條目若 5 閉環內 2 次命中 → 自動升回</li>
+    </ul>
+    <svg class="diagram" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="升格降級狀態機">
+      <rect x="20" y="80" width="120" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="80" y="105" text-anchor="middle" font-family="sans-serif" font-size="13" fill="currentColor">learning-log</text>
+      <text x="80" y="120" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">(短期)</text>
+      <rect x="180" y="80" width="120" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="240" y="100" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="currentColor">🔥 永久警惕</text>
+      <text x="240" y="118" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">(architect 必讀)</text>
+      <rect x="340" y="80" width="120" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="400" y="100" text-anchor="middle" font-family="sans-serif" font-size="13" fill="currentColor">⏸️ 條件式</text>
+      <text x="400" y="118" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">(命中才適用)</text>
+      <rect x="500" y="80" width="80" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <text x="540" y="100" text-anchor="middle" font-family="sans-serif" font-size="13" fill="currentColor">🗄️ archive</text>
+      <line x1="140" y1="105" x2="180" y2="105" stroke="currentColor" stroke-width="2"/>
+      <polygon points="178,105 172,101 172,109" fill="currentColor"/>
+      <text x="160" y="95" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">3 次</text>
+      <line x1="300" y1="105" x2="340" y2="105" stroke="currentColor" stroke-width="2"/>
+      <polygon points="338,105 332,101 332,109" fill="currentColor"/>
+      <text x="320" y="95" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">10 閉環</text>
+      <line x1="460" y1="105" x2="500" y2="105" stroke="currentColor" stroke-width="2"/>
+      <polygon points="498,105 492,101 492,109" fill="currentColor"/>
+      <text x="480" y="95" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">20 閉環</text>
+      <path d="M 400 80 Q 320 30 240 80" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4"/>
+      <polygon points="244,82 240,76 232,80" fill="currentColor"/>
+      <text x="320" y="40" text-anchor="middle" font-family="sans-serif" font-size="10" fill="currentColor">復發 5 閉環 2 次 → 升回</text>
+    </svg>
+    <div class="why-box">
+      <strong>為什麼</strong>：防止教訓清單永久膨脹沒人看 — 教訓要有 lifecycle，沒用的會自動清掉
+    </div>
+    <a class="deep-link" href=".claudedocs/records/問題追蹤.md">↗ 深入：records/問題追蹤.md</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-4">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§4</span> 紀律保底層 R-1~R-5</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">當判斷+機械化都失效時，5 條規則任何情況不可 bypass。</p>
+  <div class="section-body" hidden>
+    <div class="lock-list">
+      <div class="lock-item"><span class="icon">🔒</span><div class="text"><strong>R-1 閘門不可 bypass</strong><small>Phase 5 自證沒過不能 commit</small></div></div>
+      <div class="lock-item"><span class="icon">🔒</span><div class="text"><strong>R-2 重大方法論修改強制 cross-source review</strong><small>不能靠單一 LLM 自評（呼應 #007 升格教訓：single-LLM 自評漏看率 50-67%）</small></div></div>
+      <div class="lock-item"><span class="icon">🔒</span><div class="text"><strong>R-3 升格降級不可 bypass</strong><small>不能自己關掉教訓檢查</small></div></div>
+      <div class="lock-item"><span class="icon">🔒</span><div class="text"><strong>R-4 架構體質 + 合理性自檢不可省略</strong><small>設計階段不能跳閘</small></div></div>
+      <div class="lock-item"><span class="icon">🔒</span><div class="text"><strong>R-5 連續 ≥ 2 次 needs-attention → 強制降級 scope</strong><small>累積失誤要強制縮減任務範圍</small></div></div>
+    </div>
+    <div class="why-box">
+      <strong>為什麼</strong>：抓「自治可繞 + 機械化可關，遲早會繞到底」的紅線 — 劃出「自治 + 機械化都不能管的最後底線」
+    </div>
+    <a class="deep-link" href="CLAUDE.md">↗ 深入：CLAUDE_TEMPLATE.md Section 13.5 反向劃線</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-5">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§5</span> 行為哲學 4 原則細節</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">Karpathy 4 原則橫切每個 Phase + Push back 義務（5 種情境主動反對用戶）。</p>
+  <div class="section-body" hidden>
+    <h4>4 原則展開</h4>
+    <table>
+      <thead><tr><th>原則</th><th>自問</th><th>違反案例（對照範例庫）</th></tr></thead>
+      <tbody>
+        <tr><td>❓ Think</td><td>我假設了什麼？驗證過嗎？</td><td>默默選一種解讀，沒對用戶說</td></tr>
+        <tr><td>✂️ Simplicity</td><td>能更簡單嗎？</td><td>一個簡單計算用 Strategy pattern</td></tr>
+        <tr><td>🎯 Surgical</td><td>只動了該動的嗎？</td><td>修 typo 順手 reformat 一堆</td></tr>
+        <tr><td>✅ Goal</td><td>成功的可驗證標準是什麼？</td><td>「我先 review 再改善」（沒設可驗證標準）</td></tr>
+      </tbody>
+    </table>
+    <h4>Push back 義務 · 5 種情境</h4>
+    <p style="font-size:0.92rem">Claude 在這 5 種情境會主動反對用戶：</p>
+    <ol>
+      <li>有更簡單的方案</li>
+      <li>用戶基於弱證據要動</li>
+      <li>任務超出該等級範圍</li>
+      <li>規格自相矛盾</li>
+      <li>用戶事實前提待驗證（與 §2 事實主張閘門對稱）</li>
+    </ol>
+    <div class="why-box">
+      <strong>為什麼</strong>：防止「LLM 對用戶有求必應反而帶錯方向」— 對用戶有義務反對，不是有求必應
+    </div>
+    <a class="deep-link" href="CLAUDE.md">↗ 深入：CLAUDE_TEMPLATE.md Section 0 + Section 12.5</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-6">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§6</span> Hook 系統</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">6 個 shell hook 在 Claude Code 動手前/後自動觸發，把方法論變執行不只口號。</p>
+  <div class="section-body" hidden>
+    <table>
+      <thead><tr><th>Hook</th><th>觸發時機</th><th>做什麼</th></tr></thead>
+      <tbody>
+        <tr><td>修改前統一守衛</td><td>PreToolUse Edit/Write</td><td>修改任何檔案前必先做依賴影響分析</td></tr>
+        <tr><td>增量驗證</td><td>PostToolUse Edit/Write</td><td>編輯完該檔立即跑 lint</td></tr>
+        <tr><td>委派前因果鏈閘門</td><td>PreToolUse Task</td><td>委派給 sub-agent 前要寫明因果</td></tr>
+        <tr><td>理解確認旗標</td><td>UserPromptSubmit</td><td>確認用戶意圖才行動</td></tr>
+        <tr><td>委派追蹤</td><td>PostToolUse Task</td><td>記錄 sub-agent 委派軌跡</td></tr>
+        <tr><td>學習日誌提醒</td><td>Stop</td><td>Session 結束時提醒寫 daily log</td></tr>
+      </tbody>
+    </table>
+    <div class="why-box">
+      <strong>為什麼</strong>：抓「方法論寫了但執行時忘記」— 機械化把「應該做」變「沒做就跑不過」
+    </div>
+    <a class="deep-link" href="dev-closed-loop/hooks/">↗ 深入：dev-closed-loop/hooks/ + deploy-hooks.sh</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-7">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§7</span> Agent 專家庫</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">5 階段 + Phase 1b 的角色由 8 個專用 agent prompt 擔綱，不靠通用 LLM。</p>
+  <div class="section-body" hidden>
+    <table>
+      <thead><tr><th>Agent</th><th>Phase</th><th>類型</th><th>特色</th></tr></thead>
+      <tbody>
+        <tr><td>requirements-analyst</td><td>1b 前</td><td>inline</td><td>蘇格拉底式引導 + 多角度選項</td></tr>
+        <tr><td>architect</td><td><span class="phase-chip" data-phase="1">1</span></td><td>inline</td><td>設計規格 + 架構體質 + 閘門</td></tr>
+        <tr><td>design-reviewer</td><td>1b</td><td>task</td><td>挑戰式 + 驗證式 + 分層審查</td></tr>
+        <tr><td>implementer</td><td><span class="phase-chip" data-phase="2">2</span></td><td>inline</td><td>設計忠實實作 + 增量 lint + 簡化</td></tr>
+        <tr><td>code-reviewer</td><td><span class="phase-chip" data-phase="3">3</span></td><td>task</td><td>設計一致性 + 結構安全 + 依賴方向</td></tr>
+        <tr><td>security-reviewer</td><td><span class="phase-chip" data-phase="3">3</span></td><td>task</td><td>5 面向（輸入/注入/認證/暴露/依賴）</td></tr>
+        <tr><td>tester</td><td><span class="phase-chip" data-phase="4">4</span></td><td>inline</td><td>驗證層級分層 + 實際執行</td></tr>
+        <tr><td>verifier</td><td><span class="phase-chip" data-phase="5">5</span></td><td>task</td><td>9 步驟雙向追溯 + 交叉比對</td></tr>
+      </tbody>
+    </table>
+    <div class="why-box">
+      <strong>為什麼</strong>：防止「一個通用 LLM 同時扮 5 個角色容易混淆」— 每個 phase 用專用 prompt 強化角色聚焦
+    </div>
+    <a class="deep-link" href=".claudedocs/agents/">↗ 深入：.claudedocs/agents/（含 README）</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-8">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§8</span> 對照範例</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">列出 5 個 LLM 常犯錯誤的對照範本，給 reviewer / architect 查閱。</p>
+  <div class="section-body" hidden>
+    <ol>
+      <li><strong>01 Think Before Coding</strong> — Q1 違反：默默選一種解讀，沒對用戶說</li>
+      <li><strong>02 Simplicity First</strong> — Q2 違反：一個簡單計算用 Strategy pattern</li>
+      <li><strong>03 Surgical Changes</strong> — Q3 違反：修 typo 順手 reformat 一堆</li>
+      <li><strong>04 Goal-Driven Execution</strong> — Q4 違反：「我先 review 再改善」（沒設可驗證標準）</li>
+      <li><strong>05 Cross-Artifact Mismatch</strong> — 閉環特色：設計 / 實作 / 測試對齊缺失</li>
+    </ol>
+    <p style="margin-top:0.8rem;font-size:0.88rem;color:var(--fg-muted)">每檔 5 段結構：場景 / 錯誤示範 / 原則診斷 / 修正版本 / 關鍵限制</p>
+    <div class="why-box">
+      <strong>為什麼</strong>：抓「LLM 自評時自己是同一個 LLM 容易看不見的盲點」— 對照範例讓 reviewer agent 有外部錨點，不依靠主 LLM 的自我反省
+    </div>
+    <a class="deep-link" href=".claudedocs/examples/">↗ 深入：.claudedocs/examples/ 5 個 anti-pattern 文件</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-9">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§9</span> 兩層教訓架構</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">短期事件記 learning-log，跨閉環高頻問題升格成「永久警惕模式」。</p>
+  <div class="section-body" hidden>
+    <h4>Short-term · learning-log（per-session）</h4>
+    <ul>
+      <li>每個 session 的事件記錄</li>
+      <li>含 failure_type / root cause / 怎麼修的 / 下次注意</li>
+      <li>不入問題追蹤的小事件留這裡觀察</li>
+    </ul>
+    <h4>Long-term · 問題追蹤「永久警惕模式」（跨閉環）</h4>
+    <ul>
+      <li>同類根因 ≥ 3 次升格條目</li>
+      <li>architect Phase 1 強制必讀</li>
+      <li>含 v6.4.0 加的降級機制（無人問津自動降）</li>
+    </ul>
+    <div class="why-box">
+      <strong>為什麼</strong>：防止「教訓寫了沒人看」— 兩層分工避免單檔變太長，重要的升格成「強制必讀」
+    </div>
+    <a class="deep-link" href=".claudedocs/records/問題追蹤.md">↗ 深入：learning-log.md + records/問題追蹤.md</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-10">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§10</span> 工具鏈（dev:handoff + dev:init-claude）</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">兩個 Skill 包進方法論：/dev:handoff 跨 session 交接 + /dev:init-claude 一鍵部署 / 升級。</p>
+  <div class="section-body" hidden>
+    <table>
+      <thead><tr><th>指令</th><th>場景</th></tr></thead>
+      <tbody>
+        <tr><td><code>/dev:init-claude</code></td><td>部署閉環到當前專案（含偵測語言 / 框架 / 指令）</td></tr>
+        <tr><td><code>/dev:init-claude status</code></td><td>健康檢查 + 升級偵測</td></tr>
+        <tr><td><code>/dev:init-claude upgrade</code></td><td>從 GitHub 拉最新版 + 智能合併</td></tr>
+        <tr><td><code>/dev:init-claude uninstall</code></td><td>反向移除（保留 .claude-loop/）</td></tr>
+        <tr><td><code>/dev:handoff save</code></td><td>寫當前 session 狀態（File state）</td></tr>
+        <tr><td><code>/dev:handoff load</code></td><td>接續上個 session 狀態（重建 TaskList runtime state）</td></tr>
+      </tbody>
+    </table>
+    <div class="why-box">
+      <strong>為什麼</strong>：抓「方法論很好但部署 / 上手成本高 / 換 session 失憶」— 工具鏈把方法論從「文件」變成「可執行」
+    </div>
+    <a class="deep-link" href="dev-closed-loop/skill/init-claude.md">↗ 深入：dev-closed-loop/skill/init-claude.md + dev:handoff/SKILL.md</a>
+  </div>
+</section>
+
+<section class="advanced" id="section-11">
+  <button class="section-header" onclick="toggleSection(this)" aria-expanded="false">
+    <h2><span class="num">§11</span> 語言指南（6 語言）</h2>
+    <span class="chevron">▼</span>
+  </button>
+  <p class="section-tagline">6 個語言專屬指南（TS/Py/Go/Rust/C#/Bash），把 Phase 1-5 閘門翻成語言慣例。</p>
+  <div class="section-body" hidden>
+    <table>
+      <thead><tr><th>語言</th><th>主要工具鏈</th></tr></thead>
+      <tbody>
+        <tr><td>TypeScript</td><td>tsc + eslint + vitest + react testing library</td></tr>
+        <tr><td>Python</td><td>mypy + ruff + pytest</td></tr>
+        <tr><td>Go</td><td>go vet + golangci-lint + go test</td></tr>
+        <tr><td>Rust</td><td>cargo check + clippy + cargo test</td></tr>
+        <tr><td>C#</td><td>dotnet format + xunit + nullable enabled</td></tr>
+        <tr><td>Bash</td><td>shellcheck + bats</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:0.8rem;font-size:0.88rem;color:var(--fg-muted)">每個語言指南內含 Phase 1-5 對應的語言慣例 + 工具鏈呼叫範例 + R-x 編號示例。</p>
+    <div class="why-box">
+      <strong>為什麼</strong>：防止「同一閘門對 TS 跟 Python 操作方式完全不同」— 語言指南把抽象閘門變具體指令
+    </div>
+    <a class="deep-link" href=".claudedocs/languages/">↗ 深入：.claudedocs/languages/ 6 個語言文件</a>
+  </div>
+</section>
+
+<section class="deployment">
+  <h2>🟢 Your Deployment</h2>
+  <div class="deployment-grid">
+    <div class="deployment-group">
+      <h4>版本</h4>
+      <div class="row"><span class="label">版本</span><span class="value">v6.4.2</span></div>
+      <div class="row"><span class="label">部署於</span><span class="value">2026-05-23</span></div>
+      <div class="row"><span class="label">距今</span><span class="value">0 天</span></div>
+      <div class="status ok">✅ 已是最新版</div>
+    </div>
+    <div class="deployment-group">
+      <h4>啟用功能</h4>
+      <div class="row"><span class="label">核心文檔</span><span class="value">17 / 17</span></div>
+      <div class="row"><span class="label">Agent 專家庫</span><span class="value">8 / 8</span></div>
+      <div class="row"><span class="label">Hook</span><span class="value">6 / 6</span></div>
+      <div class="row"><span class="label">語言指南</span><span class="value">TypeScript</span></div>
+      <div class="row"><span class="label">對照範例</span><span class="value">5 / 5</span></div>
+    </div>
+    <div class="deployment-group">
+      <h4>累積活動</h4>
+      <div class="row"><span class="label">Learning log</span><span class="value">15 筆</span></div>
+      <div class="row"><span class="label">永久警惕</span><span class="value">#001~#007 (7 項)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ CTA ════════════════ -->
+<section class="cta-section">
+  <h2>下一步</h2>
+
+  <div class="cta-grid">
+    <div class="cta-item"><strong>啟動下個閉環</strong>自然語言描述任務即可（如「實作 X 功能」）</div>
+    <div class="cta-item"><strong>看部署的文件</strong>開啟 <code>.claudedocs/README.md</code></div>
+    <div class="cta-item"><strong>跨 session 接續</strong><code>/dev:handoff save</code> 後 <code>/dev:handoff load</code></div>
+    <div class="cta-item"><strong>升級到最新</strong><code>/dev:init-claude upgrade</code></div>
+    <div class="cta-item"><strong>查看部署狀態</strong><code>/dev:init-claude status</code></div>
+    <div class="cta-item"><strong>重新產生本頁</strong><code>/dev:overview</code></div>
+  </div>
+
+
+  <div class="cta-external">
+    <a href="https://github.com/gatewen/ClaudeCodeTools">📦 GitHub Repo</a>
+    <a href="dev-closed-loop/design/">📚 設計史 design/01-13</a>
+  </div>
+</section>
+
+<footer>
+  <p>開發設計閉環方法論 · <span id="overview-version">v6.4.2</span> · 用 <code>/dev:overview</code> 重新產生本頁</p>
+</footer>
+
+</div>
+
+<script>
+function toggleTheme() {
+  var cur = document.documentElement.getAttribute('data-theme');
+  var next = cur === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('dev-overview-theme', next);
+  updateToggleIcon(next);
+}
+
+function updateToggleIcon(theme) {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  btn.textContent = theme === 'light' ? '🌙' : '🌞';
+  btn.setAttribute('aria-label', theme === 'light' ? '切換到 dark mode' : '切換到 light mode');
+}
+
+// init icon on load
+updateToggleIcon(document.documentElement.getAttribute('data-theme'));
+
+function togglePhase(card) {
+  var expanded = card.getAttribute('aria-expanded') === 'true';
+  var detail = card.querySelector('.phase-detail');
+  if (expanded) {
+    card.setAttribute('aria-expanded', 'false');
+    detail.hidden = true;
+  } else {
+    // collapse siblings (only one expanded at a time, unless 全部展開 mode)
+    if (!window._allPhasesExpanded) {
+      document.querySelectorAll('.phase-card').forEach(function(c) {
+        c.setAttribute('aria-expanded', 'false');
+        var d = c.querySelector('.phase-detail');
+        if (d) d.hidden = true;
+      });
+    }
+    card.setAttribute('aria-expanded', 'true');
+    detail.hidden = false;
+  }
+}
+
+function toggleAllPhases() {
+  var btn = document.getElementById('phases-toggle-all');
+  window._allPhasesExpanded = !window._allPhasesExpanded;
+  document.querySelectorAll('.phase-card').forEach(function(c) {
+    c.setAttribute('aria-expanded', window._allPhasesExpanded ? 'true' : 'false');
+    var d = c.querySelector('.phase-detail');
+    if (d) d.hidden = !window._allPhasesExpanded;
+  });
+  btn.textContent = window._allPhasesExpanded ? '全部折疊' : '全部展開';
+}
+
+function toggleSection(header) {
+  var expanded = header.getAttribute('aria-expanded') === 'true';
+  var section = header.parentElement;
+  var body = section.querySelector('.section-body');
+  header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  body.hidden = expanded;
+}
+
+function toggleAllAdvanced() {
+  var btn = document.getElementById('adv-toggle-all');
+  var anyCollapsed = false;
+  document.querySelectorAll('.advanced').forEach(function(s) {
+    var header = s.querySelector('.section-header');
+    if (header.getAttribute('aria-expanded') !== 'true') anyCollapsed = true;
+  });
+  var openAll = anyCollapsed;
+  document.querySelectorAll('.advanced').forEach(function(s) {
+    var header = s.querySelector('.section-header');
+    var body = s.querySelector('.section-body');
+    header.setAttribute('aria-expanded', openAll ? 'true' : 'false');
+    body.hidden = !openAll;
+  });
+  btn.textContent = openAll ? '全部折疊進階機制' : '全部展開進階機制';
+}
+</script>
+
+</body>
+</html>

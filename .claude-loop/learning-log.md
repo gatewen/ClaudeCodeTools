@@ -503,9 +503,25 @@
 3. 完整實驗可複現於 `sandbox/closed-loop-validation/`（gitignored；A/B/C 各含 SPEC/PLAN/FROZEN/oracle/arms/RESULTS）
 4. **不升格**：此為方法論層級的定位校準（已直接寫入主檔 + 人類文檔），非閉環執行中的根因模式；記為重大 dogfood 觀察 [observation]
 
+## 2026-05-30 - [方法論 dogfood Stage F：B 不在窗 regime] [meta]
+
+**Phase**: 跨方法論驗證（接 A–E，打 A–E 唯一未否證 regime）
+**failure_type**: methodology_efficacy_observation
+**緣起**：用戶質疑「全平手不合理，或許實例不夠強」+「一定要找出裸寫會犯而方法論不犯的 bug 才有意義」。兩份 workflow 報告（value-test-design / baseline-failure-taxonomy）+ Codex 三輪預審收斂出唯一可能鑑別點 = 「B 不在窗」（跨 session / 遠端非直覺依賴）。設計 Stage F：Evict-then-Edit，~1300 行 Go ledger 預建，新增交易型別 `Interest`（中性需求），三個「列舉所有型別」的遠端消費點（export csvLabels / reconcile reportedTypes / limits perTypeDailyLimit）漏接會靜默失效（Go 無 exhaustive-match）。5 臂：裸寫 / 裸寫+中性提示 / +NOTES / +一次Codex / +完整閉環 IF-TT registry。Codex v1 FAIL→v2 REDESIGN→v3 APPROVE-WITH-FIXES（明判「預期 null」）。
+**結果**：B1(匯出)/B2(月報) 三臂全平手——**arm0 純裸寫一個 `grep -rn TransactionType` 就把窗外遠端消費點全找到補上**（transcript 實證 = Codex 必修 #2 的 clean NULL）。唯一分歧 B3(限額)：arm0/arm0+ 得 2/3、arm1/arm2/arm3 得 3/3——但 arm0 **不是漏看 limits.go**，是讀了之後刻意判斷「需求沒提利息限額、文件語義『未列入=無限額』、編任意數字更糟」（可辯護）；E1 需求確實沒提限額，golden 的限額也是亂編的。∴ B3 是被「需求未指定的設計選擇」污染的鑑別點，非乾淨漂移 bug。
+**結論**：(1) A–E 唯一未否證 regime（B 不在窗）在可行尺度實測 → 前沿模型裸寫照樣 grep 補齊，B1/B2 平手。(2) 即使把 B3 從寬算價值，**arm1（一份自由 note）= arm2（一次 Codex review）= arm3（完整五階段，最貴 221K）= 3/3 完全相同**——價值 100% 歸「持久化 / 外部視角」通用動作，**五階段 ritual 零邊際貢獻**（命中 taxonomy 報告閘 3 預測）。(3) 順手驗證「因果鏈/事實求證的天花板就是窗」：arm0 靠 grep 把 B 拉進窗就全抓。
+**過程亮點**：arm0/arm0+ 在 B3 的「刻意不加限額」判斷揭露 oracle 設計歧義；arm2 的一次 Codex review 即補上 limits（外部視角再次承重，非 ritual）。
+**下次注意**：
+1. correctness 軸已六場（A–F）耗盡，robust null——**勿再用 agent-to-agent correctness 測試找價值**（含放大尺度，Codex 已論證大尺度仍會 grep 平手）。
+2. **真正未測的是「人」軸**：人類接手/稽核成本、可證明性（Phase 5 可向 stakeholder 證明覆蓋而非僅達成）、弱執行者（人類/長自主 agent/弱模型，非前沿模型 fresh context）護欄。要找價值只剩這些，且需非-correctness-oracle 的指標。
+3. 完整可複現於 `sandbox/closed-loop-validation/stage-f/`（gitignored；SPEC v1→v3 演進 + before/golden/oracle/arms/RESULTS）。
+4. **不升格**：方法論層定位校準，非閉環執行根因模式；記為重大 dogfood 觀察 [observation]。
+
 ---
 
-最後修訂：2026-05-30（方法論 dogfood **A–E 五型**對照實驗 · 五場全三方平手（涵蓋正確性/質量維護/因果鏈/事實求證四維度）· 閉環對 in-context 任務可量測結果零增益、成本最高 7x · 核心洞察「外部化模型本來就會做的認知」· 校準補齊 A–E 寫入 CLAUDE_TEMPLATE + 核心理念 · 不升格／重大觀察）
+最後修訂：2026-05-30（方法論 dogfood **Stage F**：B 不在窗 regime · Evict-then-Edit 5 臂 · arm0 裸寫 grep 自抓窗外消費點 B1/B2 平手 · 唯一分歧 B3 為設計歧義污染、且 note=review=ritual 全 3/3、五階段零增量 · A–F 六場 correctness 軸耗盡 robust null · 真正未測=「人」軸 · 不升格／重大觀察）
+
+之前修訂：2026-05-30（方法論 dogfood **A–E 五型**對照實驗 · 五場全三方平手（涵蓋正確性/質量維護/因果鏈/事實求證四維度）· 閉環對 in-context 任務可量測結果零增益、成本最高 7x · 核心洞察「外部化模型本來就會做的認知」· 校準補齊 A–E 寫入 CLAUDE_TEMPLATE + 核心理念 · 不升格／重大觀察）
 
 之前修訂：2026-05-29（v6.6.0 dev:codemap PAUSE 決策 · 兩條觀察條目記入：多輪 review 收斂模式作為複雜度信號 + Phase 1 declarative tense theater 陷阱 · 不升格 / 各 1 次累積中）
 
