@@ -105,7 +105,7 @@ const critiques = (await parallel(proposals.map((p, i) => () =>
 ))).filter(Boolean)
 
 const judgment = await agent(
-  `你是設計評審團。根據三個方案 + 各自的 skeptic 批評，評分排名、列出跨方案的致命缺陷、推薦基底方案並指出該嫁接哪些亮點。
+  `你是設計評審團。根據 ${proposals.length} 個方案 + 各自的 skeptic 批評，評分排名、列出跨方案的致命缺陷、推薦基底方案並指出該嫁接哪些亮點。
 方案：${JSON.stringify(proposals)}
 批評：${JSON.stringify(critiques)}`,
   { label: 'judge-panel', phase: 'Adversarial', schema: JUDGE_SCHEMA }

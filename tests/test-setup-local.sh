@@ -185,6 +185,46 @@ if [ -f "$OVERVIEW_DIR/SKILL.md" ]; then
 fi
 
 # --------------------------------------------------
+# Check 5.7: workflow 腳本部署到 $HOME/.claude/workflows/（v7.0.0）
+# --------------------------------------------------
+echo ""
+echo "Check 5.7: workflow 腳本部署"
+WORKFLOWS_DIR="$TEST_HOME/.claude/workflows"
+WORKFLOW_EXPECTED=(
+    "dev-prd.js"
+    "dev-design.js"
+    "dev-review.js"
+    "dev-verify.js"
+)
+WORKFLOW_MISSING=0
+for f in "${WORKFLOW_EXPECTED[@]}"; do
+    if [ ! -f "$WORKFLOWS_DIR/$f" ]; then
+        echo "  ❌ 缺少：$f"
+        WORKFLOW_MISSING=$((WORKFLOW_MISSING+1))
+    fi
+done
+if [ $WORKFLOW_MISSING -eq 0 ]; then
+    echo "  ✅ 4 個 workflow 腳本全部部署落地"
+else
+    FAIL=$((FAIL+1))
+fi
+
+# 內容驗證：每個腳本含 meta.name（部署的是真腳本，非空檔/截斷）
+WORKFLOW_BAD_META=0
+for f in "${WORKFLOW_EXPECTED[@]}"; do
+    expected_name="${f%.js}"
+    if [ -f "$WORKFLOWS_DIR/$f" ] && ! grep -q "name: '${expected_name}'" "$WORKFLOWS_DIR/$f"; then
+        echo "  ❌ $f 缺少 meta.name: '${expected_name}'"
+        WORKFLOW_BAD_META=$((WORKFLOW_BAD_META+1))
+    fi
+done
+if [ $WORKFLOW_BAD_META -eq 0 ]; then
+    echo "  ✅ 所有 workflow 腳本 meta.name 正確"
+else
+    FAIL=$((FAIL+1))
+fi
+
+# --------------------------------------------------
 # Check 6: 抽查 check-version.sh 對未部署狀態判定
 # --------------------------------------------------
 echo ""

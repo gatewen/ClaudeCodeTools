@@ -85,9 +85,12 @@ const reverse = await agent(
 phase('Synthesize')
 
 const notCovered = coverage.filter(c => !c.covered)
+const zeroDenominatorWarn = BCS.length === 0
+  ? `\n⚠️ **分母=0 警示**：本次枚舉到 0 條 BC-x。這幾乎一定是異常（設計規格缺失／未落檔 .claude-loop/artifacts/ ／枚舉 agent 失敗），**不代表「全部通過」**。verdict 必須判 fix-required，並指出：先確認設計規格存在且含 BC-x 再重跑。嚴禁因「無 covered=false 項」而判 pass。\n`
+  : ''
 const verdict = await agent(
   `你是自證彙整者。產出跨產出物一致性自證報告（繁中，寫入 .claude-loop/artifacts/P5-verify.md）。
-正向覆蓋結果（分母 ${BCS.length} 條 BC-x）：${JSON.stringify(coverage)}
+${zeroDenominatorWarn}正向覆蓋結果（分母 ${BCS.length} 條 BC-x）：${JSON.stringify(coverage)}
 未覆蓋項：${JSON.stringify(notCovered)}
 反向遍歷（死碼/未實作/範圍蔓延）：${JSON.stringify(reverse)}
 
@@ -101,4 +104,4 @@ const verdict = await agent(
   { label: 'verify-synthesis', phase: 'Synthesize' }
 )
 
-return { verdict, forwardCoverage: `${coverage.length - notCovered.length}/${BCS.length}`, reverseFindings: reverse }
+return { verdict, forwardCoverage: BCS.length === 0 ? '⚠️ 0/0（分母異常·非通過）' : `${coverage.length - notCovered.length}/${BCS.length}`, reverseFindings: reverse }
