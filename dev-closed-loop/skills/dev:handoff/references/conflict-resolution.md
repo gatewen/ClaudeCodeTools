@@ -97,13 +97,14 @@ cp "<handoff_dir>/handoff.md" "<handoff_dir>/handoff.md.external-$ts"
 
 ### Step C：Backup 清理
 
-僅保留最近 5 個 backup：
+保留最近 5 個歷史 backup（守衛會額外保住本次剛建的 `$ts`，故磁碟上最多 6 個——刻意多留一個的安全偏差）：
 
 ```bash
-ls -t "<handoff_dir>"/handoff.md.external-* 2>/dev/null | tail -n +6 | xargs rm -f
+# 守衛：先排除本次剛建的 $ts backup（避免時鐘偏移／ls 排序異常誤刪剛建檔），再從其餘歷史檔刪掉超出最近 5 個者
+ls -t "<handoff_dir>"/handoff.md.external-* 2>/dev/null | grep -v "external-${ts}\$" | tail -n +6 | xargs rm -f 2>/dev/null
 ```
 
-安靜執行，不通知 user。
+安靜執行，不通知 user。**清理排在備份+寫入完成之後**，且絕不刪本次剛建的 `$ts` backup（守衛已排除）——清理步驟本身不得成為自造的資料遺失來源。
 
 ## 通知訊息表
 
@@ -138,3 +139,11 @@ ls -t "<handoff_dir>"/handoff.md.external-* 2>/dev/null | tail -n +6 | xargs rm 
 - ❌ 合併時丟失 user 手寫備註
 - ❌ Backup 堆到無限多（必須清理）
 - ❌ 問 user「要不要合併」「要不要備份」這類本該自動的問題
+
+## 已知限制（假設單人單寫）
+
+本流程**假設同一 `<handoff_dir>` 同時只有一個 session 在 save**。並行情境未加鎖：
+
+- **並行 save 競態**：同 cwd 兩 session 幾乎同時 save，handoff.md 是整檔覆蓋、無鎖 → **後寫覆蓋前寫（last-writer-wins）**，前一個 session 的進行中/起手式可能遺失。（logs/ 是 append，相對安全；風險集中在 handoff.md。）
+- **緩解**：save 前若懷疑有另一 session 正在同一專案寫，先確認；或以最新一次 save 為準（歷史仍在 logs/）。
+- 時戳異常（欄位損毀無法抽取、未來時戳/時鐘偏移導致負落差）時，時戳分級無對應分支 → fallback 視為 `silent_overwrite`（內部來源覆蓋安全，歷史在 logs/）。

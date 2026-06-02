@@ -13,9 +13,8 @@ description: >-
 
 # dev:handoff
 
-> **本 skill 隨 dev-closed-loop 方法論部署**，功能與 `wt:handoff` 等價。
-> 若使用者同時擁有兩者並存無衝突；閉環方法論使用者建議用本 skill 以與方法論散佈節奏同步。
-> 未來可能加入 methodology-aware 增強（phase 進度、升格機制 status 等），由 Phase 2 觸發後決定。
+> **本 skill 隨 dev-closed-loop 方法論部署**。⚠️ 當前與 `wt:handoff` **逐字等價（byte-equivalent，僅 namespace 差異）**——存在的唯一理由是「隨方法論散佈節奏同步更新」，**功能零增量**。預留的 methodology-aware 增強（phase 進度、升格機制 status 等）**尚未實作**（Phase 2 觸發後才會分化）。
+> 兩者並存無衝突；在分化前，用哪個都一樣。閉環方法論使用者建議用本 skill。
 
 ## 用途
 
@@ -33,9 +32,9 @@ description: >-
 
 避免重複：當前 session 進行中工作 → Handoff；跨 session 偏好/決策 → Memory；歷史歸檔 → Log。
 
-## TaskList 雙向同步
+## TaskList 兩端對齊
 
-handoff 的「進行中工作」與 Claude Code 的 **TaskList runtime state** 雙向同步，避免 file state 與 runtime state 漂移：
+handoff 的「進行中工作」與 Claude Code 的 **TaskList runtime state** 在兩端對齊，避免 file state 與 runtime state 漂移。⚠️ 這是「save 端讀 + load 端重建」兩次單向操作組成的閉環，**不是 runtime 級雙向綁定**（中途 TaskUpdate 不會自動回寫 handoff）：
 
 - **save 時**：以 TaskList 為 source of truth 寫入 handoff（不在 TaskList 中的隱性任務會提示 user 是否正式 TaskCreate）
 - **load 時**：自動 TaskCreate 重建 TaskList（forcing function — 即使 handoff 進行中為空也要明確回報）

@@ -519,7 +519,9 @@
 
 ---
 
-最後修訂：2026-05-30（方法論 dogfood **Stage F**：B 不在窗 regime · Evict-then-Edit 5 臂 · arm0 裸寫 grep 自抓窗外消費點 B1/B2 平手 · 唯一分歧 B3 為設計歧義污染、且 note=review=ritual 全 3/3、五階段零增量 · A–F 六場 correctness 軸耗盡 robust null · 真正未測=「人」軸 · 不升格／重大觀察）
+最後修訂：2026-06-02（**承重核自身事實錯述修正** · 14-agent workflow 對抗評估方法論 38/100·handoff 70/100 · 逐行讀 `impact-analysis-guard.sh` 證偽「因果鏈 grep 機械子集=model-independent 硬核」宣稱——hook 實為「首次擋一次→touch marker→retry 無條件放行(L68/L74)、grep 呼叫者只 advisory 印出(L120-127)、=0 不拒絕、exit 2(L146) 不解析 grep」=提示型 ritual 非機械保證 · 更正 CLAUDE_TEMPLATE.md:138 + 核心理念.md:66,68 誠實邊界措辭 · meta 教訓：驗證機制行為要讀源碼，連「誠實邊界」句都可能對自己過度宣稱、需異源對抗才抓得到 · 不升格／重大觀察）
+
+之前修訂：2026-05-30（方法論 dogfood **Stage F**：B 不在窗 regime · Evict-then-Edit 5 臂 · arm0 裸寫 grep 自抓窗外消費點 B1/B2 平手 · 唯一分歧 B3 為設計歧義污染、且 note=review=ritual 全 3/3、五階段零增量 · A–F 六場 correctness 軸耗盡 robust null · 真正未測=「人」軸 · 不升格／重大觀察）
 
 之前修訂：2026-05-30（方法論 dogfood **A–E 五型**對照實驗 · 五場全三方平手（涵蓋正確性/質量維護/因果鏈/事實求證四維度）· 閉環對 in-context 任務可量測結果零增益、成本最高 7x · 核心洞察「外部化模型本來就會做的認知」· 校準補齊 A–E 寫入 CLAUDE_TEMPLATE + 核心理念 · 不升格／重大觀察）
 
