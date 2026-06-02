@@ -310,7 +310,7 @@ workflow 不可用（免費方案 / < v2.1.154 / headless / preview 未啟用）
 `.claudedocs/` 含核心文檔、Agent 素材庫、語言指南。`.claude/workflows/` 含預製 workflow 腳本。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v7.0.0
+closed-loop v7.0.1
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄，CLAUDE_TEMPLATE.md 改名為 CLAUDE.md
@@ -318,7 +318,7 @@ closed-loop v7.0.0
 3. 替換所有 {{PLACEHOLDER}}：{{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LANGUAGE_SKILL_SECTION}}
 4. 部署 hooks（deploy-hooks.sh）：承重核的 always-on 觸發層
 
-版本：v7.0.0（2026-06-01）· workflow-first 重構：五階流水線 ritual（A–F 實證零增益）交給原生 Workflow 編排（/dev-prd /dev-design /dev-review /dev-verify），CLAUDE.md 縮減約 42%（588→341 行），保留並重新定位承重核（因果鏈+事實求證·人軸 proxy 未否證）為三層架構：L1 always-on hook（fail-safe 地基）+ L2 workflow（預設首選編排）+ L3 文字層（退化路徑）。
+版本：v7.0.1（2026-06-02）· 文件誠實校正 + 交接工具防呆：發現先前文件把 L1 因果鏈 hook 的「提醒」誤寫成「機械窮舉呼叫者、=0 禁改的硬保證」，逐行讀守衛程式後改回實話——hook 機械強制的只有「首次觸發一次提示 + 印呼叫者清單(advisory)」（在 hook 正確註冊的前提下，這個 always-on 觸發才是 model-independent 的）；至於「真窮舉呼叫者 / =0 禁改 / 語意層判斷」皆屬文字層 AI 自律、非機械保證。另含 dev:handoff skill 措辭澄清（雙向同步→兩端對齊、與 wt:handoff 逐字等價）+ 備份清理守衛 + 並行 save 已知限制揭露。無破壞性變更、無新功能、未動 phase 規則，承重核三層架構（L1 hook / L2 workflow / L3 文字層）不變。
 
 migration-notes (v6.5.0 → v7.0.0)
 breaking-changes:
