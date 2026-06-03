@@ -310,7 +310,7 @@ workflow 不可用（免費方案 / < v2.1.154 / headless / preview 未啟用）
 `.claudedocs/` 含核心文檔、Agent 素材庫、語言指南。`.claude/workflows/` 含預製 workflow 腳本。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v7.0.1
+closed-loop v7.1.0
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄，CLAUDE_TEMPLATE.md 改名為 CLAUDE.md
@@ -318,7 +318,7 @@ closed-loop v7.0.1
 3. 替換所有 {{PLACEHOLDER}}：{{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LANGUAGE_SKILL_SECTION}}
 4. 部署 hooks（deploy-hooks.sh）：承重核的 always-on 觸發層
 
-版本：v7.0.1（2026-06-02）· 文件誠實校正 + 交接工具防呆：發現先前文件把 L1 因果鏈 hook 的「提醒」誤寫成「機械窮舉呼叫者、=0 禁改的硬保證」，逐行讀守衛程式後改回實話——hook 機械強制的只有「首次觸發一次提示 + 印呼叫者清單(advisory)」（在 hook 正確註冊的前提下，這個 always-on 觸發才是 model-independent 的）；至於「真窮舉呼叫者 / =0 禁改 / 語意層判斷」皆屬文字層 AI 自律、非機械保證。另含 dev:handoff skill 措辭澄清（雙向同步→兩端對齊、與 wt:handoff 逐字等價）+ 備份清理守衛 + 並行 save 已知限制揭露。無破壞性變更、無新功能、未動 phase 規則，承重核三層架構（L1 hook / L2 workflow / L3 文字層）不變。
+版本：v7.1.0（2026-06-03）· dev:handoff / dev:overview 改 command 形式（原生 Windows 相容）：兩配套指令原為冒號目錄個人 skill（`~/.claude/skills/dev:handoff`、`dev:overview`），`:` 在 Windows NTFS 為非法字元 → repo 原生 Windows clone/checkout 失敗（僅 WSL/ext4 可）。比照 `/dev:init-claude` 的 command 機制改修：shim `commands/dev/handoff.md`+`overview.md`（冒號名由子資料夾 `dev/` 合成、磁碟零冒號）+ bundle（原 SKILL.md + references 原樣）移到 `~/.claude/dev-closed-loop/`（commands/skills 之外、不註冊不污染命名空間），shim 指向 bundle SKILL.md（內容 byte-equivalent 不變、保住與 wt:handoff 等價）。setup.sh 加舊 colon-skill 遷移清理 + 驗證。指令名/用法零變更（仍 `/dev:handoff`、`/dev:overview`）。純散佈結構 + 平台相容性變更：承重核三層架構（L1 hook / L2 workflow / L3 文字層）不變、phase 規則不變、無破壞性方法論變更。
 
 migration-notes (v6.5.0 → v7.0.0)
 breaking-changes:

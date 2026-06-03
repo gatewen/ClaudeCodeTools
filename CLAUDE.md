@@ -15,8 +15,8 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
 - `setup.sh` — 安裝腳本（雙模式）。支援 `curl | bash` 遠端安裝和本地 `bash setup.sh`。遠端模式從 GitHub 下載 tarball 到 `~/.claude/cache/ClaudeCodeTools/`，本地模式直接從 repo 目錄安裝。將 Skill 部署到 `~/.claude/commands/dev/init-claude.md`（對應 `/dev:init-claude` 指令），過程中把 `{{REPO_PATH}}` 替換為來源路徑。
 - `dev-closed-loop/CLAUDE_TEMPLATE.md` — 核心產物。自包含的 CLAUDE.md 模板，含完整五階段閉環方法論。內有 `{{PLACEHOLDER}}` 變數，部署到專案時由 Skill 填入實際值。
 - `dev-closed-loop/skill/init-claude.md` — Skill 源碼。定義 `/dev:init-claude` 指令（專案偵測、互動確認、模板填充部署）。
-- `dev-closed-loop/skills/dev:handoff/` — 配套 Skill（v6.4.1 引入）。定義 `/dev:handoff` 跨 session 交接指令，由 setup.sh 一鍵部署到 `~/.claude/skills/dev:handoff/`。功能與用戶個人版 `wt:handoff` 等價（三層分工 / cwd 路徑判定 / auto_merge / TaskList 雙向同步），Phase 1 為逐字 fork，Phase 2 預留 methodology-aware 增強空間。
-- `dev-closed-loop/skills/dev:overview/` — 配套 Skill（v6.5.0 引入）。定義 `/dev:overview` 產生方法論視覺化介紹 HTML（給人類看，不是給 LLM 看）。Self-contained HTML 含 light/dark mode 切換、5 phase 流程圖、§2-§11 進階區 collapsible、動態填當前部署狀態。由 setup.sh 一鍵部署到 `~/.claude/skills/dev:overview/`。5 檔結構（SKILL.md + 4 references：content-spec / source-mapping / visual-guide / template.html）。
+- `dev-closed-loop/commands/dev/handoff.md`（command shim）+ `dev-closed-loop/command-refs/handoff/`（bundle：SKILL.md + 5 references）— 配套指令（v6.4.1 引入；**v7.1.0 由 colon-skill 改 command 形式**）。定義 `/dev:handoff` 跨 session 交接指令。冒號名由子資料夾 `dev/` 合成（`commands/dev/handoff.md` → `/dev:handoff`，磁碟零冒號 → 原生 Windows 相容）；shim 部署到 `~/.claude/commands/dev/handoff.md`，bundle 部署到 `~/.claude/dev-closed-loop/handoff/`（commands/skills 之外，不註冊不污染命名空間），shim 指向 bundle 的 SKILL.md。功能與用戶個人版 `wt:handoff` 等價（三層分工 / cwd 路徑判定 / auto_merge / TaskList 雙向同步），bundle SKILL.md 與 wt:handoff byte-equivalent。
+- `dev-closed-loop/commands/dev/overview.md`（command shim）+ `dev-closed-loop/command-refs/overview/`（bundle：SKILL.md + 4 references：content-spec / source-mapping / visual-guide / template.html）— 配套指令（v6.5.0 引入；**v7.1.0 改 command 形式**）。定義 `/dev:overview` 產生方法論視覺化介紹 HTML（給人類看，不是給 LLM 看）。Self-contained HTML 含 light/dark mode 切換、5 phase 流程圖、§2-§11 進階區 collapsible、動態填當前部署狀態。shim 部署到 `~/.claude/commands/dev/overview.md`，bundle 部署到 `~/.claude/dev-closed-loop/overview/`。
 - `dev-closed-loop/.claudedocs/` — 共 33 個檔，分布如下（給人類閱讀，部署時一併複製到目標專案）：
   - 11 份核心方法論文檔（concepts 2 + process 5 + standards 3 + records 1）
   - Agent 專家庫 `agents/` 9 檔（8 個 agent prompt + 1 個 README 索引）
@@ -90,8 +90,8 @@ v6.x 系列在五階段之上加了三層擴充：
 | `.claudedocs/agents/*.md` — agent 步驟 / 閘門 / severity 變更 | CLAUDE_TEMPLATE.md 對應 Phase 描述 · `.claudedocs/process/五階段閉環流程.md` · `.claudedocs/standards/Agent使用指南.md`（若調用方式變動） |
 | `.claudedocs/` — 檔案增刪 | `setup.sh`（驗證清單）· `.claudedocs/README.md` |
 | Hook 腳本增刪或行為變更 | `deploy-hooks.sh`（部署邏輯）· `init-claude.md`（Step 4b） |
-| `dev-closed-loop/skills/dev:handoff/*` — Skill 內容變更 | `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh`（部署落地斷言） |
-| `dev-closed-loop/skills/dev:overview/*` — Skill 內容變更（template.html / SKILL.md / 4 references 任一）| `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh` Check 5.6（部署落地斷言 + placeholder 完整性 + dark mode CSS 存在）· 若 content-spec 改動同步看 source-mapping 對映是否還對 |
+| `dev-closed-loop/command-refs/handoff/*`（bundle）或 `commands/dev/handoff.md`（shim）— 內容變更 | `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh`（部署落地斷言）· 若改 shim↔bundle 路徑契約須同步 setup.sh 部署目標 |
+| `dev-closed-loop/command-refs/overview/*`（bundle）或 `commands/dev/overview.md`（shim）— 內容變更（template.html / SKILL.md / 4 references 任一）| `setup.sh`（部署 + 驗證清單）· `tests/test-setup-local.sh` Check 5.6（部署落地斷言 + placeholder 完整性 + dark mode CSS 存在）· 若 content-spec 改動同步看 source-mapping 對映是否還對 |
 | `dev-closed-loop/workflows/*.js` — workflow 腳本變更（v7.0.0）| `setup.sh`（3.7 部署段 + WORKFLOW_FILES 驗證清單）· CLAUDE_TEMPLATE.md「可用 workflow 表」+「承重核注入段」（指令名/結構/承重核必一致）· 若改 meta.name 連動 slash 指令名（連字號）· 主檔對該 workflow 的能力描述不可錯述（R-2 round2 教訓：dev-prd 曾誤稱 judge-panel） |
 | `.claudedocs/examples/*.md` — anti-pattern 範例修改（K-07 主檔） | `.claudedocs/concepts/閉環核心理念.md`「Anti-Patterns Summary」段（K-16 對照表）· CLAUDE_TEMPLATE.md Section 0 4 原則對映表（若範例 Q1-Q4 對應變動） |
 | `.claudedocs/concepts/方法論運作指標.md` — KPI 指標 / 門檻 / 觸發條件變動（K-11 主檔） | `.claudedocs/records/問題追蹤.md`（升格觸發機制）· CLAUDE_TEMPLATE.md Phase 5 步驟 4.5（觀察項記入機制） |
@@ -107,8 +107,8 @@ v6.x 系列在五階段之上加了三層擴充：
 
 - `CLAUDE_TEMPLATE.md` 必須保留所有 `{{PLACEHOLDER}}` 標記——它們在部署時才被替換。
 - `.claudedocs/` 目錄必須維持完整結構，setup.sh 分三類驗證：核心 17/17（= 11 核心 + 5 examples + 1 `.claudedocs/README.md`）+ agents 9/9（= 8 agent prompt + 1 README）+ languages 7/7（= 6 語言指南 + 1 README）。
-- `dev-closed-loop/skills/dev:handoff/` Skill 必須維持 6 檔結構（SKILL.md + 5 references），setup.sh 部署到 `~/.claude/skills/dev:handoff/`，由 test-setup-local.sh Check 5.5 驗證落地。
-- `dev-closed-loop/skills/dev:overview/` Skill 必須維持 5 檔結構（SKILL.md + 4 references：content-spec.md / source-mapping.md / visual-guide.md / template.html），setup.sh 部署到 `~/.claude/skills/dev:overview/`，由 test-setup-local.sh Check 5.6 驗證落地 + template.html placeholder 完整性 + dark mode CSS 存在。
+- `dev-closed-loop/command-refs/handoff/` bundle 必須維持 6 檔結構（SKILL.md + 5 references），對應 shim 為 `dev-closed-loop/commands/dev/handoff.md`；setup.sh 部署 shim → `~/.claude/commands/dev/handoff.md`、bundle → `~/.claude/dev-closed-loop/handoff/`，由 test-setup-local.sh Check 5.5 驗證落地。⚠️ bundle 內 references 用相對路徑互引（靠 SKILL.md 自身位置解析），故 bundle 須整包同層部署、不可拆放 `~/.claude/commands/` 下（會被註冊成指令污染命名空間）。
+- `dev-closed-loop/command-refs/overview/` bundle 必須維持 5 檔結構（SKILL.md + 4 references：content-spec.md / source-mapping.md / visual-guide.md / template.html），對應 shim 為 `dev-closed-loop/commands/dev/overview.md`；setup.sh 部署 shim → `~/.claude/commands/dev/overview.md`、bundle → `~/.claude/dev-closed-loop/overview/`，由 test-setup-local.sh Check 5.6 驗證落地 + template.html placeholder 完整性 + dark mode CSS 存在。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。

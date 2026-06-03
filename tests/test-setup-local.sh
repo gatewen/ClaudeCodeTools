@@ -83,11 +83,14 @@ else
 fi
 
 # --------------------------------------------------
-# Check 5.5: dev:handoff Skill 部署到 $HOME/.claude/skills/dev:handoff/
+# Check 5.5: dev:handoff 部署（command shim + bundle · v7.1.0 改 command 形式）
+#   shim   → $HOME/.claude/commands/dev/handoff.md（提供 /dev:handoff 冒號名）
+#   bundle → $HOME/.claude/dev-closed-loop/handoff/（commands/skills 之外）
 # --------------------------------------------------
 echo ""
-echo "Check 5.5: dev:handoff Skill 部署"
-HANDOFF_DIR="$TEST_HOME/.claude/skills/dev:handoff"
+echo "Check 5.5: dev:handoff command shim + bundle 部署"
+HANDOFF_SHIM="$TEST_HOME/.claude/commands/dev/handoff.md"
+HANDOFF_BUNDLE="$TEST_HOME/.claude/dev-closed-loop/handoff"
 HANDOFF_EXPECTED=(
     "SKILL.md"
     "references/path-resolution.md"
@@ -96,49 +99,68 @@ HANDOFF_EXPECTED=(
     "references/load-mode.md"
     "references/templates.md"
 )
+if [ -f "$HANDOFF_SHIM" ]; then
+    echo "  ✅ command shim 部署落地：commands/dev/handoff.md"
+else
+    echo "  ❌ 缺少 command shim：commands/dev/handoff.md"
+    FAIL=$((FAIL+1))
+fi
 HANDOFF_MISSING=0
 for f in "${HANDOFF_EXPECTED[@]}"; do
-    if [ ! -f "$HANDOFF_DIR/$f" ]; then
-        echo "  ❌ 缺少：$f"
+    if [ ! -f "$HANDOFF_BUNDLE/$f" ]; then
+        echo "  ❌ 缺少 bundle 檔案：$f"
         HANDOFF_MISSING=$((HANDOFF_MISSING+1))
     fi
 done
 if [ $HANDOFF_MISSING -eq 0 ]; then
-    echo "  ✅ dev:handoff Skill 6 個檔案全部部署落地"
+    echo "  ✅ dev:handoff bundle 6 個檔案全部部署落地"
 else
     FAIL=$((FAIL+1))
 fi
 
-# dev:handoff 內容驗證：指令名稱無 /wt:handoff 殘留（preamble 提及 wt:handoff 等價關係是 intended）
-# 規則：「`/wt:handoff`」斜杠指令字串應全部替換為「`/dev:handoff`」；裸 `wt:handoff` namespace 引用允許保留
+# 指令名稱無 /wt:handoff 殘留（shim + bundle 全檢；裸 wt:handoff 等價關係是 intended）
 HANDOFF_LEAK=0
+if [ -f "$HANDOFF_SHIM" ] && grep -q "/wt:handoff" "$HANDOFF_SHIM"; then
+    echo "  ❌ shim 仍有 /wt:handoff 指令殘留"
+    HANDOFF_LEAK=$((HANDOFF_LEAK+1))
+fi
 for f in "${HANDOFF_EXPECTED[@]}"; do
-    if [ -f "$HANDOFF_DIR/$f" ] && grep -q "/wt:handoff" "$HANDOFF_DIR/$f"; then
+    if [ -f "$HANDOFF_BUNDLE/$f" ] && grep -q "/wt:handoff" "$HANDOFF_BUNDLE/$f"; then
         echo "  ❌ $f 仍有 /wt:handoff 指令殘留"
         HANDOFF_LEAK=$((HANDOFF_LEAK+1))
     fi
 done
 if [ $HANDOFF_LEAK -eq 0 ]; then
-    echo "  ✅ 所有檔案無 /wt:handoff 指令殘留"
+    echo "  ✅ shim + bundle 無 /wt:handoff 指令殘留"
 else
     FAIL=$((FAIL+1))
 fi
 
-if [ -f "$HANDOFF_DIR/SKILL.md" ]; then
-    if grep -q "^name: dev:handoff$" "$HANDOFF_DIR/SKILL.md"; then
-        echo "  ✅ SKILL.md frontmatter name 正確"
+# shim frontmatter name 正確（決定 /dev:handoff 冒號名）
+if [ -f "$HANDOFF_SHIM" ]; then
+    if grep -q "^name: dev:handoff$" "$HANDOFF_SHIM"; then
+        echo "  ✅ shim frontmatter name 正確"
     else
-        echo "  ❌ SKILL.md frontmatter name 異常"
+        echo "  ❌ shim frontmatter name 異常"
         FAIL=$((FAIL+1))
     fi
 fi
 
+# shim → bundle 契約：shim 必須指向 bundle SKILL.md
+if [ -f "$HANDOFF_SHIM" ] && grep -q "dev-closed-loop/handoff/SKILL.md" "$HANDOFF_SHIM"; then
+    echo "  ✅ shim 正確指向 bundle SKILL.md"
+else
+    echo "  ❌ shim 未指向 bundle SKILL.md"
+    FAIL=$((FAIL+1))
+fi
+
 # --------------------------------------------------
-# Check 5.6: dev:overview Skill 部署到 $HOME/.claude/skills/dev:overview/
+# Check 5.6: dev:overview 部署（command shim + bundle · v7.1.0 改 command 形式）
 # --------------------------------------------------
 echo ""
-echo "Check 5.6: dev:overview Skill 部署"
-OVERVIEW_DIR="$TEST_HOME/.claude/skills/dev:overview"
+echo "Check 5.6: dev:overview command shim + bundle 部署"
+OVERVIEW_SHIM="$TEST_HOME/.claude/commands/dev/overview.md"
+OVERVIEW_BUNDLE="$TEST_HOME/.claude/dev-closed-loop/overview"
 OVERVIEW_EXPECTED=(
     "SKILL.md"
     "references/content-spec.md"
@@ -146,28 +168,34 @@ OVERVIEW_EXPECTED=(
     "references/visual-guide.md"
     "references/template.html"
 )
+if [ -f "$OVERVIEW_SHIM" ]; then
+    echo "  ✅ command shim 部署落地：commands/dev/overview.md"
+else
+    echo "  ❌ 缺少 command shim：commands/dev/overview.md"
+    FAIL=$((FAIL+1))
+fi
 OVERVIEW_MISSING=0
 for f in "${OVERVIEW_EXPECTED[@]}"; do
-    if [ ! -f "$OVERVIEW_DIR/$f" ]; then
-        echo "  ❌ 缺少：$f"
+    if [ ! -f "$OVERVIEW_BUNDLE/$f" ]; then
+        echo "  ❌ 缺少 bundle 檔案：$f"
         OVERVIEW_MISSING=$((OVERVIEW_MISSING+1))
     fi
 done
 if [ $OVERVIEW_MISSING -eq 0 ]; then
-    echo "  ✅ dev:overview Skill 5 個檔案全部部署落地"
+    echo "  ✅ dev:overview bundle 5 個檔案全部部署落地"
 else
     FAIL=$((FAIL+1))
 fi
 
 # 內容驗證：template.html 含關鍵 placeholder + light/dark CSS variables
-if [ -f "$OVERVIEW_DIR/references/template.html" ]; then
-    if grep -q "{{DEPLOYMENT_VERSION}}" "$OVERVIEW_DIR/references/template.html"; then
+if [ -f "$OVERVIEW_BUNDLE/references/template.html" ]; then
+    if grep -q "{{DEPLOYMENT_VERSION}}" "$OVERVIEW_BUNDLE/references/template.html"; then
         echo "  ✅ template.html 含 placeholder（未在部署時誤替換）"
     else
         echo "  ❌ template.html 缺少 {{DEPLOYMENT_VERSION}} placeholder"
         FAIL=$((FAIL+1))
     fi
-    if grep -q '\[data-theme="dark"\]' "$OVERVIEW_DIR/references/template.html"; then
+    if grep -q '\[data-theme="dark"\]' "$OVERVIEW_BUNDLE/references/template.html"; then
         echo "  ✅ template.html 含 light/dark mode CSS"
     else
         echo "  ❌ template.html 缺少 dark mode CSS"
@@ -175,13 +203,47 @@ if [ -f "$OVERVIEW_DIR/references/template.html" ]; then
     fi
 fi
 
-if [ -f "$OVERVIEW_DIR/SKILL.md" ]; then
-    if grep -q "^name: dev:overview$" "$OVERVIEW_DIR/SKILL.md"; then
-        echo "  ✅ SKILL.md frontmatter name 正確"
+# shim frontmatter name + 指向 bundle 契約
+if [ -f "$OVERVIEW_SHIM" ]; then
+    if grep -q "^name: dev:overview$" "$OVERVIEW_SHIM"; then
+        echo "  ✅ shim frontmatter name 正確"
     else
-        echo "  ❌ SKILL.md frontmatter name 異常"
+        echo "  ❌ shim frontmatter name 異常"
         FAIL=$((FAIL+1))
     fi
+    if grep -q "dev-closed-loop/overview/SKILL.md" "$OVERVIEW_SHIM"; then
+        echo "  ✅ shim 正確指向 bundle SKILL.md"
+    else
+        echo "  ❌ shim 未指向 bundle SKILL.md"
+        FAIL=$((FAIL+1))
+    fi
+fi
+
+# --------------------------------------------------
+# Check 5.6b: 升級遷移——舊版 colon-skill 目錄被清除（v7.1.0）
+#   模擬已安裝舊版（冒號目錄 skill），再跑一次 setup，驗證舊目錄被移除且 command 形式保留
+# --------------------------------------------------
+echo ""
+echo "Check 5.6b: 舊版 colon-skill 遷移清理"
+mkdir -p "$TEST_HOME/.claude/skills/dev:handoff" "$TEST_HOME/.claude/skills/dev:overview"
+echo "stale" > "$TEST_HOME/.claude/skills/dev:handoff/SKILL.md"
+echo "stale" > "$TEST_HOME/.claude/skills/dev:overview/SKILL.md"
+HOME="$TEST_HOME" bash "$REPO_ROOT/setup.sh" >/dev/null 2>&1 || true
+MIGRATION_OK=true
+for old in "$TEST_HOME/.claude/skills/dev:handoff" "$TEST_HOME/.claude/skills/dev:overview"; do
+    if [ -d "$old" ]; then
+        echo "  ❌ 舊版 skill 未被清除：$old"
+        MIGRATION_OK=false
+    fi
+done
+if [ ! -f "$TEST_HOME/.claude/commands/dev/handoff.md" ]; then
+    echo "  ❌ 遷移後 command shim 遺失"
+    MIGRATION_OK=false
+fi
+if $MIGRATION_OK; then
+    echo "  ✅ 舊版 colon-skill 已清除，command 形式保留"
+else
+    FAIL=$((FAIL+1))
 fi
 
 # --------------------------------------------------

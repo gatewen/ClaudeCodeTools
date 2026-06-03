@@ -404,7 +404,7 @@ Claude 在這 5 種情境會主動反對用戶：
 
 ### ↗ 深入
 
-`dev-closed-loop/skill/init-claude.md` + `dev-closed-loop/skills/dev:handoff/SKILL.md`
+`dev-closed-loop/skill/init-claude.md` + `dev-closed-loop/commands/dev/handoff.md`
 
 ---
 

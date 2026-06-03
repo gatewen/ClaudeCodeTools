@@ -172,8 +172,12 @@ ClaudeCodeTools/
     ├── CLAUDE_TEMPLATE.md            ← 閉環模板（核心產物）
     ├── skill/
     │   └── init-claude.md            ← /dev:init-claude 指令的源碼
-    ├── skills/
-    │   └── dev:handoff/              ← /dev:handoff 配套 Skill（跨 session 交接，等價 wt:handoff）
+    ├── commands/dev/                 ← /dev:handoff、/dev:overview 的 command shim（冒號名靠子資料夾合成 → Windows 相容）
+    │   ├── handoff.md                ← /dev:handoff（跨 session 交接，等價 wt:handoff）
+    │   └── overview.md               ← /dev:overview（方法論視覺化介紹 HTML）
+    ├── command-refs/                 ← 上列 command 的 bundle（SKILL.md + references，部署到 commands/skills 之外）
+    │   ├── handoff/
+    │   └── overview/
     ├── deploy-hooks.sh                ← 一鍵部署 Hook 系統（腳本保證，不靠 AI 自律）
     ├── check-version.sh              ← 版本檢查工具（快取/部署/遠端一次比完）
     ├── hooks/
@@ -212,6 +216,7 @@ ClaudeCodeTools/
 
 | 版本 | 重點 |
 |------|------|
+| **v7.1.0** | **`/dev:handoff`、`/dev:overview` 改用 command 形式，修好原生 Windows 相容**（minor · 2026-06-03 · 需重跑安裝）——這兩個配套指令原本是「冒號目錄」的個人 skill（裝在 `~/.claude/skills/dev:handoff`），但 `:` 在 Windows 檔名是非法字元，導致這個 repo 在原生 Windows 直接 clone/checkout 會失敗（只有 WSL 能用）。改成跟 `/dev:init-claude` 同一套作法：放進 `commands/dev/` 當 command（`/dev:handoff` 這個冒號名是系統用「子資料夾名」合成的，磁碟上完全沒有冒號），指令的完整內容搬到 `~/.claude/dev-closed-loop/` 下（避開命令目錄，免得被誤註冊成一堆雜指令）。**指令名與用法完全不變**（還是打 `/dev:handoff`、`/dev:overview`），內容一字未改。安裝腳本會自動清掉舊的冒號 skill 目錄避免重複。**要不要重裝**：它由安裝腳本部署（不是 `/dev:init-claude upgrade`），需 `git pull && bash setup.sh` 或重跑 curl 安裝指令 |
 | **v7.0.1** | **文件誠實校正 + 交接工具防呆**（patch · 2026-06-02 · 無破壞性變更 · 不必重裝）——一句話：我們自己讀了一遍程式，發現先前說明把一個「提醒」講成了「程式硬保證」，誠實改回來。(1) 原本文件宣稱「改檔前系統會自動查光所有用到它的地方，沒人用就機械擋下、跟 AI 聰不聰明無關」。實際讀過守衛程式後發現只做到「你第一次改某檔時擋一下、要你打字說明會牽連什麼、順手列出誰用到這個檔給你參考」就放行；至於「真的查遍、發現沒人用就停手」是靠 AI 自律、不是程式逼的。已把措辭改回實話（只改了 2 份說明文件，工具行為一個字沒動）。對你的意義：方法論對自己能力邊界更誠實，使用上零影響。(2) 跨 session 交接工具（`/dev:handoff`）小修：「雙向同步」措辭改成「兩端對齊」並講白它是「存檔時讀一次、載入時重建一次」兩個獨立動作、不是即時連動；老實標明它跟個人版 `wt:handoff` 目前一字不差、沒多功能；清理舊備份時加保險（不誤刪剛建的備份），並補一段「已知限制」：兩個視窗幾乎同時存檔可能互蓋（單人單視窗用不到）。要不要重裝：一般使用者不必。想拿交接工具那個防呆，因為它由安裝腳本部署到 `~/.claude/skills/`（不是 `/dev:init-claude` 部署到專案），需重跑安裝：clone 安裝者 `git pull && bash setup.sh`、一行安裝者重跑 `curl` 安裝指令（`/dev:init-claude upgrade` 不會更新它） |
 | **v7.0.0** | **大改版：把多角色審查交給 Claude Code 原生 Workflow**（breaking · 2026-06-01）——我們拿方法論自己反覆實測發現：那套「五階段固定流程」對「程式寫得對不對」其實沒幫上忙（六場對照測試，跟著走 vs 不跟著走結果一樣，但跟著走貴很多）。所以把流程改交給 Claude Code 原生的 Workflow 跑，新增 4 個指令（`/dev-prd` 需求探索 / `/dev-design` 架構設計 / `/dev-review` 審查 / `/dev-verify` 自我驗證），主規則檔（CLAUDE.md）瘦身約 42%（588→342 行）。整套變三層：① 改檔前的影響檢查（一定會跑，不管你用哪種方案）② Workflow 多角色審查（預設首選）③ 純文字規則（前兩者不能用時的退路）。方法論真正在扛事的兩個核心（改檔前想清楚連帶影響、重要事實先查證）保留下來，但誠實說明：它對「程式正確性」已實測沒加分，可能有價值的是「方便別人接手/稽核」這類人的層面（還沒量化證實）。⚠️ Workflow 需 Claude Code v2.1.154+ · 付費方案 · research preview；用不了就走純文字規則退路 |
 | **v6.5.0** | **新增 `dev:overview`：一鍵產生方法論的圖文介紹網頁**（2026-05-23）——給人看的、不是給 AI 看的。跑 `/dev:overview` 會生成一個離線可開的 HTML：30 秒看懂這方法論在做什麼、五階段流程圖、以及一排可展開的進階主題（含幾張說明圖）。右上角可切換亮/暗色（會記住你的選擇）。若已部署到專案，還會自動填入當前狀態（版本 / 已啟用功能）。隨安裝腳本一鍵裝到 `~/.claude/skills/dev:overview/` |

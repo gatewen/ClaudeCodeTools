@@ -174,44 +174,66 @@ sed "s|{{REPO_PATH}}|${REPO_PATH_VALUE}|g" "$SKILL_SOURCE" > "$SKILL_TARGET"
 echo "✅ init-claude.md 已部署到 ${SKILL_TARGET}"
 
 # --------------------------------------------------
-# 3.5 部署 dev:handoff Skill（配套 Skill · 跨 session 交接）
+# 3.4 遷移：移除 v7.0.x 舊版 colon-skill 形式
+#     v7.1.0 起 dev:handoff / dev:overview 改為 commands/dev/*.md（冒號由子資料夾合成 →
+#     磁碟零冒號 → 原生 Windows 相容）。舊版是冒號目錄 skill，需清除避免同名指令重複。
 # --------------------------------------------------
 
-echo "--- 部署 dev:handoff Skill ---"
+LEGACY_SKILLS_DIR="$HOME/.claude/skills"
+for old in "$LEGACY_SKILLS_DIR/dev:handoff" "$LEGACY_SKILLS_DIR/dev:overview"; do
+    if [ -d "$old" ]; then
+        rm -rf "$old"
+        echo "🧹 已移除舊版 skill：${old}（v7.1.0 起改用 command 形式）"
+    fi
+done
 
-SKILLS_DIR="$HOME/.claude/skills"
-HANDOFF_SKILL_SOURCE="$SOURCE_DIR/dev-closed-loop/skills/dev:handoff"
-HANDOFF_SKILL_TARGET="$SKILLS_DIR/dev:handoff"
+# --------------------------------------------------
+# 3.5 部署 dev:handoff（command shim + bundle · 跨 session 交接）
+#     shim  → ~/.claude/commands/dev/handoff.md（提供 /dev:handoff 冒號名 + 自動觸發）
+#     bundle → ~/.claude/dev-closed-loop/handoff/（commands/skills 之外，不註冊不污染）
+# --------------------------------------------------
 
-if [ ! -d "$HANDOFF_SKILL_SOURCE" ]; then
-    echo "❌ 找不到 dev:handoff Skill 源碼：${HANDOFF_SKILL_SOURCE}"
+echo "--- 部署 dev:handoff（command + bundle）---"
+
+BUNDLES_DIR="$HOME/.claude/dev-closed-loop"
+HANDOFF_SHIM_SOURCE="$SOURCE_DIR/dev-closed-loop/commands/dev/handoff.md"
+HANDOFF_SHIM_TARGET="$COMMANDS_DIR/dev/handoff.md"
+HANDOFF_BUNDLE_SOURCE="$SOURCE_DIR/dev-closed-loop/command-refs/handoff"
+HANDOFF_BUNDLE_TARGET="$BUNDLES_DIR/handoff"
+
+if [ ! -f "$HANDOFF_SHIM_SOURCE" ] || [ ! -d "$HANDOFF_BUNDLE_SOURCE" ]; then
+    echo "❌ 找不到 dev:handoff 源碼：${HANDOFF_SHIM_SOURCE} 或 ${HANDOFF_BUNDLE_SOURCE}"
     exit 1
 fi
 
-mkdir -p "$SKILLS_DIR"
-rm -rf "$HANDOFF_SKILL_TARGET"
-cp -r "$HANDOFF_SKILL_SOURCE" "$HANDOFF_SKILL_TARGET"
+mkdir -p "$BUNDLES_DIR"
+cp "$HANDOFF_SHIM_SOURCE" "$HANDOFF_SHIM_TARGET"
+rm -rf "$HANDOFF_BUNDLE_TARGET"
+cp -r "$HANDOFF_BUNDLE_SOURCE" "$HANDOFF_BUNDLE_TARGET"
 
-echo "✅ dev:handoff 已部署到 ${HANDOFF_SKILL_TARGET}"
+echo "✅ dev:handoff 已部署：shim → ${HANDOFF_SHIM_TARGET}，bundle → ${HANDOFF_BUNDLE_TARGET}"
 
 # --------------------------------------------------
-# 3.6 部署 dev:overview Skill（配套 Skill · 方法論視覺化介紹）
+# 3.6 部署 dev:overview（command shim + bundle · 方法論視覺化介紹）
 # --------------------------------------------------
 
-echo "--- 部署 dev:overview Skill ---"
+echo "--- 部署 dev:overview（command + bundle）---"
 
-OVERVIEW_SKILL_SOURCE="$SOURCE_DIR/dev-closed-loop/skills/dev:overview"
-OVERVIEW_SKILL_TARGET="$SKILLS_DIR/dev:overview"
+OVERVIEW_SHIM_SOURCE="$SOURCE_DIR/dev-closed-loop/commands/dev/overview.md"
+OVERVIEW_SHIM_TARGET="$COMMANDS_DIR/dev/overview.md"
+OVERVIEW_BUNDLE_SOURCE="$SOURCE_DIR/dev-closed-loop/command-refs/overview"
+OVERVIEW_BUNDLE_TARGET="$BUNDLES_DIR/overview"
 
-if [ ! -d "$OVERVIEW_SKILL_SOURCE" ]; then
-    echo "❌ 找不到 dev:overview Skill 源碼：${OVERVIEW_SKILL_SOURCE}"
+if [ ! -f "$OVERVIEW_SHIM_SOURCE" ] || [ ! -d "$OVERVIEW_BUNDLE_SOURCE" ]; then
+    echo "❌ 找不到 dev:overview 源碼：${OVERVIEW_SHIM_SOURCE} 或 ${OVERVIEW_BUNDLE_SOURCE}"
     exit 1
 fi
 
-rm -rf "$OVERVIEW_SKILL_TARGET"
-cp -r "$OVERVIEW_SKILL_SOURCE" "$OVERVIEW_SKILL_TARGET"
+cp "$OVERVIEW_SHIM_SOURCE" "$OVERVIEW_SHIM_TARGET"
+rm -rf "$OVERVIEW_BUNDLE_TARGET"
+cp -r "$OVERVIEW_BUNDLE_SOURCE" "$OVERVIEW_BUNDLE_TARGET"
 
-echo "✅ dev:overview 已部署到 ${OVERVIEW_SKILL_TARGET}"
+echo "✅ dev:overview 已部署：shim → ${OVERVIEW_SHIM_TARGET}，bundle → ${OVERVIEW_BUNDLE_TARGET}"
 
 # --------------------------------------------------
 # 3.7 部署 workflow 腳本（v7.0.0 · workflow-first 編排）
@@ -329,8 +351,8 @@ if $AGENT_OK; then
     echo "✅ Agent 專家庫完整（${AGENT_COUNT}/${#AGENT_FILES[@]}）"
 fi
 
-# 確認 dev:handoff Skill 完整
-HANDOFF_SKILL_FILES=(
+# 確認 dev:handoff 完整（shim + bundle）
+HANDOFF_BUNDLE_FILES=(
     "SKILL.md"
     "references/path-resolution.md"
     "references/conflict-resolution.md"
@@ -340,20 +362,24 @@ HANDOFF_SKILL_FILES=(
 )
 HANDOFF_OK=true
 HANDOFF_COUNT=0
-for f in "${HANDOFF_SKILL_FILES[@]}"; do
-    if [ -f "$HANDOFF_SKILL_TARGET/$f" ]; then
+if [ ! -f "$HANDOFF_SHIM_TARGET" ]; then
+    echo "❌ 缺少 dev:handoff shim：$HANDOFF_SHIM_TARGET"
+    HANDOFF_OK=false
+fi
+for f in "${HANDOFF_BUNDLE_FILES[@]}"; do
+    if [ -f "$HANDOFF_BUNDLE_TARGET/$f" ]; then
         HANDOFF_COUNT=$((HANDOFF_COUNT + 1))
     else
-        echo "❌ 缺少 dev:handoff 檔案：$f"
+        echo "❌ 缺少 dev:handoff bundle 檔案：$f"
         HANDOFF_OK=false
     fi
 done
 if $HANDOFF_OK; then
-    echo "✅ dev:handoff Skill 完整（${HANDOFF_COUNT}/${#HANDOFF_SKILL_FILES[@]}）"
+    echo "✅ dev:handoff 完整（shim + bundle ${HANDOFF_COUNT}/${#HANDOFF_BUNDLE_FILES[@]}）"
 fi
 
-# 確認 dev:overview Skill 完整
-OVERVIEW_SKILL_FILES=(
+# 確認 dev:overview 完整（shim + bundle）
+OVERVIEW_BUNDLE_FILES=(
     "SKILL.md"
     "references/content-spec.md"
     "references/source-mapping.md"
@@ -362,17 +388,28 @@ OVERVIEW_SKILL_FILES=(
 )
 OVERVIEW_OK=true
 OVERVIEW_COUNT=0
-for f in "${OVERVIEW_SKILL_FILES[@]}"; do
-    if [ -f "$OVERVIEW_SKILL_TARGET/$f" ]; then
+if [ ! -f "$OVERVIEW_SHIM_TARGET" ]; then
+    echo "❌ 缺少 dev:overview shim：$OVERVIEW_SHIM_TARGET"
+    OVERVIEW_OK=false
+fi
+for f in "${OVERVIEW_BUNDLE_FILES[@]}"; do
+    if [ -f "$OVERVIEW_BUNDLE_TARGET/$f" ]; then
         OVERVIEW_COUNT=$((OVERVIEW_COUNT + 1))
     else
-        echo "❌ 缺少 dev:overview 檔案：$f"
+        echo "❌ 缺少 dev:overview bundle 檔案：$f"
         OVERVIEW_OK=false
     fi
 done
 if $OVERVIEW_OK; then
-    echo "✅ dev:overview Skill 完整（${OVERVIEW_COUNT}/${#OVERVIEW_SKILL_FILES[@]}）"
+    echo "✅ dev:overview 完整（shim + bundle ${OVERVIEW_COUNT}/${#OVERVIEW_BUNDLE_FILES[@]}）"
 fi
+
+# 確認舊版 colon-skill 已清除（遷移驗證）
+for old in "$LEGACY_SKILLS_DIR/dev:handoff" "$LEGACY_SKILLS_DIR/dev:overview"; do
+    if [ -d "$old" ]; then
+        echo "⚠️  舊版 skill 仍存在（遷移未完成）：$old"
+    fi
+done
 
 # 確認 workflow 腳本完整（v7.0.0）
 WORKFLOW_OK=true
