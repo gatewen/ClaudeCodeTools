@@ -109,6 +109,7 @@ v6.x 系列在五階段之上加了三層擴充：
 - `.claudedocs/` 目錄必須維持完整結構，setup.sh 分三類驗證：核心 17/17（= 11 核心 + 5 examples + 1 `.claudedocs/README.md`）+ agents 9/9（= 8 agent prompt + 1 README）+ languages 7/7（= 6 語言指南 + 1 README）。
 - `dev-closed-loop/command-refs/handoff/` bundle 必須維持 6 檔結構（SKILL.md + 5 references），對應 shim 為 `dev-closed-loop/commands/dev/handoff.md`；setup.sh 部署 shim → `~/.claude/commands/dev/handoff.md`、bundle → `~/.claude/dev-closed-loop/handoff/`，由 test-setup-local.sh Check 5.5 驗證落地。⚠️ bundle 內 references 用相對路徑互引（靠 SKILL.md 自身位置解析），故 bundle 須整包同層部署、不可拆放 `~/.claude/commands/` 下（會被註冊成指令污染命名空間）。
 - `dev-closed-loop/command-refs/overview/` bundle 必須維持 5 檔結構（SKILL.md + 4 references：content-spec.md / source-mapping.md / visual-guide.md / template.html），對應 shim 為 `dev-closed-loop/commands/dev/overview.md`；setup.sh 部署 shim → `~/.claude/commands/dev/overview.md`、bundle → `~/.claude/dev-closed-loop/overview/`，由 test-setup-local.sh Check 5.6 驗證落地 + template.html placeholder 完整性 + dark mode CSS 存在。
+- **command shim frontmatter 規約**（`commands/dev/handoff.md`、`overview.md`）：(1) **不放顯式 `name:`**——指令名由路徑 `commands/dev/` 合成（`/dev:handoff`），顯式含冒號的 `name:` 曾致原生 Windows 不註冊（v7.1.0→v7.1.1 修）；(2) `description:` **必須用折疊塊 `>-`**（不可用單行純量）——值內含 `NOT for: ` 等「冒號+空格」在單行純量會被當 YAML mapping 致解析失敗。由 test-setup-local.sh Check 5.6c（frontmatter YAML 合法性）+ name-absent 斷言守門。
 - `init-claude.md` Skill 源碼中的 `{{REPO_PATH}}` 由 setup.sh 替換為實際路徑——不要寫死路徑。
 - 設計歷史文檔（`design/`）僅供參考，修改方法論時不要動這些檔案。
 - 更新方法論時，以 `CLAUDE_TEMPLATE.md` 為主（Claude 的執行依據），同步更新 `.claudedocs/` 對應文檔（人類的閱讀參考），兩者保持一致。

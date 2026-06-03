@@ -1,5 +1,4 @@
 ---
-name: dev:handoff
 description: >-
   Use when the user wants to save or load session state for cross-session
   handoff. Triggers include "/dev:handoff", "/dev:handoff save",

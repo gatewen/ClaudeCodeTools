@@ -1,6 +1,15 @@
 ---
-name: dev:overview
-description: Use when the user wants a visual / human-friendly overview of the dev-closed-loop methodology, especially as an onboarding aid for newcomers. Triggers include "/dev:overview", "/dev:overview gen", or phrases like "介紹方法論"、"閉環是什麼"、"方法論有什麼功能"、"給我看 overview"、"overview"、"介紹"、"幫我看一下這個方法論". Produces a self-contained HTML file with light/dark toggle, three-layer-architecture + workflow visual flow, advanced-mechanism collapsible sections, and current-deployment status (if deployed). NOT for: editing methodology content (that's manual editing of CLAUDE_TEMPLATE.md), deploying methodology (that's /dev:init-claude), cross-session handoff (that's /dev:handoff).
+description: >-
+  Use when the user wants a visual / human-friendly overview of the
+  dev-closed-loop methodology, especially as an onboarding aid for newcomers.
+  Triggers include "/dev:overview", "/dev:overview gen", or phrases like
+  "介紹方法論"、"閉環是什麼"、"方法論有什麼功能"、"給我看 overview"、"overview"、"介紹"、"幫我看一下這個方法論".
+  Produces a self-contained HTML file with light/dark toggle,
+  three-layer-architecture + workflow visual flow, advanced-mechanism
+  collapsible sections, and current-deployment status (if deployed).
+  NOT for: editing methodology content (that's manual editing of
+  CLAUDE_TEMPLATE.md), deploying methodology (that's /dev:init-claude),
+  cross-session handoff (that's /dev:handoff).
 ---
 
 # /dev:overview

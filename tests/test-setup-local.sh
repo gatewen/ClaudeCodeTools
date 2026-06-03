@@ -136,13 +136,13 @@ else
     FAIL=$((FAIL+1))
 fi
 
-# shim frontmatter name 正確（決定 /dev:handoff 冒號名）
+# shim 不應帶顯式 name（指令名由路徑 commands/dev/ 合成；顯式含冒號 name 曾致 Windows 不註冊）
 if [ -f "$HANDOFF_SHIM" ]; then
-    if grep -q "^name: dev:handoff$" "$HANDOFF_SHIM"; then
-        echo "  ✅ shim frontmatter name 正確"
-    else
-        echo "  ❌ shim frontmatter name 異常"
+    if grep -q "^name:" "$HANDOFF_SHIM"; then
+        echo "  ❌ shim 帶顯式 name 欄位（應移除，靠路徑合成 /dev:handoff）"
         FAIL=$((FAIL+1))
+    else
+        echo "  ✅ shim 無顯式 name（指令名靠路徑合成）"
     fi
 fi
 
@@ -203,13 +203,13 @@ if [ -f "$OVERVIEW_BUNDLE/references/template.html" ]; then
     fi
 fi
 
-# shim frontmatter name + 指向 bundle 契約
+# shim 不應帶顯式 name + 指向 bundle 契約
 if [ -f "$OVERVIEW_SHIM" ]; then
-    if grep -q "^name: dev:overview$" "$OVERVIEW_SHIM"; then
-        echo "  ✅ shim frontmatter name 正確"
-    else
-        echo "  ❌ shim frontmatter name 異常"
+    if grep -q "^name:" "$OVERVIEW_SHIM"; then
+        echo "  ❌ shim 帶顯式 name 欄位（應移除，靠路徑合成 /dev:overview）"
         FAIL=$((FAIL+1))
+    else
+        echo "  ✅ shim 無顯式 name（指令名靠路徑合成）"
     fi
     if grep -q "dev-closed-loop/overview/SKILL.md" "$OVERVIEW_SHIM"; then
         echo "  ✅ shim 正確指向 bundle SKILL.md"
@@ -244,6 +244,37 @@ if $MIGRATION_OK; then
     echo "  ✅ 舊版 colon-skill 已清除，command 形式保留"
 else
     FAIL=$((FAIL+1))
+fi
+
+# --------------------------------------------------
+# Check 5.6c: shim frontmatter 必須為合法 YAML（防 v7.1.0 overview 單行純量 ": " 致命回歸）
+#   根因：description 單行純量內含 "NOT for: " 冒號+空格 → YAML 解析失敗 → command 不註冊
+# --------------------------------------------------
+echo ""
+echo "Check 5.6c: command shim frontmatter YAML 合法性"
+if command -v python3 >/dev/null 2>&1 && python3 -c "import yaml" >/dev/null 2>&1; then
+    for shim in "$HANDOFF_SHIM" "$OVERVIEW_SHIM"; do
+        if [ -f "$shim" ]; then
+            if python3 - "$shim" <<'PY'
+import sys, re, yaml
+t = open(sys.argv[1], encoding='utf-8').read()
+m = re.match(r'^---\n(.*?)\n---\n', t, re.S)
+try:
+    ok = m is not None and isinstance(yaml.safe_load(m.group(1)), dict)
+except Exception:
+    ok = False
+sys.exit(0 if ok else 1)
+PY
+            then
+                echo "  ✅ $(basename "$shim") frontmatter 合法 YAML"
+            else
+                echo "  ❌ $(basename "$shim") frontmatter YAML 解析失敗"
+                FAIL=$((FAIL+1))
+            fi
+        fi
+    done
+else
+    echo "  ⏭️  跳過（無 python3 / pyyaml；frontmatter YAML 驗證需要）"
 fi
 
 # --------------------------------------------------
