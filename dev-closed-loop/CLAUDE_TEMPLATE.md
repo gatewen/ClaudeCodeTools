@@ -310,7 +310,7 @@ workflow 不可用（免費方案 / < v2.1.154 / headless / preview 未啟用）
 `.claudedocs/` 含核心文檔、Agent 素材庫、語言指南。`.claude/workflows/` 含預製 workflow 腳本。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
 
 <!--
-closed-loop v7.1.1
+closed-loop v7.1.2
 
 部署說明：
 1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄，CLAUDE_TEMPLATE.md 改名為 CLAUDE.md
@@ -318,6 +318,7 @@ closed-loop v7.1.1
 3. 替換所有 {{PLACEHOLDER}}：{{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LANGUAGE_SKILL_SECTION}}
 4. 部署 hooks（deploy-hooks.sh）：承重核的 always-on 觸發層
 
+版本：v7.1.2（2026-06-15）· dev:handoff 健壯性強化（外部評估報告驅動，三段 workflow + 對抗驗證收斂）：(1) path-resolution ENCODE 修底線編碼 `sed 's|[/_]|-|g'`（修含底線專案 fallback 落孤兒目錄）+ 移除「與系統編碼一致」假斷言 + load glob 存在性 fallback + home/root `pwd -P` 守衛。(2) 誠實校正 byte-equivalent 自述（5 references 中 4 個僅 namespace 等價、conflict-resolution.md 已分化故非 byte-equivalent；「TaskList 雙向同步」→「兩端對齊」）。(3) load 端 Step 6 重建前 freshness 按需 git 查證（分辨真未做 vs 已做未提交、防破壞性覆蓋；advisory+fail-open、零時戳解析、排除 .claude-loop churn）。(4) conflict 對疑似外部來源 deterministic cp 保守備份（閉合偽判內部跳過備份缺口）。(5) 新增 /compact↔/dev:handoff 時機表 + 耐久源澄清。tests 7/7 全綠 + 異源 cross-source review（C/D pass、零 blocker）。誠實邊界：本輪為「修漏+不說謊+一條小紀律」，非新增量化驗證的能力；「時戳新≠內容新」僅 1 筆實證、不升格承重核（待 ≥3 樣本）；wt:handoff 個人版同病須另同步。承重核三層架構不變、phase 規則不變。
 版本：v7.1.1（2026-06-03）· 修 v7.1.0 兩個 command shim 在原生 Windows 不註冊的 bug（對抗驗證 19-agent workflow 定位）：(1) overview.md frontmatter 單行純量 description 內含「NOT for: 」冒號+空格 → YAML 解析失敗 → command 被丟棄；改 `>-` 折疊塊。(2) 兩 shim 移除冗餘且值含冒號的顯式 `name:`（指令名應由路徑 commands/dev/ 合成，比照唯一在 Windows 正常的 init-claude）。tests 加 Check 5.6c（frontmatter YAML 合法性）+ name-absent 斷言守門回歸。誠實邊界：overview-YAML 為已證偽必修缺陷；name-colon 對 handoff 為「對齊 proven-working init-claude」的假設修法，未能在 mac 直接證實 Windows 因果；git pull 是否因 colon-path 刪除在 Windows abort 仍需實機確認。承重核三層架構不變、phase 規則不變。v7.1.0 原始變更詳見下方歷史。
 版本（v7.1.0）：dev:handoff / dev:overview 改 command 形式（原生 Windows 相容）：兩配套指令原為冒號目錄個人 skill（`~/.claude/skills/dev:handoff`、`dev:overview`），`:` 在 Windows NTFS 為非法字元 → repo 原生 Windows clone/checkout 失敗（僅 WSL/ext4 可）。比照 `/dev:init-claude` 的 command 機制改修：shim `commands/dev/handoff.md`+`overview.md`（冒號名由子資料夾 `dev/` 合成、磁碟零冒號）+ bundle（原 SKILL.md + references 原樣）移到 `~/.claude/dev-closed-loop/`（commands/skills 之外、不註冊不污染命名空間），shim 指向 bundle SKILL.md（內容 byte-equivalent 不變、保住與 wt:handoff 等價）。setup.sh 加舊 colon-skill 遷移清理 + 驗證。指令名/用法零變更（仍 `/dev:handoff`、`/dev:overview`）。純散佈結構 + 平台相容性變更：承重核三層架構（L1 hook / L2 workflow / L3 文字層）不變、phase 規則不變、無破壞性方法論變更。
 
