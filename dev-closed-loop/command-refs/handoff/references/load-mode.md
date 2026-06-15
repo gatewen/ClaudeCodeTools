@@ -24,6 +24,8 @@
 
 讀取後**不要逐字回傳給使用者**，只做摘要。
 
+> handoff 一律以磁碟（git / MEMORY / handoff.md / TaskList）為準、不依賴對話 context；故即使本 session 經歷過 /compact，load 重建仍從耐久層取材。
+
 ### Step 2：時間落差計算
 
 從 handoff.md 的「最後更新」時戳對比系統當前時間：

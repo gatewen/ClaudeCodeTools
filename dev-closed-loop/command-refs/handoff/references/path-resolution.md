@@ -20,19 +20,19 @@
 
 ## cwd 編碼規則
 
-把 cwd 全路徑的 `/` 全部替換成 `-`（含開頭那個 `/`）：
+把 cwd 全路徑的 `/` 與 `_` 全部替換成 `-`（含開頭那個 `/`）：
 
 ```bash
-encoded=$(echo "$PWD" | sed 's|/|-|g')
+encoded=$(echo "$PWD" | sed 's|[/_]|-|g')
 ```
 
 範例：
 | cwd | encoded |
 |-----|---------|
 | `/Users/gatewenlee/Ctrl` | `-Users-gatewenlee-Ctrl` |
-| `/Users/gatewenlee/WorkProjects/UK_Wrok` | `-Users-gatewenlee-WorkProjects-UK_Wrok` |
+| `/Users/gatewenlee/WorkProjects/UK_Wrok` | `-Users-gatewenlee-WorkProjects-UK-Wrok` |
 
-與系統 auto-memory 編碼一致（可比對 `~/.claude/projects/` 下既有目錄驗證）。
+⚠️ 須同時轉 `/` 與 `_`；此為 best-effort 啟發式，權威來源是 `~/.claude/projects/` 既有目錄的實際存在性——load 時若拼出的 slug 目錄不存在，應 glob `~/.claude/projects/` 找實際匹配再採用，避免落孤兒目錄。
 
 ## 最終路徑表
 
@@ -86,8 +86,9 @@ logs    → ~/.claude/projects/-some-new-project/logs/YYYY-MM-DD.md
 
 | 情境 | 處理 |
 |------|------|
-| cwd 是 `$HOME` 或 `/` | 警告「不適合在 home/root 跑 handoff」，要求使用者 cd 到專案再試，**中止流程** |
-| fallback 路徑的目錄不存在 | 自動 `mkdir -p ~/.claude/projects/<cwd-encoded>/logs` |
+| cwd 是 `$HOME` 或 `/` | 警告「不適合在 home/root 跑 handoff」，要求使用者 cd 到專案再試，**中止流程**。**比對前先正規化**（解 symlink / 去尾斜線），別純字串比：`real=$(cd "$PWD" && pwd -P)`，再以 `real` 與 `$HOME` / `/` 比對。⚠️ 注意 shell 運算子優先序——`[ ] || [ ]` 後接 `&& abort` 會讓 `&&` 只綁到第二個 test，須加括號或拆寫：`if [ "$real" = "$HOME" ] \|\| [ "$real" = "/" ]; then abort; fi`（或 `{ [ ... ] \|\| [ ... ]; } && abort`） |
+| fallback slug 目錄不存在（load 模式） | 編碼為 best-effort，可能與既有目錄不符；**load 時先枚舉 `~/.claude/projects/` 比對**（glob 找實際匹配的 slug），找到就採用實際目錄，避免讀到孤兒目錄 |
+| fallback 路徑的目錄不存在（save 模式） | 自動 `mkdir -p ~/.claude/projects/<cwd-encoded>/logs`（save 才建立，不在 load 誤觸發 mkdir） |
 | `.claude-loop/` 存在但無 handoff.md（規範存在但首次使用） | handoff_dir = `<cwd>/.claude-loop`，視為首次寫入並建立檔案 |
 | CLAUDE.md 規範路徑但該路徑無法寫入（權限/不存在） | 警告、列印實際錯誤、問 user 是否 fallback 到 [3] |
 | 同時有 `.claude-loop/` 和 CLAUDE.md 規範另一處 | 以 `.claude-loop/` 為準（[1] 優先序高於 [2]），但回報時提及衝突 |

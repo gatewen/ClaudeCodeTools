@@ -13,14 +13,24 @@ description: >-
 
 # dev:handoff
 
-> **本 skill 隨 dev-closed-loop 方法論部署**。⚠️ 當前與 `wt:handoff` **逐字等價（byte-equivalent，僅 namespace 差異）**——存在的唯一理由是「隨方法論散佈節奏同步更新」，**功能零增量**。預留的 methodology-aware 增強（phase 進度、升格機制 status 等）**尚未實作**（Phase 2 觸發後才會分化）。
-> 兩者並存無衝突；在分化前，用哪個都一樣。閉環方法論使用者建議用本 skill。
+> **本 skill 隨 dev-closed-loop 方法論部署**。核心協議（三層分工 / cwd 路徑判定 / auto_merge / 兩端對齊）與 `wt:handoff` **同源**；5 個 references 中 4 個僅 namespace 改名等價，唯 `references/conflict-resolution.md` **已分化**（dev 端含 backup 清理守衛 + 「假設單人單寫」限制 section），故**非 byte-equivalent**。存在的理由是「隨方法論散佈節奏同步更新」。預留的 methodology-aware 增強（phase 進度、升格機制 status 等）**尚未實作**（Phase 2 觸發後才會進一步分化）。
+> 兩者並存無衝突；核心行為一致，閉環方法論使用者建議用本 skill。
 
 ## 用途
 
 跨 session 工作交接專用 skill。Context 上限時打 `/dev:handoff` 寫狀態，開新 session 時打 `/dev:handoff load` 接續。
 
 **所有路徑跟著當前 cwd 走**，不寫死任何專案。詳見 `references/path-resolution.md`。
+
+## /compact 與 /dev:handoff 使用時機
+
+| 情境 | 動作 | 為什麼 |
+|---|---|---|
+| context 快滿、續做同一任務 | 先 /compact | session 內壓縮、續同一條線 |
+| 要換 session / 收工 | /dev:handoff save | 結晶到磁碟跨 session 接續 |
+| context 逼近 auto-compact 上限且本 session 有重要決策/未解問題 | 先 handoff 再 compact | handoff 先吃完整 context；compact 後只能吃摘要 |
+
+進行中/已完成工作以 TaskList 為主幹（耐久、compact 不失真）；但「決策的為什麼」與「未解問題」來源是對話分析，compact 後可能僅剩摘要——這正是 auto-compact 前該先 handoff 的理由。
 
 ## 三層資訊分工
 
