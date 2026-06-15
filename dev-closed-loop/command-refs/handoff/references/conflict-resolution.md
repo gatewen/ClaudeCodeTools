@@ -23,8 +23,10 @@
 | `## 起手式建議` 區段 |
 
 判定：
-- **≥ 3 個特徵** → 內部來源（dev:handoff 寫的）
+- **≥ 3 個特徵** → 疑似內部來源（dev:handoff 寫的）
 - **< 3 個特徵** → 外部來源（手動 / 其他工具）
+
+⚠️ **此判據是字串啟發式，非確定性 marker**：上述特徵全是 dev:handoff 模板的可見 markdown 字串（標題 / 欄位 / 區段名），外部手寫只要沿用同樣欄位名（≥ 3 個）就會被偽判為內部。目前**沒有任何 machine-readable marker**（HTML 註解 / uuid 等權威標記）能確定區分內外。因此「≥ 3 個特徵」只能視為「疑似內部」，**不可據此跳過備份直接覆蓋**——見 Step 3「保守備份」分支。
 
 ## Step 2：時戳分級（僅內部來源）
 
@@ -42,7 +44,11 @@
 讀 <handoff_dir>/handoff.md
   ├─ 不存在 → mode = first_write，直接寫，結束
   │
-  ├─ 內部來源
+  ├─ 疑似內部來源（≥ 3 字串特徵，但無確定性 marker）
+  │    ├─ Step 0: 保守 backup（deterministic cp，無條件先做）
+  │    │          理由：marker 缺失，無法確定真內部，疑似外部模仿
+  │    │          也走這支 → 先 cp 保命，覆蓋才不可逆地丟資料。
+  │    │          cp 是確定性動作，非 LLM heuristic 判斷。
   │    ├─ < 1h   → mode = silent_overwrite
   │    ├─ 1–24h → mode = auto_merge
   │    └─ > 24h  → mode = silent_overwrite_stale
@@ -54,6 +60,8 @@
        │    └─ 失敗 → mode = external_overwrite
        └─ Step C: backup 清理（保留最近 5 個）
 ```
+
+> **為何疑似內部也要備份**：來源偵測只有字串啟發式、沒有確定性 marker（見 Step 1 ⚠️）。外部手寫沿用模板欄位名就會被偽判為內部，舊邏輯會跳過備份直接覆蓋/合併、撞時戳分級即安靜覆蓋、不可復原。改採「**缺確定性 marker 時一律保守備份**」：用一次確定性的 `cp` 換掉不可逆的資料遺失風險，代價極小。若未來 PR 在模板埋入 machine-readable marker，可將「marker 存在=確定內部、可安全跳過備份」收窄回原行為。
 
 回傳 `mode` 給 save-mode.md 的 Step 4a 使用。
 
@@ -73,6 +81,34 @@
 | 起手式建議 | **覆蓋** | 依新進行中工作重新生成 |
 
 實作：Read 既存 + 對話分析 + 模板，由 Claude 直接 Write 結果（不需 script）。
+
+## 疑似內部來源的保守備份（Step 0）
+
+來源偵測沒有確定性 marker（見 Step 1 ⚠️），「疑似內部」可能其實是外部手寫沿用了模板欄位名。為避免偽判內部 → 跳過備份 → 撞時戳分級安靜覆蓋 → 不可復原，**疑似內部來源在進入時戳分級（silent_overwrite / auto_merge / silent_overwrite_stale）之前，無條件先做一次確定性備份**：
+
+```bash
+ts=$(date +%Y%m%d-%H%M)
+cp "<handoff_dir>/handoff.md" "<handoff_dir>/handoff.md.internal-$ts"
+```
+
+備份檔命名：`handoff.md.internal-YYYYMMDD-HHMM`（與外部來源的 `external-` 前綴分開，互不干擾各自的清理 glob）。
+
+- **`cp` 是確定性動作、非 LLM heuristic 判斷**——不依賴「字串命中=內部」這種不可靠推論，只依賴「檔案存在就先複製一份」這個無爭議事實。
+- 備份完成後，再依時戳分級決定 mode 並覆蓋/合併。即使後續分級判斷有誤，原檔已在 backup。
+- 安靜執行，不通知 user（與外部備份一致，不把選擇推給 user）。
+
+> 備註：本步驟刻意**不**做並行 session 競態偵測/告警。無鎖的 LLM spec 對「另一 session 是否正在寫」給不出可靠保證，硬寫告警會變成無法兌現的承諾。並行限制仍歸「已知限制」section 誠實揭露。
+
+### Backup 清理（疑似內部）
+
+與外部來源對稱，保留最近 5 個 `internal-` backup（守衛會額外保住本次剛建的 `$ts`，故磁碟上最多 6 個——刻意多留一個的安全偏差）：
+
+```bash
+# 守衛：先排除本次剛建的 $ts backup（避免時鐘偏移／ls 排序異常誤刪剛建檔），再從其餘歷史檔刪掉超出最近 5 個者
+ls -t "<handoff_dir>"/handoff.md.internal-* 2>/dev/null | grep -v "internal-${ts}\$" | tail -n +6 | xargs rm -f 2>/dev/null
+```
+
+glob 限定 `handoff.md.internal-*`，不波及 `external-` 系列；排在備份+寫入完成之後執行。
 
 ## 外部來源處理
 
@@ -113,9 +149,9 @@ ls -t "<handoff_dir>"/handoff.md.external-* 2>/dev/null | grep -v "external-${ts
 | mode | 訊息 |
 |------|------|
 | `first_write` | `✅ handoff 已建立（首次）` |
-| `silent_overwrite` | `✅ handoff 已更新（同 session 第 N 次）` |
-| `auto_merge` | `🔄 偵測到 X 小時前的交接，已合併（已完成累積 N 項、決策保留 Y 項）` |
-| `silent_overwrite_stale` | `✅ handoff 已覆蓋（上次交接 N 天前，歷史在 logs/）` |
+| `silent_overwrite` | `✅ handoff 已更新（同 session 第 N 次，原檔已保守備份至 handoff.md.internal-YYYYMMDD-HHMM）` |
+| `auto_merge` | `🔄 偵測到 X 小時前的交接，已合併（已完成累積 N 項、決策保留 Y 項，原檔已保守備份至 handoff.md.internal-YYYYMMDD-HHMM）` |
+| `silent_overwrite_stale` | `✅ handoff 已覆蓋（上次交接 N 天前，歷史在 logs/，原檔已保守備份至 handoff.md.internal-YYYYMMDD-HHMM）` |
 | `external_merge` | `🔀 偵測到外部 handoff，已合併內容，原檔備份至 handoff.md.external-YYYYMMDD-HHMM` |
 | `external_overwrite` | `⚠️ 偵測到外部 handoff 但無法解析，已寫入新版，原檔備份至 handoff.md.external-YYYYMMDD-HHMM` |
 
@@ -135,7 +171,8 @@ ls -t "<handoff_dir>"/handoff.md.external-* 2>/dev/null | grep -v "external-${ts
 
 - ❌ 把選擇權推給 user（除非真衝突）
 - ❌ 沒備份就覆蓋外部來源
-- ❌ 把覆蓋當預設行為而不偵測（即使內部來源也要先判時戳）
+- ❌ 把「≥ 3 字串特徵」當確定性 marker、據此跳過備份直接覆蓋（無確定性 marker → 疑似內部也要先保守 cp 備份）
+- ❌ 把覆蓋當預設行為而不偵測（即使疑似內部來源也要先判時戳、且先備份）
 - ❌ 合併時丟失 user 手寫備註
 - ❌ Backup 堆到無限多（必須清理）
 - ❌ 問 user「要不要合併」「要不要備份」這類本該自動的問題

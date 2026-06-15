@@ -68,6 +68,8 @@
 
 handoff「進行中工作」是 **file state**；Claude Code 的 TaskList 是 **runtime state**。新 session 開啟時 TaskList 為空，必須由本步驟把 file state 還原為 runtime state，否則任務追蹤會失效、後續工作無法 TaskUpdate 標記、下次 save 時對話分析會跟實際狀態漂移。
 
+> **重建前必做 · freshness 查證（強制紀律）**：若 cwd 是 git repo，重建每個「進行中」task 前，先 `git status --short`、並對該項涉及檔跑 `git diff`，確認是「**真未做**」還是「**已做未提交**」；若已做則轉 R-2 審查 / commit，**不要**無腦照 handoff 字面重建（會破壞性覆蓋已完成工作）。觸發只在實質程式碼變更時提示，排除 `.claude-loop/` 這類 session churn。advisory-only、fail-open：非 git repo 或 git 不可用就跳過此查證、不擋流程。
+
 #### 流程
 
 1. 呼叫 `TaskList` 檢查當前狀態
