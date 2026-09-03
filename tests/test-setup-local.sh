@@ -56,8 +56,6 @@ fi
 
 # --------------------------------------------------
 # Check 4: REPO_PATH placeholder 替換為 repo 路徑（不是 cache）
-# 注意：skill 源碼文檔本來就有 mention cache 路徑（解釋 upgrade 模式），不可全文 grep
-# 只能驗證「{{REPO_PATH}} 替換結果為 repo 路徑」這個關鍵契約
 # --------------------------------------------------
 echo ""
 echo "Check 4: skill 中 REPO_PATH 被替換為 repo（不是 cache）"
@@ -83,7 +81,7 @@ else
 fi
 
 # --------------------------------------------------
-# Check 5.5: dev:handoff 部署（command shim + bundle · v7.1.0 改 command 形式）
+# Check 5.5: dev:handoff 部署（command shim + bundle）
 #   shim   → $HOME/.claude/commands/dev/handoff.md（提供 /dev:handoff 冒號名）
 #   bundle → $HOME/.claude/dev-closed-loop/handoff/（commands/skills 之外）
 # --------------------------------------------------
@@ -155,107 +153,55 @@ else
 fi
 
 # --------------------------------------------------
-# Check 5.6: dev:overview 部署（command shim + bundle · v7.1.0 改 command 形式）
+# Check 5.6: v8 起 dev:overview 不再部署，且舊安裝殘留被清除
+#   模擬 v7.0.x（冒號目錄 skill）與 v7.1.x（command shim + bundle）殘留，再跑一次 setup
 # --------------------------------------------------
 echo ""
-echo "Check 5.6: dev:overview command shim + bundle 部署"
-OVERVIEW_SHIM="$TEST_HOME/.claude/commands/dev/overview.md"
-OVERVIEW_BUNDLE="$TEST_HOME/.claude/dev-closed-loop/overview"
-OVERVIEW_EXPECTED=(
-    "SKILL.md"
-    "references/content-spec.md"
-    "references/source-mapping.md"
-    "references/visual-guide.md"
-    "references/template.html"
-)
-if [ -f "$OVERVIEW_SHIM" ]; then
-    echo "  ✅ command shim 部署落地：commands/dev/overview.md"
-else
-    echo "  ❌ 缺少 command shim：commands/dev/overview.md"
-    FAIL=$((FAIL+1))
-fi
-OVERVIEW_MISSING=0
-for f in "${OVERVIEW_EXPECTED[@]}"; do
-    if [ ! -f "$OVERVIEW_BUNDLE/$f" ]; then
-        echo "  ❌ 缺少 bundle 檔案：$f"
-        OVERVIEW_MISSING=$((OVERVIEW_MISSING+1))
-    fi
-done
-if [ $OVERVIEW_MISSING -eq 0 ]; then
-    echo "  ✅ dev:overview bundle 5 個檔案全部部署落地"
-else
-    FAIL=$((FAIL+1))
-fi
-
-# 內容驗證：template.html 含關鍵 placeholder + light/dark CSS variables
-if [ -f "$OVERVIEW_BUNDLE/references/template.html" ]; then
-    if grep -q "{{DEPLOYMENT_VERSION}}" "$OVERVIEW_BUNDLE/references/template.html"; then
-        echo "  ✅ template.html 含 placeholder（未在部署時誤替換）"
-    else
-        echo "  ❌ template.html 缺少 {{DEPLOYMENT_VERSION}} placeholder"
-        FAIL=$((FAIL+1))
-    fi
-    if grep -q '\[data-theme="dark"\]' "$OVERVIEW_BUNDLE/references/template.html"; then
-        echo "  ✅ template.html 含 light/dark mode CSS"
-    else
-        echo "  ❌ template.html 缺少 dark mode CSS"
-        FAIL=$((FAIL+1))
-    fi
-fi
-
-# shim 不應帶顯式 name + 指向 bundle 契約
-if [ -f "$OVERVIEW_SHIM" ]; then
-    if grep -q "^name:" "$OVERVIEW_SHIM"; then
-        echo "  ❌ shim 帶顯式 name 欄位（應移除，靠路徑合成 /dev:overview）"
-        FAIL=$((FAIL+1))
-    else
-        echo "  ✅ shim 無顯式 name（指令名靠路徑合成）"
-    fi
-    if grep -q "dev-closed-loop/overview/SKILL.md" "$OVERVIEW_SHIM"; then
-        echo "  ✅ shim 正確指向 bundle SKILL.md"
-    else
-        echo "  ❌ shim 未指向 bundle SKILL.md"
-        FAIL=$((FAIL+1))
-    fi
-fi
-
-# --------------------------------------------------
-# Check 5.6b: 升級遷移——舊版 colon-skill 目錄被清除（v7.1.0）
-#   模擬已安裝舊版（冒號目錄 skill），再跑一次 setup，驗證舊目錄被移除且 command 形式保留
-# --------------------------------------------------
-echo ""
-echo "Check 5.6b: 舊版 colon-skill 遷移清理"
+echo "Check 5.6: 舊版殘留遷移清理（colon-skill + dev:overview）"
 mkdir -p "$TEST_HOME/.claude/skills/dev:handoff" "$TEST_HOME/.claude/skills/dev:overview"
 echo "stale" > "$TEST_HOME/.claude/skills/dev:handoff/SKILL.md"
 echo "stale" > "$TEST_HOME/.claude/skills/dev:overview/SKILL.md"
+mkdir -p "$TEST_HOME/.claude/dev-closed-loop/overview/references"
+echo "stale" > "$TEST_HOME/.claude/dev-closed-loop/overview/SKILL.md"
+echo "stale" > "$TEST_HOME/.claude/commands/dev/overview.md"
 HOME="$TEST_HOME" bash "$REPO_ROOT/setup.sh" >/dev/null 2>&1 || true
 MIGRATION_OK=true
-for old in "$TEST_HOME/.claude/skills/dev:handoff" "$TEST_HOME/.claude/skills/dev:overview"; do
+for old in "$TEST_HOME/.claude/skills/dev:handoff" "$TEST_HOME/.claude/skills/dev:overview" "$TEST_HOME/.claude/dev-closed-loop/overview"; do
     if [ -d "$old" ]; then
-        echo "  ❌ 舊版 skill 未被清除：$old"
+        echo "  ❌ 舊版殘留未被清除：$old"
         MIGRATION_OK=false
     fi
 done
+if [ -f "$TEST_HOME/.claude/commands/dev/overview.md" ]; then
+    echo "  ❌ 舊版 /dev:overview command shim 未被清除"
+    MIGRATION_OK=false
+fi
 if [ ! -f "$TEST_HOME/.claude/commands/dev/handoff.md" ]; then
-    echo "  ❌ 遷移後 command shim 遺失"
+    echo "  ❌ 遷移後 handoff command shim 遺失"
     MIGRATION_OK=false
 fi
 if $MIGRATION_OK; then
-    echo "  ✅ 舊版 colon-skill 已清除，command 形式保留"
+    echo "  ✅ 舊版 colon-skill 與 dev:overview 已清除，handoff command 形式保留"
 else
     FAIL=$((FAIL+1))
 fi
 
+# 源碼側：repo 不該再含 overview 源碼
+if [ -e "$REPO_ROOT/dev-closed-loop/commands/dev/overview.md" ] || [ -d "$REPO_ROOT/dev-closed-loop/command-refs/overview" ]; then
+    echo "  ❌ repo 仍含 dev:overview 源碼（v8 已移除）"
+    FAIL=$((FAIL+1))
+else
+    echo "  ✅ repo 無 dev:overview 源碼"
+fi
+
 # --------------------------------------------------
-# Check 5.6c: shim frontmatter 必須為合法 YAML（防 v7.1.0 overview 單行純量 ": " 致命回歸）
-#   根因：description 單行純量內含 "NOT for: " 冒號+空格 → YAML 解析失敗 → command 不註冊
+# Check 5.6c: shim frontmatter 必須為合法 YAML（防單行純量 ": " 致命回歸）
 # --------------------------------------------------
 echo ""
 echo "Check 5.6c: command shim frontmatter YAML 合法性"
 if command -v python3 >/dev/null 2>&1 && python3 -c "import yaml" >/dev/null 2>&1; then
-    for shim in "$HANDOFF_SHIM" "$OVERVIEW_SHIM"; do
-        if [ -f "$shim" ]; then
-            if python3 - "$shim" <<'PY'
+    if [ -f "$HANDOFF_SHIM" ]; then
+        if python3 - "$HANDOFF_SHIM" <<'PY'
 import sys, re, yaml
 t = open(sys.argv[1], encoding='utf-8').read()
 m = re.match(r'^---\n(.*?)\n---\n', t, re.S)
@@ -265,20 +211,19 @@ except Exception:
     ok = False
 sys.exit(0 if ok else 1)
 PY
-            then
-                echo "  ✅ $(basename "$shim") frontmatter 合法 YAML"
-            else
-                echo "  ❌ $(basename "$shim") frontmatter YAML 解析失敗"
-                FAIL=$((FAIL+1))
-            fi
+        then
+            echo "  ✅ handoff.md frontmatter 合法 YAML"
+        else
+            echo "  ❌ handoff.md frontmatter YAML 解析失敗"
+            FAIL=$((FAIL+1))
         fi
-    done
+    fi
 else
     echo "  ⏭️  跳過（無 python3 / pyyaml；frontmatter YAML 驗證需要）"
 fi
 
 # --------------------------------------------------
-# Check 5.7: workflow 腳本部署到 $HOME/.claude/workflows/（v7.0.0）
+# Check 5.7: workflow 腳本部署到 $HOME/.claude/workflows/
 # --------------------------------------------------
 echo ""
 echo "Check 5.7: workflow 腳本部署"
@@ -315,6 +260,33 @@ if [ $WORKFLOW_BAD_META -eq 0 ]; then
     echo "  ✅ 所有 workflow 腳本 meta.name 正確"
 else
     FAIL=$((FAIL+1))
+fi
+
+# 語法驗證：node 可用時 --check 每個腳本。
+#   Workflow 執行環境會把腳本包進 async 函式（所以腳本可用頂層 return 與 await），
+#   直接 --check 會報 Illegal return；這裡仿照包一層再檢查，並把 export 拿掉。
+if command -v node >/dev/null 2>&1; then
+    WORKFLOW_SYNTAX_BAD=0
+    WF_TMP="$(make_tmpdir)"
+    for f in "${WORKFLOW_EXPECTED[@]}"; do
+        wrapped="$WF_TMP/${f%.js}.wrapped.js"
+        {
+            printf 'async function __wf(agent, parallel, pipeline, phase, args) {\n'
+            sed 's/^export const meta/const meta/' "$REPO_ROOT/dev-closed-loop/workflows/$f"
+            printf '\n}\n'
+        } > "$wrapped"
+        if ! node --check "$wrapped" >/dev/null 2>&1; then
+            echo "  ❌ $f 語法錯誤（node --check，已包 async 函式）"
+            WORKFLOW_SYNTAX_BAD=$((WORKFLOW_SYNTAX_BAD+1))
+        fi
+    done
+    if [ $WORKFLOW_SYNTAX_BAD -eq 0 ]; then
+        echo "  ✅ 所有 workflow 腳本通過 node --check"
+    else
+        FAIL=$((FAIL+1))
+    fi
+else
+    echo "  ⏭️  跳過 node --check（無 node）"
 fi
 
 # --------------------------------------------------

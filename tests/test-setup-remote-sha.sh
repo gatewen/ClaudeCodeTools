@@ -52,12 +52,22 @@ EOF
 
 # --------------------------------------------------
 # 跑 setup.sh（stdin 模式，env var 指向本地 file://）
+#   Windows Git Bash 的 curl 是原生 exe，看不懂 MSYS 路徑 /tmp/...；
+#   有 cygpath 時轉成 file:///C:/... 形式。
 # --------------------------------------------------
+to_file_url() {
+    if command -v cygpath >/dev/null 2>&1; then
+        printf 'file:///%s' "$(cygpath -m "$1")"
+    else
+        printf 'file://%s' "$1"
+    fi
+}
+
 echo "Running setup.sh with mocked URLs..."
 output=$(
     HOME="$TEST_HOME" \
-    SETUP_TARBALL_URL="file://$FAKE_TARBALL" \
-    SETUP_SHA_URL="file://$FAKE_SHA_FILE" \
+    SETUP_TARBALL_URL="$(to_file_url "$FAKE_TARBALL")" \
+    SETUP_SHA_URL="$(to_file_url "$FAKE_SHA_FILE")" \
     bash < "$REPO_ROOT/setup.sh" 2>&1 || true
 )
 

@@ -1,6 +1,6 @@
 #!/bin/bash
-# AI-ClaudeCode 安裝腳本
-# 用途：部署 Skill 到 ~/.claude/commands/ 並檢查依賴
+# ClaudeCodeTools 安裝腳本
+# 用途：部署 /dev:init-claude 與 /dev:handoff 到 ~/.claude/，部署 workflow 腳本，檢查可選工具
 # 使用：
 #   遠端安裝：curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh | bash
 #   本地安裝：cd ClaudeCodeTools && bash setup.sh
@@ -104,7 +104,7 @@ SKILL_SOURCE="$SOURCE_DIR/dev-closed-loop/skill/init-claude.md"
 REPO_PATH_VALUE="$SOURCE_DIR"
 
 echo "================================================"
-echo "  AI-ClaudeCode 安裝腳本"
+echo "  ClaudeCodeTools 安裝腳本"
 echo "================================================"
 echo ""
 if [ "$INSTALL_MODE" = "local" ]; then
@@ -135,25 +135,20 @@ fi
 # 確認部署子目錄存在
 mkdir -p "$COMMANDS_DIR/dev"
 
-# --------------------------------------------------
-# 2. 檢查可選增強工具（v5.14.0 後閉環自帶 Agent 專家庫，全部 optional）
-# --------------------------------------------------
-
-echo "--- 可選增強工具檢查（缺少不影響閉環核心運作）---"
-
-# SuperClaude（可選 — sc:* 系列分析/設計指令）
-if ls "$HOME/.claude/commands/sc/" >/dev/null 2>&1 && [ "$(ls -A "$HOME/.claude/commands/sc/" 2>/dev/null)" ]; then
-    echo "✅ SuperClaude 已安裝"
+# JSON 工具：hook 部署合併 settings.json 需要 python3 / python / jq 任一
+if command -v python3 >/dev/null 2>&1 && python3 -c "import json" >/dev/null 2>&1; then
+    echo "✅ python3 可用（settings.json 合併）"
+elif command -v jq >/dev/null 2>&1; then
+    echo "✅ jq 可用（settings.json 合併；python3 不可用時的後援）"
 else
-    echo "ℹ️  SuperClaude 未安裝（可選 — 安裝後可用 sc:* 系列分析指令）"
+    echo "⚠️  python3 與 jq 皆不可用：/dev:init-claude 部署 hook 時將無法合併 settings.json，請安裝其一"
 fi
 
-# Superpowers（可選 — superpowers:* 系列 TDD/debugging skills）
-if grep -q "superpowers@claude-plugins-official" "$HOME/.claude/plugins/installed_plugins.json" 2>/dev/null; then
-    echo "✅ Superpowers 已安裝"
-else
-    echo "ℹ️  Superpowers 未安裝（可選 — 安裝後可用 superpowers:* 系列 skills）"
-fi
+# --------------------------------------------------
+# 2. 檢查可選增強工具（全部 optional，缺少不影響方法論運作）
+# --------------------------------------------------
+
+echo "--- 可選增強工具檢查（缺少不影響核心運作）---"
 
 # claude-mem（可選 — 跨時間語義記憶）
 if grep -rqw "claude-mem" "$HOME/.claude/plugins/" 2>/dev/null || grep -qw "claude-mem" "$HOME/.claude/.mcp.json" 2>/dev/null; then
@@ -174,18 +169,24 @@ sed "s|{{REPO_PATH}}|${REPO_PATH_VALUE}|g" "$SKILL_SOURCE" > "$SKILL_TARGET"
 echo "✅ init-claude.md 已部署到 ${SKILL_TARGET}"
 
 # --------------------------------------------------
-# 3.4 遷移：移除 v7.0.x 舊版 colon-skill 形式
-#     v7.1.0 起 dev:handoff / dev:overview 改為 commands/dev/*.md（冒號由子資料夾合成 →
-#     磁碟零冒號 → 原生 Windows 相容）。舊版是冒號目錄 skill，需清除避免同名指令重複。
+# 3.4 遷移：清除舊版安裝殘留
+#     v7.0.x：dev:handoff / dev:overview 為冒號目錄 skill（Windows NTFS 不合法）
+#     v7.1.x：dev:overview 為 command shim + bundle
+#     v8.0.0：dev:overview 整個移除（內容已與方法論脫節，git 歷史可還原）
 # --------------------------------------------------
 
 LEGACY_SKILLS_DIR="$HOME/.claude/skills"
-for old in "$LEGACY_SKILLS_DIR/dev:handoff" "$LEGACY_SKILLS_DIR/dev:overview"; do
+BUNDLES_DIR="$HOME/.claude/dev-closed-loop"
+for old in "$LEGACY_SKILLS_DIR/dev:handoff" "$LEGACY_SKILLS_DIR/dev:overview" "$BUNDLES_DIR/overview"; do
     if [ -d "$old" ]; then
         rm -rf "$old"
-        echo "🧹 已移除舊版 skill：${old}（v7.1.0 起改用 command 形式）"
+        echo "🧹 已移除舊版：${old}"
     fi
 done
+if [ -f "$COMMANDS_DIR/dev/overview.md" ]; then
+    rm -f "$COMMANDS_DIR/dev/overview.md"
+    echo "🧹 已移除舊版 command：${COMMANDS_DIR}/dev/overview.md（v8 起 /dev:overview 停用）"
+fi
 
 # --------------------------------------------------
 # 3.5 部署 dev:handoff（command shim + bundle · 跨 session 交接）
@@ -195,7 +196,6 @@ done
 
 echo "--- 部署 dev:handoff（command + bundle）---"
 
-BUNDLES_DIR="$HOME/.claude/dev-closed-loop"
 HANDOFF_SHIM_SOURCE="$SOURCE_DIR/dev-closed-loop/commands/dev/handoff.md"
 HANDOFF_SHIM_TARGET="$COMMANDS_DIR/dev/handoff.md"
 HANDOFF_BUNDLE_SOURCE="$SOURCE_DIR/dev-closed-loop/command-refs/handoff"
@@ -214,29 +214,7 @@ cp -r "$HANDOFF_BUNDLE_SOURCE" "$HANDOFF_BUNDLE_TARGET"
 echo "✅ dev:handoff 已部署：shim → ${HANDOFF_SHIM_TARGET}，bundle → ${HANDOFF_BUNDLE_TARGET}"
 
 # --------------------------------------------------
-# 3.6 部署 dev:overview（command shim + bundle · 方法論視覺化介紹）
-# --------------------------------------------------
-
-echo "--- 部署 dev:overview（command + bundle）---"
-
-OVERVIEW_SHIM_SOURCE="$SOURCE_DIR/dev-closed-loop/commands/dev/overview.md"
-OVERVIEW_SHIM_TARGET="$COMMANDS_DIR/dev/overview.md"
-OVERVIEW_BUNDLE_SOURCE="$SOURCE_DIR/dev-closed-loop/command-refs/overview"
-OVERVIEW_BUNDLE_TARGET="$BUNDLES_DIR/overview"
-
-if [ ! -f "$OVERVIEW_SHIM_SOURCE" ] || [ ! -d "$OVERVIEW_BUNDLE_SOURCE" ]; then
-    echo "❌ 找不到 dev:overview 源碼：${OVERVIEW_SHIM_SOURCE} 或 ${OVERVIEW_BUNDLE_SOURCE}"
-    exit 1
-fi
-
-cp "$OVERVIEW_SHIM_SOURCE" "$OVERVIEW_SHIM_TARGET"
-rm -rf "$OVERVIEW_BUNDLE_TARGET"
-cp -r "$OVERVIEW_BUNDLE_SOURCE" "$OVERVIEW_BUNDLE_TARGET"
-
-echo "✅ dev:overview 已部署：shim → ${OVERVIEW_SHIM_TARGET}，bundle → ${OVERVIEW_BUNDLE_TARGET}"
-
-# --------------------------------------------------
-# 3.7 部署 workflow 腳本（v7.0.0 · workflow-first 編排）
+# 3.7 部署 workflow 腳本（可選編排層）
 # --------------------------------------------------
 
 echo "--- 部署 workflow 腳本（dev-prd / dev-design / dev-review / dev-verify）---"
@@ -260,7 +238,7 @@ for wf in "${WORKFLOW_FILES[@]}"; do
 done
 
 echo "✅ 4 個 workflow 腳本已部署到 ${WORKFLOWS_DIR}（/dev-prd /dev-design /dev-review /dev-verify）"
-echo "   ⚠️ workflow 需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用時方法論走退化路徑（CLAUDE.md Section 14）"
+echo "   ⚠️ workflow 需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用時 CLAUDE.md 有退化做法"
 
 # --------------------------------------------------
 # 4. 驗證
@@ -293,25 +271,13 @@ else
     exit 1
 fi
 
-# 確認 .claudedocs 完整
+# 確認 .claudedocs 完整（v8：5 檔）
 EXPECTED_FILES=(
     "README.md"
     "concepts/閉環核心理念.md"
-    "concepts/方法論運作指標.md"
-    "process/五階段閉環流程.md"
-    "process/層級擴展.md"
-    "process/跨Session持久化.md"
-    "process/介面契約與變更管理.md"
-    "process/實戰驗證流程.md"
-    "standards/Agent使用指南.md"
     "standards/Git工作流.md"
     "standards/產出物格式.md"
     "records/問題追蹤.md"
-    "examples/01-think-before-coding.md"
-    "examples/02-simplicity-first.md"
-    "examples/03-surgical-changes.md"
-    "examples/04-goal-driven-execution.md"
-    "examples/05-cross-artifact-mismatch.md"
 )
 DOCS_DIR="${SOURCE_DIR}/dev-closed-loop/.claudedocs"
 DOCS_OK=true
@@ -322,33 +288,7 @@ for f in "${EXPECTED_FILES[@]}"; do
     fi
 done
 if $DOCS_OK; then
-    echo "✅ .claudedocs 完整（17/17）"
-fi
-
-# 確認 agents 目錄完整
-AGENT_FILES=(
-    "agents/README.md"
-    "agents/requirements-analyst.md"
-    "agents/architect.md"
-    "agents/design-reviewer.md"
-    "agents/implementer.md"
-    "agents/code-reviewer.md"
-    "agents/security-reviewer.md"
-    "agents/tester.md"
-    "agents/verifier.md"
-)
-AGENT_OK=true
-AGENT_COUNT=0
-for f in "${AGENT_FILES[@]}"; do
-    if [ -f "$DOCS_DIR/$f" ]; then
-        AGENT_COUNT=$((AGENT_COUNT + 1))
-    else
-        echo "❌ 缺少 Agent：.claudedocs/$f"
-        AGENT_OK=false
-    fi
-done
-if $AGENT_OK; then
-    echo "✅ Agent 專家庫完整（${AGENT_COUNT}/${#AGENT_FILES[@]}）"
+    echo "✅ .claudedocs 完整（${#EXPECTED_FILES[@]}/${#EXPECTED_FILES[@]}）"
 fi
 
 # 確認 dev:handoff 完整（shim + bundle）
@@ -378,40 +318,14 @@ if $HANDOFF_OK; then
     echo "✅ dev:handoff 完整（shim + bundle ${HANDOFF_COUNT}/${#HANDOFF_BUNDLE_FILES[@]}）"
 fi
 
-# 確認 dev:overview 完整（shim + bundle）
-OVERVIEW_BUNDLE_FILES=(
-    "SKILL.md"
-    "references/content-spec.md"
-    "references/source-mapping.md"
-    "references/visual-guide.md"
-    "references/template.html"
-)
-OVERVIEW_OK=true
-OVERVIEW_COUNT=0
-if [ ! -f "$OVERVIEW_SHIM_TARGET" ]; then
-    echo "❌ 缺少 dev:overview shim：$OVERVIEW_SHIM_TARGET"
-    OVERVIEW_OK=false
-fi
-for f in "${OVERVIEW_BUNDLE_FILES[@]}"; do
-    if [ -f "$OVERVIEW_BUNDLE_TARGET/$f" ]; then
-        OVERVIEW_COUNT=$((OVERVIEW_COUNT + 1))
-    else
-        echo "❌ 缺少 dev:overview bundle 檔案：$f"
-        OVERVIEW_OK=false
-    fi
-done
-if $OVERVIEW_OK; then
-    echo "✅ dev:overview 完整（shim + bundle ${OVERVIEW_COUNT}/${#OVERVIEW_BUNDLE_FILES[@]}）"
-fi
-
-# 確認舊版 colon-skill 已清除（遷移驗證）
-for old in "$LEGACY_SKILLS_DIR/dev:handoff" "$LEGACY_SKILLS_DIR/dev:overview"; do
+# 確認舊版殘留已清除（遷移驗證）
+for old in "$LEGACY_SKILLS_DIR/dev:handoff" "$LEGACY_SKILLS_DIR/dev:overview" "$BUNDLES_DIR/overview"; do
     if [ -d "$old" ]; then
-        echo "⚠️  舊版 skill 仍存在（遷移未完成）：$old"
+        echo "⚠️  舊版殘留仍存在（遷移未完成）：$old"
     fi
 done
 
-# 確認 workflow 腳本完整（v7.0.0）
+# 確認 workflow 腳本完整
 WORKFLOW_OK=true
 WORKFLOW_COUNT=0
 for wf in "${WORKFLOW_FILES[@]}"; do
@@ -426,40 +340,11 @@ if $WORKFLOW_OK; then
     echo "✅ workflow 腳本完整（${WORKFLOW_COUNT}/${#WORKFLOW_FILES[@]}）"
 fi
 
-# 確認 languages 目錄完整
-LANG_FILES=(
-    "languages/README.md"
-    "languages/typescript.md"
-    "languages/python.md"
-    "languages/go.md"
-    "languages/rust.md"
-    "languages/csharp.md"
-    "languages/bash.md"
-)
-LANG_OK=true
-LANG_COUNT=0
-LANG_TOTAL=${#LANG_FILES[@]}
-for f in "${LANG_FILES[@]}"; do
-    if [ -f "$DOCS_DIR/$f" ]; then
-        LANG_COUNT=$((LANG_COUNT + 1))
-    else
-        LANG_OK=false
-    fi
-done
-if $LANG_OK; then
-    echo "✅ 語言 Skills 完整（${LANG_COUNT}/${LANG_TOTAL}）"
-else
-    echo "⚠️  語言 Skills 不完整（${LANG_COUNT}/${LANG_TOTAL}）— 不影響核心功能"
-fi
-
-# 確認 hooks 完整（6 個 hook + 1 個共用 helpers）
+# 確認 hooks 完整（3 個 hook + 1 個共用 helpers）
 HOOK_FILES=(
     "hooks/impact-analysis-guard.sh"
+    "hooks/causal-chain-reset.sh"
     "hooks/incremental-lint.sh"
-    "hooks/delegation-tracker.sh"
-    "hooks/delegation-gate.sh"
-    "hooks/prompt-understanding-guard.sh"
-    "hooks/learning-log-checker.sh"
     "hooks/_helpers.sh"
 )
 HOOKS_OK=true
@@ -498,11 +383,10 @@ echo "================================================"
 echo "  ✅ 安裝完成"
 echo "================================================"
 echo ""
-echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署閉環（v7.0.0 · workflow-first）。"
-echo "也可以用 /dev:handoff save / load 跨 session 交接（功能等價 wt:handoff）。"
-echo "或執行 /dev:overview 產生方法論視覺化介紹 HTML（給人類看）。"
-echo "大型/PRD/架構設計可用 workflow：/dev-prd /dev-design /dev-review /dev-verify"
-echo "  （需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用則走退化路徑）"
+echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署方法論（v8.0.0）。"
+echo "跨 session 交接：/dev:handoff save / load"
+echo "大型任務或需求未定時可用 workflow：/dev-prd /dev-design /dev-review /dev-verify"
+echo "  （需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用則走 CLAUDE.md 內的退化做法）"
 echo ""
 if [ "$INSTALL_MODE" = "local" ]; then
     echo "更新流程：git pull → bash setup.sh"

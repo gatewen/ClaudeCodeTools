@@ -1,6 +1,6 @@
 export const meta = {
   name: 'dev-design',
-  description: '架構設計 workflow（取代閉環 Phase 1+1b）：多方案 judge-panel → 對抗驗證砍缺陷 → 設計規格（含 BC-x）。承重核（因果鏈+事實求證）注入每個 agent。',
+  description: '架構設計 workflow：探索現況 → 三個視角各提一個方案 → 每案派 skeptic 找缺陷 → 評審團排名 → 綜合成設計規格（含 BC-x）。因果鏈與事實求證要求注入每個 agent。',
   phases: [
     { title: 'Explore' },
     { title: 'Propose' },

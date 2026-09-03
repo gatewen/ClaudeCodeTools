@@ -1,20 +1,23 @@
 # ClaudeCodeTools
 
-> 中文版本 → [README.md](README.md) · 30-min quick start → [dev-closed-loop/QUICKSTART.md](dev-closed-loop/QUICKSTART.md)
+Make Claude Code think about two things before it touches existing code: who depends on this, and is what I believe actually true.
 
-**Personal Claude Code harness distilled from real trial-and-error.** A closed-loop methodology + 6 enforced Hooks + deployable Skill, aimed at making Claude write more reliable code.
+> **Positioning**: a personal tool the author holds themself to. The repo is public and you are welcome to fork, learn from, or use it, but it is not promoted and comes with no support commitment. MIT licensed (see `LICENSE`).
+>
+> **中文版** → [README.md](README.md)
 
-> **Positioning**: This is a personal hardcore-discipline toolkit, not a team-grade framework. Tasks under 50 lines / single-file get a fast-pass; only medium and large tasks go through the full closed loop.
+## What it is
 
-## The problem
+A CLAUDE.md template of about 125 lines, three hooks, and a one-command deployer. Once deployed into a project, every Claude Code session follows these rules:
 
-[Andrej Karpathy's observation](https://x.com/karpathy/status/2015883857489522876):
+1. **Size the task before acting.** A one-line fix is just done. A new module gets a short design first, then implementation, then a check that every behavior contract has code and a test.
+2. **Write down what a change touches before making it.** A hook blocks the first edit to an existing source file in each turn and asks Claude to write 2-4 lines of impact analysis first. You see the reasoning before the edit lands.
+3. **Check evidence before asserting facts about the environment.** Literal evidence, a counter-example check, and a shared-value check, all learned from a real misjudgment incident.
+4. **Push back only in five situations**, otherwise do as asked.
 
-> "The models make wrong assumptions on your behalf and just run along with them without checking. They overcomplicate code and APIs. They sometimes change/remove comments and code they don't sufficiently understand as side effects."
+## What it is not
 
-Two deeper issues this toolkit addresses:
-- **Cross-artifact mismatch**: Design says 5 errors, impl handles 3, tests cover 2 — traditional Code Review can't catch this
-- **Cognitive premise misjudgment**: Asserting facts based on a single clue (the "GS misjudgment" incident, see issue tracker #003-#005)
+Versions 3 through 7 were a five-role pipeline (architect, implementer, reviewer, tester, verifier). Six controlled experiments in May 2026 showed that, for a frontier model, the pipeline gave zero correctness gain at up to 7x the cost. v8 removes it and keeps only what the experiments pointed to: write the contract down, get one review from a context that did not see the original reasoning, and the four disciplines above. Details in `dev-closed-loop/.claudedocs/concepts/閉環核心理念.md` (Chinese).
 
 ## Install
 
@@ -22,102 +25,47 @@ Two deeper issues this toolkit addresses:
 curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh | bash
 ```
 
-Downloads to `~/.claude/cache/ClaudeCodeTools/` and deploys the `/dev:init-claude` Skill.
+Or clone and run `bash setup.sh`.
 
-> Developers can also: `git clone https://github.com/gatewen/ClaudeCodeTools.git && cd ClaudeCodeTools && bash setup.sh`
+| Platform | Support | Notes |
+|----------|---------|-------|
+| macOS | primary | Full smoke suite runs before each release |
+| Linux | best effort | Should work; no Linux-specific tests |
+| Windows | Git Bash | Repo clones on native Windows since v7.1. Hooks and tests verified under Git Bash. Needs `jq` or a working `python3` (the Microsoft Store stub does not count). Native cmd / PowerShell unsupported |
 
-### Platform support
+Dependencies: `bash 3.2+`, `git`, `curl`, plus one of `jq` or `python3`.
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **macOS** | ✅ Primary | Dev / test environment. Full smoke suite (`bash tests/run.sh`) runs before each release |
-| **Linux** | ⚠️ Best effort | Most things should work; no Linux-specific tests. Open issues for any breakage |
-| **Windows** | ❌ Not directly supported | Use WSL2 (treated as Linux). Native cmd / PowerShell will not work |
-
-Runtime deps: `bash 3.2+` (macOS default) / `python3` / `git` / `curl`.
-
-### 🛡️ About `curl | bash`
-
-Piping directly to bash means **no chance to review the script first**. If you don't fully trust this repo, prefer one of:
-
-**Option A (recommended): inspect first**
-
-```bash
-curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh -o /tmp/setup.sh
-less /tmp/setup.sh
-bash /tmp/setup.sh
-```
-
-**Option B: clone, then install locally**
-
-```bash
-git clone https://github.com/gatewen/ClaudeCodeTools.git
-cd ClaudeCodeTools
-bash setup.sh
-```
-
-**Option C: pin to a specific commit SHA**
-
-```bash
-SHA=$(curl -sL https://api.github.com/repos/gatewen/ClaudeCodeTools/commits/main | grep '"sha"' | head -1 | sed 's/.*"sha": *"//;s/".*//')
-curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/${SHA}/setup.sh | bash
-```
-
-> `setup.sh` is ~350 lines. It downloads a tarball, extracts to `~/.claude/cache/`, copies one markdown file to `~/.claude/commands/dev/`, and prints validation results. It does **not** modify PATH, write cron jobs, or install additional software.
+If you would rather not pipe to bash, download `setup.sh`, read it, then run it. It downloads a tarball to `~/.claude/cache/`, copies two markdown commands to `~/.claude/commands/dev/`, one bundle to `~/.claude/dev-closed-loop/`, four workflow scripts to `~/.claude/workflows/`, and prints a verification report. It does not touch PATH, cron, or install software.
 
 ## Use
 
-In any project directory, open Claude Code and run:
+In a project directory, run `/dev:init-claude`. It detects language, framework, test and build commands, asks you to confirm, and deploys CLAUDE.md, five docs, and three hooks.
 
-```
-/dev:init-claude
-```
+| Command | Purpose |
+|---------|---------|
+| `/dev:init-claude status` | Deployment status, version, leftover v7 files |
+| `/dev:init-claude upgrade` | Fetch latest from GitHub and upgrade |
+| `/dev:init-claude uninstall` | Remove from project |
+| `/dev:handoff save` / `load` | Cross-session handoff |
+| `/dev-prd` `/dev-design` `/dev-review` `/dev-verify` | Multi-agent workflows (need Claude Code v2.1.154+, paid plan, research preview; CLAUDE.md has a fallback when unavailable) |
 
-It auto-detects your project (language / framework / test commands), confirms with you, then deploys the closed-loop CLAUDE.md + supporting docs into your repo. Claude will then automatically follow the closed loop on every session.
+## Hooks
 
-| Command | Action |
-|---------|--------|
-| `/dev:init-claude status` | Check deployment status, version, health |
-| `/dev:init-claude upgrade` | Pull latest version from GitHub, one-click upgrade |
-| `/dev:init-claude uninstall` | Remove closed loop from project |
+| Hook | Trigger | Behavior |
+|------|---------|----------|
+| `impact-analysis-guard.sh` | First edit to an existing source file per turn | Blocks once, prints a filename-based rough search as a starting point, asks for 2-4 lines of impact analysis, passes on retry. Ignores new files and md / json / yaml. Only intercepts Write / Edit, not Bash |
+| `causal-chain-reset.sh` | Every user prompt | Clears this session's markers so each turn re-analyzes. Never blocks |
+| `incremental-lint.sh` | After edit | Per-file lint for js / ts, py, go. Other languages not covered |
 
-## How the methodology works
+Hooks are reminders, not guarantees. They guarantee a pause and a visible analysis; correctness still comes from the model and your review. Hooks do not depend on python.
 
-Five-phase closed loop runs automatically per feature:
+## Version
 
-```
-Phase 1  Architect         Write design spec, define interfaces and test strategy
-Phase 2  Programmer        Implement to spec; auto-runs code-simplifier after
-Phase 3  Code Reviewer     Line-by-line check that code matches spec
-Phase 4  Tester            Run tests, validate performance
-Phase 5  Verifier          Cross-reference all 4 phases for contradictions
-```
+Current: **v8.0.0** (2026-09-03). Full history in [dev-closed-loop/README.md](dev-closed-loop/README.md) (Chinese).
 
-Phase 5 is the unique part — it uses an ID system (BC-x for boundary conditions, EH-x for error handling, R-x for review findings) to precisely trace whether design ↔ code ↔ tests ↔ review reports are all aligned. Traditional CI/CD checks each phase independently; this checks across phases.
-
-The v6.x series adds three layers on top:
-- **Behavioral philosophy** (v6.0/v6.1): Karpathy's 4 principles as cross-cutting self-checks (Think / Simplicity / Surgical / Goal) + Claude push-back duty in 5 scenarios (small/medium/large tasks)
-- **Cognitive verification** (v5.23 + v6.2): fact-claim gate + challenge circuit-breaker + reverse fact-challenge protocol
-- **Health metrics + anti-pattern examples** (v6.2/v6.3): 3 indicators with 3-zone thresholds + 5 anti-pattern reference cases
-
-## Six automation Hooks
-
-Deployed alongside, these enforce discipline at the harness level (not relying on Claude's self-discipline):
-
-- **Pre-edit guard** (file modifications): blocks edits without prior understanding-confirmation + impact-chain analysis
-- **Pre-delegation gate** (Agent calls): blocks modifying Agent calls without expected-impact statement
-- **Understanding flag** (user prompt): detects modify intent, sets flag for the pre-edit guard
-- **Incremental lint** (post-edit): runs project lint on changed files
-- **Delegation tracker** (post-delegation): records Agent calls automatically
-- **Learning-log reminder** (post-commit): checks that learning-log.md is included in commits
-
-## Learn more
-
-- **30-min onboarding**: [dev-closed-loop/QUICKSTART.md](dev-closed-loop/QUICKSTART.md)
-- **Full methodology**: [dev-closed-loop/.claudedocs/](dev-closed-loop/.claudedocs/)
-- **Design history (v3 → v6.x)**: [dev-closed-loop/design/](dev-closed-loop/design/)
-- **Health metrics doc**: [dev-closed-loop/.claudedocs/concepts/方法論運作指標.md](dev-closed-loop/.claudedocs/concepts/方法論運作指標.md)
-
-## License
-
-MIT
+| Version | Summary |
+|---------|---------|
+| **v8.0.0** | Slim-down: template 344 → 134 lines, deployed docs 33 → 5, hooks 6 → 3, `/dev:overview` removed. Impact hook narrowed to existing source files, messages via stderr, no python dependency |
+| v7.x | Workflow-first refactor, Windows compatibility, handoff hardening |
+| v6.x | Karpathy principles, cognitive verification, KPIs, examples |
+| v5.x | Five-phase loop, hook system, agent library, auto-update |
