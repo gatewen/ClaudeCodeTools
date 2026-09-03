@@ -30,9 +30,9 @@ bash tests/run.sh
 | `test-cross-file-consistency.sh` | 文檔數量 / 依賴敘述 / 版本宣告跨檔不一致（codex 揭露的最大歷史失敗類）|
 | `test-setup-local.sh` | 本地模式 happy path：偵測 / 部署 / placeholder / 路徑 / check-version 抽查 |
 | `test-setup-remote-sha.sh` | 階段 2-2 回歸防線：`.commit-sha` 寫入 + 完整 40 字元 |
-| `test-deploy-hooks.sh` | hook 複製 / +x / settings.json 6 keywords / 合法 JSON / **幂等** |
+| `test-deploy-hooks.sh` | hook 複製 / +x / settings.json 5 keywords / 合法 JSON / **幂等** / 舊版 hook 配置遷移清除 |
 | `test-hooks-isolation.sh` | 階段 2-1 回歸防線：marker project-scoped、跨專案不污染 |
-| `test-hooks-exit-codes.sh` | 核心 3 hook（impact-analysis / delegation-gate / incremental-lint）行為契約 |
+| `test-hooks-exit-codes.sh` | 核心 3 hook（impact-analysis / causal-chain-reset / incremental-lint）行為契約：副檔名白名單、新檔放行、session 隔離、每輪重置 |
 | `test-bash-compat.sh` | macOS bash 3.2 全形括號陷阱 / `/bin/bash` syntax / shebang / bash 4+ 功能禁用 |
 
 ## 加新測試

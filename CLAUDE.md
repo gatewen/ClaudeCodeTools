@@ -23,7 +23,7 @@ Claude Code 工具鏈集中管理。包含自建的軟體品質方法論「開�
   - 對照範例 `examples/` 5 檔（v6.3.0 K-07 新增）
   - 語言指南 `languages/` 7 檔（6 語言指南：TS/Py/Go/Rust/C#/Bash + 1 個 README 索引）
   - `.claudedocs/README.md` 1 檔（總目錄導覽）
-- `dev-closed-loop/hooks/` — 6 個 Hook 腳本（修改前統一守衛 / 委派前因果鏈閘門 / 理解確認旗標 / 增量驗證 / 委派追蹤 / 學習日誌提醒），由 `deploy-hooks.sh` 一鍵部署到 `~/.claude/hooks/`。
+- `dev-closed-loop/hooks/` — 5 個 Hook 腳本（修改前因果鏈守衛 / 因果鏈重置 / 增量驗證 / 委派追蹤 / 學習日誌提醒）+ `_helpers.sh` 共用層（project key、session key、jq→sed 的 JSON 欄位解析），由 `deploy-hooks.sh` 一鍵部署到專案 `.claude/hooks/`。v8 起因果鏈守衛只擋既有原始碼檔的首次修改（不擋新檔 / md / json / yaml），阻擋訊息走 stderr；舊版 `delegation-gate.sh`、`prompt-understanding-guard.sh` 已移除，deploy-hooks.sh 會清除舊部署的殘留項目。
 - `dev-closed-loop/workflows/` — 4 個 workflow 腳本（v7.0.0 引入）：`dev-prd.js`（PRD 探索→候選→挑戰）/ `dev-design.js`（架構多方案 judge-panel + 對抗驗證，取代舊 Phase 1+1b）/ `dev-review.js`（parallel 多視角審查 + 異源 skeptic 驗證，取代舊 Phase 3）/ `dev-verify.js`（正向 adversarial + 反向遍歷輕量 verifier，取代舊 Phase 5）。由 setup.sh 部署到 `~/.claude/workflows/` → `/dev-prd` `/dev-design` `/dev-review` `/dev-verify`（連字號 slash，非冒號）。承重核（因果鏈+事實求證）內嵌於各 agent prompt。⚠️ 需 Claude Code v2.1.154+ · 付費 · research preview。
 - `dev-closed-loop/deploy-hooks.sh` — Hook 部署腳本（複製 + 合併 settings.json + 驗證）。`dev-closed-loop/check-version.sh` — 版本檢查工具（快取/部署/遠端一次比完）。
 - `dev-closed-loop/design/` — 設計歷史（01-11）：v3 原始構想 → v4 重寫 → v5 認知驗證層 → v6 Karpathy 行為哲學 + 對照範例 + KPI。僅供參考。

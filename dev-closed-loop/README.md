@@ -35,7 +35,7 @@
 | `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
 | `commands/dev/handoff.md` + `command-refs/handoff/` | `/dev:handoff` command shim + bundle（跨 session 交接，等價 `wt:handoff`）。shim → `~/.claude/commands/dev/handoff.md`、bundle → `~/.claude/dev-closed-loop/handoff/`（冒號名靠子資料夾合成，磁碟零冒號 → Windows 相容） |
 | `commands/dev/overview.md` + `command-refs/overview/` | `/dev:overview` command shim + bundle（方法論視覺化介紹 HTML）。shim → `~/.claude/commands/dev/overview.md`、bundle → `~/.claude/dev-closed-loop/overview/` |
-| `hooks/` | 6 個 Hook 腳本（修改守衛、委派前閘門、理解確認、增量 lint、委派追蹤、學習日誌提醒） |
+| `hooks/` | 5 個 Hook 腳本（修改前因果鏈守衛、因果鏈重置、增量 lint、委派追蹤、學習日誌提醒）+ `_helpers.sh` 共用層 |
 | `deploy-hooks.sh` | 一鍵部署 Hook 系統（複製腳本 + 合併 settings.json + 驗證） |
 | `check-version.sh` | 版本檢查工具（快取/部署/遠端一次比完，輸出 key=value） |
 

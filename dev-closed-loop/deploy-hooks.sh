@@ -5,8 +5,9 @@
 # 範例：bash /path/to/ClaudeCodeTools/dev-closed-loop/deploy-hooks.sh /path/to/ClaudeCodeTools
 #
 # 執行內容：
-#   1. 複製 6 個 Hook 腳本到 .claude/hooks/
-#   2. 合併 Hook 配置到 .claude/settings.json（保留既有設定）
+#   1. 複製 5 個 Hook 腳本 + _helpers.sh 到 .claude/hooks/；清除舊版已移除的 hook
+#   2. 合併 Hook 配置到 .claude/settings.json（保留既有設定；移除指向已刪腳本的舊項目）
+#      合併工具：python3 → python → jq（任一可用即可）
 #   3. 驗證部署結果
 
 set -euo pipefail
@@ -29,17 +30,22 @@ if [[ ! -d "$HOOKS_SOURCE" ]]; then
 fi
 
 # ──────────────────────────────────────────
-# 1. 複製 Hook 腳本
+# 1. 複製 Hook 腳本 + 清除舊版 hook
 # ──────────────────────────────────────────
 mkdir -p .claude/hooks
 
 HOOK_FILES=(
   "impact-analysis-guard.sh"
+  "causal-chain-reset.sh"
   "incremental-lint.sh"
   "delegation-tracker.sh"
+  "learning-log-checker.sh"
+)
+
+# v8 移除的 hook（部署時順手清掉，避免 settings.json 指向不存在的腳本）
+LEGACY_HOOKS=(
   "delegation-gate.sh"
   "prompt-understanding-guard.sh"
-  "learning-log-checker.sh"
 )
 
 COPY_COUNT=0
@@ -59,6 +65,13 @@ if [[ -f "${HOOKS_SOURCE}/_helpers.sh" ]]; then
   chmod +x ".claude/hooks/_helpers.sh"
 fi
 
+for f in "${LEGACY_HOOKS[@]}"; do
+  if [[ -f ".claude/hooks/$f" ]]; then
+    rm -f ".claude/hooks/$f"
+    echo "🧹 已移除舊版 hook：.claude/hooks/$f"
+  fi
+done
+
 echo "📋 Hook 腳本：${COPY_COUNT}/${#HOOK_FILES[@]} 已複製（+ _helpers.sh 共用層）"
 
 # ──────────────────────────────────────────
@@ -66,13 +79,12 @@ echo "📋 Hook 腳本：${COPY_COUNT}/${#HOOK_FILES[@]} 已複製（+ _helpers.
 # ──────────────────────────────────────────
 SETTINGS_FILE=".claude/settings.json"
 
-# 合併用的 Python 腳本（幂等：已存在的 hook 不重複新增）
+# 合併用的 Python 腳本（幂等：已存在的 hook 不重複新增；舊版 hook 項目移除）
 MERGE_SCRIPT='
 import json, sys, os
 
 settings_path = sys.argv[1]
 
-# 讀取或建立設定
 if os.path.exists(settings_path):
     with open(settings_path) as f:
         cfg = json.load(f)
@@ -81,55 +93,34 @@ else:
 
 hooks = cfg.setdefault("hooks", {})
 
-# PreToolUse：修改前統一守衛（雙閘門阻擋）
-pre_hooks = hooks.setdefault("PreToolUse", [])
-guard_entry = {
-    "matcher": "Write|Edit|MultiEdit",
-    "hooks": [{"type": "command", "command": "bash .claude/hooks/impact-analysis-guard.sh"}]
-}
-if not any("impact-analysis-guard" in str(h) for h in pre_hooks):
-    pre_hooks.append(guard_entry)
+# 移除 v8 已刪除 hook 的舊項目
+LEGACY = ("delegation-gate", "prompt-understanding-guard")
+for ev in list(hooks.keys()):
+    hooks[ev] = [e for e in hooks[ev] if not any(k in str(e) for k in LEGACY)]
+    if not hooks[ev]:
+        del hooks[ev]
 
-# PreToolUse：委派前因果鏈閘門
-delegation_gate_entry = {
-    "matcher": "Agent",
-    "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-gate.sh"}]
-}
-if not any("delegation-gate" in str(h) for h in pre_hooks):
-    pre_hooks.append(delegation_gate_entry)
+def ensure(event, keyword, entry):
+    lst = hooks.setdefault(event, [])
+    if not any(keyword in str(h) for h in lst):
+        lst.append(entry)
 
-# PostToolUse：增量驗證
-post_hooks = hooks.setdefault("PostToolUse", [])
-lint_entry = {
-    "matcher": "Write|Edit|MultiEdit",
-    "hooks": [{"type": "command", "command": "bash .claude/hooks/incremental-lint.sh"}]
-}
-if not any("incremental-lint" in str(h) for h in post_hooks):
-    post_hooks.append(lint_entry)
+def cmd(name):
+    return {"type": "command", "command": "bash .claude/hooks/" + name}
 
-# PostToolUse：委派追蹤
-delegation_entry = {
-    "matcher": "Agent",
-    "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-tracker.sh"}]
-}
-if not any("delegation-tracker" in str(h) for h in post_hooks):
-    post_hooks.append(delegation_entry)
-
-# PostToolUse：學習日誌提醒（git commit 後檢查 learning-log）
-learning_entry = {
-    "matcher": "Bash",
-    "hooks": [{"type": "command", "command": "bash .claude/hooks/learning-log-checker.sh"}]
-}
-if not any("learning-log-checker" in str(h) for h in post_hooks):
-    post_hooks.append(learning_entry)
-
-# UserPromptSubmit：理解確認旗標
-prompt_hooks = hooks.setdefault("UserPromptSubmit", [])
-prompt_entry = {
-    "hooks": [{"type": "command", "command": "bash .claude/hooks/prompt-understanding-guard.sh"}]
-}
-if not any("prompt-understanding-guard" in str(h) for h in prompt_hooks):
-    prompt_hooks.append(prompt_entry)
+# PreToolUse：修改前因果鏈守衛（既有原始碼檔首次修改擋一次）
+ensure("PreToolUse", "impact-analysis-guard",
+       {"matcher": "Write|Edit|MultiEdit", "hooks": [cmd("impact-analysis-guard.sh")]})
+# PostToolUse：增量驗證 / 委派追蹤 / 學習日誌提醒
+ensure("PostToolUse", "incremental-lint",
+       {"matcher": "Write|Edit|MultiEdit", "hooks": [cmd("incremental-lint.sh")]})
+ensure("PostToolUse", "delegation-tracker",
+       {"matcher": "Agent", "hooks": [cmd("delegation-tracker.sh")]})
+ensure("PostToolUse", "learning-log-checker",
+       {"matcher": "Bash", "hooks": [cmd("learning-log-checker.sh")]})
+# UserPromptSubmit：因果鏈 marker 每輪重置
+ensure("UserPromptSubmit", "causal-chain-reset",
+       {"hooks": [cmd("causal-chain-reset.sh")]})
 
 with open(settings_path, "w") as f:
     json.dump(cfg, f, indent=2, ensure_ascii=False)
@@ -137,22 +128,52 @@ with open(settings_path, "w") as f:
 print("OK")
 '
 
+# jq 版本（語意與 Python 版一致；python 不可用時使用）
+JQ_SCRIPT='
+def has_kw($kw): ((.hooks // []) | map(.command // "") | any(contains($kw)));
+def drop_legacy: map(select((has_kw("delegation-gate") or has_kw("prompt-understanding-guard")) | not));
+def ensure($kw; $entry): if any(.[]; has_kw($kw)) then . else . + [$entry] end;
+def cmd($n): {type: "command", command: ("bash .claude/hooks/" + $n)};
+.hooks //= {}
+| .hooks.PreToolUse = ((.hooks.PreToolUse // []) | drop_legacy
+    | ensure("impact-analysis-guard"; {matcher: "Write|Edit|MultiEdit", hooks: [cmd("impact-analysis-guard.sh")]}))
+| .hooks.PostToolUse = ((.hooks.PostToolUse // []) | drop_legacy
+    | ensure("incremental-lint"; {matcher: "Write|Edit|MultiEdit", hooks: [cmd("incremental-lint.sh")]})
+    | ensure("delegation-tracker"; {matcher: "Agent", hooks: [cmd("delegation-tracker.sh")]})
+    | ensure("learning-log-checker"; {matcher: "Bash", hooks: [cmd("learning-log-checker.sh")]}))
+| .hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) | drop_legacy
+    | ensure("causal-chain-reset"; {hooks: [cmd("causal-chain-reset.sh")]}))
+'
+
 MERGE_OK=false
+MERGE_TOOL=""
+RESULT=""
 
-# 嘗試 python3
 if command -v python3 &>/dev/null; then
-  RESULT=$(python3 -c "$MERGE_SCRIPT" "$SETTINGS_FILE" 2>&1) && MERGE_OK=true
+  if RESULT=$(python3 -c "$MERGE_SCRIPT" "$SETTINGS_FILE" 2>&1) && [[ "$RESULT" == *OK* ]]; then
+    MERGE_OK=true; MERGE_TOOL="python3"
+  fi
 fi
-
-# 嘗試 python fallback
 if ! $MERGE_OK && command -v python &>/dev/null; then
-  RESULT=$(python -c "$MERGE_SCRIPT" "$SETTINGS_FILE" 2>&1) && MERGE_OK=true
+  if RESULT=$(python -c "$MERGE_SCRIPT" "$SETTINGS_FILE" 2>&1) && [[ "$RESULT" == *OK* ]]; then
+    MERGE_OK=true; MERGE_TOOL="python"
+  fi
+fi
+if ! $MERGE_OK && command -v jq &>/dev/null; then
+  [[ -f "$SETTINGS_FILE" ]] || echo '{}' > "$SETTINGS_FILE"
+  if jq "$JQ_SCRIPT" "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" 2>/dev/null; then
+    mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+    MERGE_OK=true; MERGE_TOOL="jq"
+  else
+    rm -f "${SETTINGS_FILE}.tmp"
+    RESULT="jq 合併失敗（settings.json 可能不是合法 JSON）"
+  fi
 fi
 
 if $MERGE_OK; then
-  echo "📋 settings.json：已合併 Hook 配置"
+  echo "📋 settings.json：已合併 Hook 配置（${MERGE_TOOL}）"
 else
-  echo "❌ settings.json 合併失敗（需要 python3）：${RESULT:-未知錯誤}"
+  echo "❌ settings.json 合併失敗（需要 python3 / python / jq 任一可用）：${RESULT:-未知錯誤}"
   exit 1
 fi
 
@@ -169,9 +190,15 @@ for f in "${HOOK_FILES[@]}"; do
 done
 
 if [[ -f "$SETTINGS_FILE" ]]; then
-  for keyword in "impact-analysis-guard" "delegation-gate" "incremental-lint" "delegation-tracker" "prompt-understanding-guard" "learning-log-checker"; do
+  for keyword in "impact-analysis-guard" "causal-chain-reset" "incremental-lint" "delegation-tracker" "learning-log-checker"; do
     if ! grep -q "$keyword" "$SETTINGS_FILE" 2>/dev/null; then
       echo "❌ 驗證失敗：settings.json 缺少 $keyword 配置"
+      VERIFY_OK=false
+    fi
+  done
+  for legacy in "delegation-gate" "prompt-understanding-guard"; do
+    if grep -q "$legacy" "$SETTINGS_FILE" 2>/dev/null; then
+      echo "❌ 驗證失敗：settings.json 仍含已移除的 $legacy 配置"
       VERIFY_OK=false
     fi
   done
@@ -181,7 +208,7 @@ else
 fi
 
 if $VERIFY_OK; then
-  echo "✅ Hook 系統部署完成（6 腳本 + settings.json 配置）"
+  echo "✅ Hook 系統部署完成（5 腳本 + _helpers.sh + settings.json 配置）"
 else
   echo "⚠️  Hook 系統部署有問題，請檢查上方錯誤訊息"
   exit 1

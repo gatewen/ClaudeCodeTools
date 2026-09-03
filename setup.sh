@@ -452,13 +452,12 @@ else
     echo "⚠️  語言 Skills 不完整（${LANG_COUNT}/${LANG_TOTAL}）— 不影響核心功能"
 fi
 
-# 確認 hooks 完整（6 個 hook + 1 個共用 helpers）
+# 確認 hooks 完整（5 個 hook + 1 個共用 helpers）
 HOOK_FILES=(
     "hooks/impact-analysis-guard.sh"
+    "hooks/causal-chain-reset.sh"
     "hooks/incremental-lint.sh"
     "hooks/delegation-tracker.sh"
-    "hooks/delegation-gate.sh"
-    "hooks/prompt-understanding-guard.sh"
     "hooks/learning-log-checker.sh"
     "hooks/_helpers.sh"
 )

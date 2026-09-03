@@ -150,13 +150,12 @@ Phase 5 是這套方法的特色——它用編號系統（BC-x / EH-x / R-x）�
 
 ### 自動化 Hook
 
-部署時會一起裝六個 Hook，在背景自動幫你做品質把關：
+部署時會一起裝五個 Hook，在背景自動幫你做品質把關：
 
 | Hook | 什麼時候觸發 | 做什麼 |
 |------|------------|--------|
-| **修改前統一守衛** | 修改檔案之前 | **阻擋**修改，雙閘門：①理解確認（對頻）②因果鏈分析（影響評估），合併為一次 block |
-| **委派前因果鏈閘門** | 呼叫 Agent 之前 | **阻擋**修改型 Agent 委派，要求先分析預期修改範圍和影響 |
-| **理解確認旗標** | 用戶提交指令時 | 偵測修改意圖，設定旗標 + 清理因果鏈/委派閘門 marker |
+| **修改前因果鏈守衛** | 首次修改既有原始碼檔之前 | **阻擋**一次，印出引用者清單，要求先寫 2-4 行因果鏈分析再重試。不擋新檔與 md / json / yaml 等非原始碼 |
+| **因果鏈重置** | 用戶提交指令時 | 清除本 session 的因果鏈 marker，讓每個新指令重新分析一次。無關鍵字判斷、不阻擋 |
 | **增量驗證** | 修改檔案之後 | 自動對改過的檔案跑 lint |
 | **委派追蹤** | 呼叫 Agent 之後 | 自動記錄 Agent 的任務和結果 |
 | **學習日誌提醒** | git commit 之後 | 檢查 learning-log.md 是否在 commit 中，未包含則提醒 |
@@ -181,9 +180,8 @@ ClaudeCodeTools/
     ├── deploy-hooks.sh                ← 一鍵部署 Hook 系統（腳本保證，不靠 AI 自律）
     ├── check-version.sh              ← 版本檢查工具（快取/部署/遠端一次比完）
     ├── hooks/
-    │   ├── impact-analysis-guard.sh  ← 修改前統一守衛（雙閘門阻擋）
-    │   ├── delegation-gate.sh        ← 委派前因果鏈閘門（修改型 Agent 阻擋）
-    │   ├── prompt-understanding-guard.sh ← 理解確認旗標 + marker 清理
+    │   ├── impact-analysis-guard.sh  ← 修改前因果鏈守衛（既有原始碼檔首次修改擋一次）
+    │   ├── causal-chain-reset.sh     ← 因果鏈 marker 每輪重置
     │   ├── incremental-lint.sh       ← 增量驗證
     │   ├── delegation-tracker.sh     ← 委派追蹤
     │   └── learning-log-checker.sh   ← 學習日誌提醒

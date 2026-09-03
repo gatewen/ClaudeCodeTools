@@ -1,33 +1,18 @@
 #!/usr/bin/env bash
-# incremental-lint.sh — Phase 2 增量驗證 Hook
+# incremental-lint.sh — 增量驗證 Hook
 # 觸發：PostToolUse (Write | Edit | MultiEdit)
 # 輸入：stdin JSON { tool_input: { file_path: "..." } }
 # 輸出：exit 0 = 放行 | exit 2 = 阻擋（stderr 回饋 lint 錯誤）
 
 set -euo pipefail
+# shellcheck source=_helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/_helpers.sh"
 
-# 1. 讀取 stdin JSON，提取 file_path
+# 1. 讀取 stdin JSON，提取 file_path（jq 優先，sed 後援，不依賴 python）
 INPUT=$(cat)
-FILE_PATH=""
+FILE_PATH=$(json_field "$INPUT" '.tool_input.file_path')
 
-# 嘗試 jq（快）
-if command -v jq &>/dev/null; then
-  FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
-fi
-
-# jq 不可用或失敗 → 用 python3 fallback
-if [[ -z "$FILE_PATH" ]]; then
-  FILE_PATH=$(echo "$INPUT" | python3 -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    print(d.get('tool_input', {}).get('file_path', ''))
-except:
-    print('')
-" 2>/dev/null)
-fi
-
-# 無法取得 file_path → 靜默放行
+# 無法取得 file_path 或檔案不存在 → 靜默放行
 if [[ -z "$FILE_PATH" ]] || [[ ! -f "$FILE_PATH" ]]; then
   exit 0
 fi

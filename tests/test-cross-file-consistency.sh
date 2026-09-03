@@ -35,7 +35,7 @@ lang_count=$(count_array_entries "LANG_FILES" "$SETUP")
 assert_eq "$lang_count" "7" "LANG_FILES 有 7 條" || FAIL=$((FAIL+1))
 
 hook_count=$(count_array_entries "HOOK_FILES" "$SETUP")
-assert_eq "$hook_count" "7" "HOOK_FILES 有 7 條（6 hooks + _helpers.sh）" || FAIL=$((FAIL+1))
+assert_eq "$hook_count" "6" "HOOK_FILES 有 6 條（5 hooks + _helpers.sh）" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
 # Check 2: setup.sh 陣列列出的檔案實際存在於 disk

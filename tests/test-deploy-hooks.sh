@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # test-deploy-hooks.sh
 # 驗證 deploy-hooks.sh 的核心契約：
-#   1. 6 個 hook + 1 個 _helpers.sh 複製到 .claude/hooks/
+#   1. 5 個 hook + 1 個 _helpers.sh 複製到 .claude/hooks/
 #   2. 所有 hook 可執行（chmod +x）
-#   3. settings.json 含 6 個 hook keywords
+#   3. settings.json 含 5 個 hook keywords，且不含已移除的舊 hook
 #   4. settings.json 是合法 JSON
 #   5. **幂等**：跑 2 次後，每個 hook 在 settings.json 中只出現 1 次（不重複）
+#   6. 舊版部署（含 delegation-gate / prompt-understanding-guard）升級後被清除，其他設定保留
 
 set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,6 +16,25 @@ source "$REPO_ROOT/tests/lib/assert.sh"
 source "$REPO_ROOT/tests/lib/fixtures.sh"
 
 FAIL=0
+
+# JSON 工具：python3 優先，不可用（如 Windows 的 Store 空殼 python）時退 jq
+json_valid() {
+    python3 -c "import json; json.load(open('$1'))" 2>/dev/null && return 0
+    jq empty "$1" 2>/dev/null
+}
+# 數 keyword 在 hooks.*[].hooks[].command 出現的次數（找不到工具時印 ?）
+count_hook_cmd() {
+    local n=""
+    n=$(python3 -c "
+import json
+cfg = json.load(open('$1'))
+print(sum(1 for entries in cfg.get('hooks', {}).values() for e in entries for h in e.get('hooks', []) if '$2' in h.get('command', '')))
+" 2>/dev/null) || n=""
+    if [ -z "$n" ]; then
+        n=$(jq -r --arg k "$2" '[.hooks // {} | .[] | .[] | (.hooks // [])[] | (.command // "") | select(contains($k))] | length' "$1" 2>/dev/null) || n=""
+    fi
+    printf '%s' "${n:-?}"
+}
 
 # 隔離 project dir
 PROJECT_DIR=$(make_tmpdir)
@@ -26,16 +46,15 @@ echo "Running deploy-hooks.sh (1st time) in $PROJECT_DIR..."
 output1=$(bash "$REPO_ROOT/dev-closed-loop/deploy-hooks.sh" "$REPO_ROOT" 2>&1 || true)
 
 # --------------------------------------------------
-# Check 1: 7 個檔案複製
+# Check 1: 6 個檔案複製
 # --------------------------------------------------
 echo ""
-echo "Check 1: hooks 目錄含 7 個檔案（6 hooks + _helpers.sh）"
+echo "Check 1: hooks 目錄含 6 個檔案（5 hooks + _helpers.sh）"
 HOOK_NAMES=(
     impact-analysis-guard.sh
+    causal-chain-reset.sh
     incremental-lint.sh
     delegation-tracker.sh
-    delegation-gate.sh
-    prompt-understanding-guard.sh
     learning-log-checker.sh
     _helpers.sh
 )
@@ -46,7 +65,7 @@ for h in "${HOOK_NAMES[@]}"; do
         missing=$((missing+1))
     fi
 done
-assert_eq "$missing" "0" "全部 7 檔複製完成" || FAIL=$((FAIL+1))
+assert_eq "$missing" "0" "全部 6 檔複製完成" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
 # Check 2: hook 可執行
@@ -63,19 +82,22 @@ done
 assert_eq "$non_exec" "0" "全部 hook 有 +x 權限" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
-# Check 3: settings.json 含 6 個 hook keywords
+# Check 3: settings.json 含 5 個 hook keywords，且不含已移除的舊 hook
 # --------------------------------------------------
 echo ""
-echo "Check 3: settings.json 含全部 6 個 hook 配置"
+echo "Check 3: settings.json 含全部 5 個 hook 配置"
 SETTINGS=".claude/settings.json"
 assert_file_exists "$SETTINGS" || FAIL=$((FAIL+1))
 KEYWORDS=(
     impact-analysis-guard
-    delegation-gate
+    causal-chain-reset
     incremental-lint
     delegation-tracker
-    prompt-understanding-guard
     learning-log-checker
+)
+LEGACY_KEYWORDS=(
+    delegation-gate
+    prompt-understanding-guard
 )
 keyword_missing=0
 for k in "${KEYWORDS[@]}"; do
@@ -84,14 +106,22 @@ for k in "${KEYWORDS[@]}"; do
         keyword_missing=$((keyword_missing+1))
     fi
 done
-assert_eq "$keyword_missing" "0" "全部 6 hook keywords 在 settings.json" || FAIL=$((FAIL+1))
+assert_eq "$keyword_missing" "0" "全部 5 hook keywords 在 settings.json" || FAIL=$((FAIL+1))
+legacy_present=0
+for k in "${LEGACY_KEYWORDS[@]}"; do
+    if grep -q "$k" "$SETTINGS" 2>/dev/null; then
+        echo "  ❌ settings.json 仍含已移除的 $k"
+        legacy_present=$((legacy_present+1))
+    fi
+done
+assert_eq "$legacy_present" "0" "已移除的 hook 不在 settings.json" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
 # Check 4: settings.json 是合法 JSON
 # --------------------------------------------------
 echo ""
 echo "Check 4: settings.json 是合法 JSON"
-if python3 -c "import json,sys; json.load(open('$SETTINGS'))" 2>/dev/null; then
+if json_valid "$SETTINGS"; then
     echo "  ✅ valid JSON"
 else
     echo "  ❌ invalid JSON"
@@ -105,26 +135,63 @@ echo ""
 echo "Check 5: 幂等性（跑第 2 次後 hook 不重複）"
 output2=$(bash "$REPO_ROOT/dev-closed-loop/deploy-hooks.sh" "$REPO_ROOT" 2>&1 || true)
 
-# 用 python 數每個 hook 在 settings.json 出現次數（在 hooks.command 字串中）
+# 數每個 hook 在 settings.json 出現次數（在 hooks.command 字串中；python3 或 jq）
 duplicate_found=0
 for k in "${KEYWORDS[@]}"; do
-    count=$(python3 -c "
-import json
-cfg = json.load(open('$SETTINGS'))
-n = 0
-for event_type, entries in cfg.get('hooks', {}).items():
-    for entry in entries:
-        for h in entry.get('hooks', []):
-            if '$k' in h.get('command', ''):
-                n += 1
-print(n)
-" 2>/dev/null)
+    count=$(count_hook_cmd "$SETTINGS" "$k")
     if [ "$count" != "1" ]; then
         echo "  ❌ $k 出現 $count 次（預期 1）"
         duplicate_found=$((duplicate_found+1))
     fi
 done
 assert_eq "$duplicate_found" "0" "全部 hook 各出現 1 次（無重複）" || FAIL=$((FAIL+1))
+
+# --------------------------------------------------
+# Check 6: 舊版部署升級——settings.json 含 delegation-gate / prompt-understanding-guard
+#          與舊 hook 檔，跑 deploy 後應被清除；非 hook 設定（permissions）保留
+# --------------------------------------------------
+echo ""
+echo "Check 6: 舊版 hook 配置遷移清除"
+LEGACY_DIR=$(make_tmpdir)
+mkdir -p "$LEGACY_DIR/.claude/hooks"
+touch "$LEGACY_DIR/.claude/hooks/delegation-gate.sh" "$LEGACY_DIR/.claude/hooks/prompt-understanding-guard.sh"
+cat > "$LEGACY_DIR/.claude/settings.json" <<'JSON'
+{
+  "hooks": {
+    "PreToolUse": [
+      {"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "bash .claude/hooks/impact-analysis-guard.sh"}]},
+      {"matcher": "Agent", "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-gate.sh"}]}
+    ],
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "command", "command": "bash .claude/hooks/prompt-understanding-guard.sh"}]}
+    ]
+  },
+  "permissions": {"allow": ["Bash(ls:*)"]}
+}
+JSON
+( cd "$LEGACY_DIR" && bash "$REPO_ROOT/dev-closed-loop/deploy-hooks.sh" "$REPO_ROOT" >/dev/null 2>&1 ) || true
+LEGACY_SETTINGS="$LEGACY_DIR/.claude/settings.json"
+legacy_left=0
+for k in "${LEGACY_KEYWORDS[@]}"; do
+    if grep -q "$k" "$LEGACY_SETTINGS" 2>/dev/null; then
+        echo "  ❌ 升級後 settings.json 仍含 $k"
+        legacy_left=$((legacy_left+1))
+    fi
+done
+assert_eq "$legacy_left" "0" "舊版 hook 配置已從 settings.json 清除" || FAIL=$((FAIL+1))
+legacy_files=0
+for f in "${LEGACY_KEYWORDS[@]}"; do
+    [ -f "$LEGACY_DIR/.claude/hooks/$f.sh" ] && legacy_files=$((legacy_files+1))
+done
+assert_eq "$legacy_files" "0" "舊版 hook 腳本檔已移除" || FAIL=$((FAIL+1))
+if grep -q '"permissions"' "$LEGACY_SETTINGS" 2>/dev/null; then
+    echo "  ✅ 非 hook 設定（permissions）保留"
+else
+    echo "  ❌ 非 hook 設定（permissions）遺失"
+    FAIL=$((FAIL+1))
+fi
+assert_eq "$(count_hook_cmd "$LEGACY_SETTINGS" impact-analysis-guard)" "1" "既有 impact-analysis-guard 不重複" || FAIL=$((FAIL+1))
+assert_eq "$(count_hook_cmd "$LEGACY_SETTINGS" causal-chain-reset)" "1" "新 hook causal-chain-reset 已加入" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
 # Diagnostic
