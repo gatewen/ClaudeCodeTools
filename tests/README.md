@@ -27,7 +27,7 @@ bash tests/run.sh
 
 | 測試 | 防什麼 |
 |------|------|
-| `test-cross-file-consistency.sh` | 文檔數量 / 依賴敘述 / 版本宣告跨檔不一致（codex 揭露的最大歷史失敗類）|
+| `test-cross-file-consistency.sh` | 文檔數量 / 依賴敘述 / 版本宣告跨檔不一致（codex 揭露的最大歷史失敗類）；v8.1 起加 workflow `TIERS` / `ARCH_RULES` 多份一致性與模板行數上限 |
 | `test-setup-local.sh` | 本地模式 happy path：偵測 / 部署 / placeholder / 路徑 / check-version 抽查 |
 | `test-setup-remote-sha.sh` | 階段 2-2 回歸防線：`.commit-sha` 寫入 + 完整 40 字元 |
 | `test-deploy-hooks.sh` | hook 複製 / +x / settings.json 3 keywords / 合法 JSON / **幂等** / 舊版 4 hook 配置遷移清除 |

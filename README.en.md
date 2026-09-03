@@ -8,12 +8,15 @@ Make Claude Code think about two things before it touches existing code: who dep
 
 ## What it is
 
-A CLAUDE.md template of about 125 lines, three hooks, and a one-command deployer. Once deployed into a project, every Claude Code session follows these rules:
+A CLAUDE.md template under 200 lines, three hooks, and a one-command deployer. Once deployed into a project, every Claude Code session follows these rules:
 
 1. **Size the task before acting.** A one-line fix is just done. A new module gets a short design first, then implementation, then a check that every behavior contract has code and a test.
-2. **Write down what a change touches before making it.** A hook blocks the first edit to an existing source file in each turn and asks Claude to write 2-4 lines of impact analysis first. You see the reasoning before the edit lands.
-3. **Check evidence before asserting facts about the environment.** Literal evidence, a counter-example check, and a shared-value check, all learned from a real misjudgment incident.
-4. **Push back only in five situations**, otherwise do as asked.
+2. **Write down what a change touches before making it.** A hook blocks the first edit to an existing source file in each turn and asks Claude to write 2-4 lines of impact analysis first. You see the reasoning before the edit lands. The analysis includes a "duplicate definitions" count: how many other copies of this value exist, so they get changed together.
+3. **Follow seven architecture rules when adding or refactoring.** Search before creating, one thing per place, dependencies point downward only, no speculative abstraction, record the why, single source of truth, and a brake against false sharing. The same section is the review standard for `/dev-design` and `/dev-review`.
+4. **Check evidence before asserting facts about the environment.** Literal evidence, a counter-example check, and a shared-value check, all learned from a real misjudgment incident.
+5. **Push back only in five situations**, otherwise do as asked.
+6. **Talk to you in plain language.** Conclusion first, a one-line explanation for each new term, and every change described as "what, why, who is affected".
+7. **Pick the model tier by difficulty when spawning sub-agents.** Mechanical work goes to the low tier, implementation and exploration to the mid tier, design and review judgment is never downgraded.
 
 ## What it is not
 
@@ -61,11 +64,12 @@ Hooks are reminders, not guarantees. They guarantee a pause and a visible analys
 
 ## Version
 
-Current: **v8.0.0** (2026-09-03). Full history in [dev-closed-loop/README.md](dev-closed-loop/README.md) (Chinese).
+Current: **v8.1.0** (2026-09-03). Full history in [dev-closed-loop/README.md](dev-closed-loop/README.md) (Chinese).
 
 | Version | Summary |
 |---------|---------|
-| **v8.0.0** | Slim-down: template 344 → 134 lines, deployed docs 33 → 5, hooks 6 → 3, `/dev:overview` removed. Impact hook narrowed to existing source files, messages via stderr, no python dependency |
+| **v8.1.0** | Four additions: plain-language interaction, architecture and maintainability rules (with SSOT and a duplicate-definition check), three-tier model routing inside workflows, dev-design / dev-review read the project's CLAUDE.md architecture rules instead of carrying a copy. Template 134 → 164 lines. Rationale in `design/16-v8.1-additions.md` |
+| v8.0.0 | Slim-down: template 344 → 134 lines, deployed docs 33 → 5, hooks 6 → 3, `/dev:overview` removed. Impact hook narrowed to existing source files, messages via stderr, no python dependency |
 | v7.x | Workflow-first refactor, Windows compatibility, handoff hardening |
 | v6.x | Karpathy principles, cognitive verification, KPIs, examples |
 | v5.x | Five-phase loop, hook system, agent library, auto-update |

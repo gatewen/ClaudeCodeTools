@@ -1,12 +1,22 @@
 export const meta = {
   name: 'dev-verify',
-  description: '跨產出物追溯 workflow（可選）：枚舉設計規格的 BC-x → 單一 agent 正向追溯每條的實作與測試覆蓋 → 反向遍歷找死碼 / 未實作 / 範圍蔓延 → 報告。小專案用 coverage 工具即可，不必開。',
+  description: '跨產出物追溯 workflow（可選）：枚舉設計規格的 BC-x → 單一 agent 正向追溯每條的實作與測試覆蓋 → 反向遍歷找死碼 / 未實作 / 範圍蔓延 → 報告。小專案用 coverage 工具即可，不必開。枚舉與彙整用低階模型，追溯與反向遍歷用中階。',
   phases: [
     { title: 'Enumerate' },
     { title: 'Forward Verify' },
     { title: 'Reverse Traverse' },
     { title: 'Synthesize' },
   ],
+}
+
+// ── 模型等級 ──
+// 定義出處：CLAUDE_TEMPLATE.md「模型分配」表。workflow 腳本不能 import，所以四支各放一份相同常數，
+// tests/test-cross-file-consistency.sh 鎖四份相同且與模板一致（SSOT 第三層：合不成一處就用測試逼一致）。
+// low：機械型 · mid：實作與探索 · high：判斷型，不指定 model 即繼承主對話。
+const TIERS = {
+  low: { model: 'haiku', effort: 'low' },
+  mid: { model: 'sonnet' },
+  high: {},
 }
 
 const SCOPE = typeof args === 'string' && args.trim()
@@ -34,7 +44,7 @@ const enumeration = await agent(
   `你是分母枚舉 agent。範圍：${SCOPE}
 讀 .claude-loop/artifacts/ 下產出物（P1-design-spec.md 等），枚舉**所有** BC-x 行為契約（這是後續正向追溯的分母——漏列一個 BC-x 就會漏驗一條）。
 回報：BC-x 清單（id + statement）+ 存在的產出物清單。`,
-  { label: 'enumerate-bc', phase: 'Enumerate', schema: ENUM_SCHEMA }
+  { label: 'enumerate-bc', phase: 'Enumerate', schema: ENUM_SCHEMA, ...TIERS.low }
 )
 const BCS = enumeration.behaviorContracts || []
 
@@ -69,7 +79,7 @@ const forward = BCS.length ? await agent(
 分母共 ${BCS.length} 條，回報的 coverage 陣列必須也是 ${BCS.length} 條、bcId 一一對應。
 BC 清單：${JSON.stringify(BCS)}
 範圍：${SCOPE}`,
-  { label: 'forward-trace', phase: 'Forward Verify', schema: COVERAGE_SCHEMA }
+  { label: 'forward-trace', phase: 'Forward Verify', schema: COVERAGE_SCHEMA, ...TIERS.mid }
 ) : { coverage: [] }
 const coverage = forward.coverage || []
 
@@ -86,7 +96,7 @@ const reverse = await agent(
 2. **未實作**：設計規格提到但程式碼裡找不到的？
 3. **未對應 BC**：實作了但不對應任何 BC-x 的行為（範圍蔓延 / 過度設計）？
 用 Read/Grep 實際查。回報每類發現 + 檔:行 + 建議（刪除 / 補 BC / 補實作）。`,
-  { label: 'reverse-traverse', phase: 'Reverse Traverse' }
+  { label: 'reverse-traverse', phase: 'Reverse Traverse', ...TIERS.mid }
 )
 
 // ============================================================
@@ -112,7 +122,7 @@ ${zeroDenominatorWarn}${missingWarn}正向覆蓋結果（分母 ${BCS.length} �
 3. 反向發現 → 死碼建議刪 / 未實作建議補 / 範圍蔓延建議砍
 4. 整體 verdict（pass / fix-required）
 誠實，不放大也不縮小。`,
-  { label: 'verify-synthesis', phase: 'Synthesize' }
+  { label: 'verify-synthesis', phase: 'Synthesize', ...TIERS.low }
 )
 
 return {

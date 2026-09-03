@@ -4,7 +4,7 @@
 
 ## 這是什麼（v8）
 
-一份約 125 行的 CLAUDE.md 模板加三支 hook。v3 到 v7 是五角色流水線，2026 年 5 月六場對照實驗證明它對程式正確性零增益，v8 砍到只剩實驗指出有價值的部分。為什麼、砍了什麼、留了什麼，寫在 `.claudedocs/concepts/閉環核心理念.md` 和 `design/15-v8-slim.md`。
+一份不到 200 行的 CLAUDE.md 模板加三支 hook。v3 到 v7 是五角色流水線，2026 年 5 月六場對照實驗證明它對程式正確性零增益，v8.0 砍到只剩實驗指出有價值的部分；v8.1 補回四樣便宜且可檢查的東西（白話互動、架構與可維護性含 SSOT、workflow 模型分級、重複定義檢查）。為什麼、砍了什麼、留了什麼、補了什麼，寫在 `.claudedocs/concepts/閉環核心理念.md`、`design/15-v8-slim.md` 和 `design/16-v8.1-additions.md`。
 
 ## 文件結構
 
@@ -12,7 +12,7 @@
 
 | 文件 | 說明 |
 |------|------|
-| `CLAUDE_TEMPLATE.md` | 核心產物。約 125 行，5 個 placeholder（PROJECT_NAME / LANGUAGE / FRAMEWORK / TEST_COMMAND / BUILD_COMMAND），末尾 HTML 註解含 `closed-loop vX.Y.Z` 版本 marker 與 migration-notes |
+| `CLAUDE_TEMPLATE.md` | 核心產物。不到 200 行，5 個 placeholder（PROJECT_NAME / LANGUAGE / FRAMEWORK / TEST_COMMAND / BUILD_COMMAND），末尾 HTML 註解含 `closed-loop vX.Y.Z` 版本 marker 與 migration-notes |
 | `.claudedocs/` | 部署到專案的 5 份人類閱讀文檔（README、核心理念、產出物格式、Git 工作流、問題追蹤） |
 | `skill/init-claude.md` | `/dev:init-claude` 源碼，由 setup.sh 替換 `{{REPO_PATH}}` 後部署到 `~/.claude/commands/dev/` |
 | `commands/dev/handoff.md` + `command-refs/handoff/` | `/dev:handoff` command shim + bundle（跨 session 交接）。shim → `~/.claude/commands/dev/handoff.md`、bundle → `~/.claude/dev-closed-loop/handoff/`。冒號名靠子資料夾合成，磁碟零冒號，Windows 相容 |
@@ -31,6 +31,7 @@
 | `design/08` 到 `11` | v6.x：Karpathy 整合、認知 KPI、對照範例、K-13 評估不做 |
 | `design/12` 到 `14` | v7 KPI 校準起點、自治化補強計劃與 review pack、codemap skill（冷凍） |
 | `design/15-v8-slim.md` | v8 評估結論與砍法 |
+| `design/16-v8.1-additions.md` | v8.1 補四項的理由、落點、SSOT 分層、審查紀錄 |
 | `design/history-v7/` | v7 以前部署過、v8 不再部署的檔案：8 個 agent prompt、6 語言指南、5 份流程文檔、5 個對照範例、KPI 指標、Agent 使用指南、v7.1.2 模板全文 |
 
 ## 使用方式
@@ -47,6 +48,7 @@
 
 | 版本 | 重點 |
 |------|------|
+| **v8.1.0** | **補四項**（2026-09-03）。用戶要求補白話互動、架構 / 模組化 / 可維護性、workflow 依難度分配模型、SSOT。模板 134 → 164 行：語言設定加白話三條；Section 2 加「重複定義」檢查與輸出欄位；新增 Section 3 架構與可維護性（先找再造 / 一處一事 / 依賴只往下 / 不預留抽象 / 留下為什麼 / SSOT 四層退路 / 假共用煞車，節首 arch-rules 錨點），原 3-7 順延為 4-8；可用 workflow 加「模型分配」表（低 haiku + effort low / 中 sonnet / 高 繼承主對話，判斷型不降）。四支 workflow 頂部放逐字相同的 `TIERS` 常數並逐 agent 標等級（dev-review 找問題中階、security 與 verify 高階、彙整低階；dev-verify 枚舉與彙整低階、追溯中階；dev-design 除 explore 外高階；dev-prd challenge 與 synthesize 高階其餘中階）；dev-design / dev-review 以 `ARCH_RULES` 指路讀專案 CLAUDE.md Section 3 當審查標準，不抄規則正文。SSOT 用在方法論自己：cross-file 測試加 Check 6（TIERS 四份相同且與模板表一致）、Check 7（ARCH_RULES 兩份相同、索引名存在於模板、錨點存在）、Check 8（模板 < 200 行），對外文檔不再寫確切行數；setup.sh 完成訊息的版本改從模板 marker 讀。問題追蹤加 #008 重複定義漂移。誠實邊界：workflow `model` 別名（haiku / sonnet）沿用 Agent 工具的值，未實跑 workflow 驗證；四項對正確性的增益未量化。獨立 context 審查（opus，與本對話不同模型）：2 high / 6 medium 全採納，含 hook 在 set -e 下讀格式行失敗會 exit 1 的回歸（補三情境測試）。理由見 `design/16-v8.1-additions.md` |
 | **v8.0.0** | **瘦身**（breaking · 2026-09-03）。依 2026-05 六場對照實驗（五階段對 correctness 零增益、成本最高 7 倍）與同年 5 月對抗評估，砍掉儀式只留承重部分。模板 344 → 134 行；`.claudedocs` 33 → 5 檔（agents / languages / process / examples / KPI / Agent使用指南 移至 `design/history-v7/`）；hook 6 → 3（刪 delegation-gate / prompt-understanding-guard / delegation-tracker / learning-log-checker）；`/dev:overview` 移除；placeholder 6 → 5。**因果鏈定為降級非砍**：紀律保留為 always-on 規則，hook 收窄為只擋既有原始碼檔首次修改、不擋新檔與 md / json / yaml、marker 依 session 隔離、新增 `causal-chain-reset.sh` 承接每輪重置、阻擋訊息改走 stderr（exit 2 時模型只看 stderr，舊版印在 stdout 模型看不到）。hook 與 deploy-hooks 不再依賴 python（jq → sed 後援；Windows Store 空殼 python 環境可部署）。dev-verify 改單 agent 追溯。init-claude 重寫（移除語言指南邏輯、awk migration parser、`grep -oP`）。tests 同步（cross-file 加 .claudedocs 反向檢查與版本 marker 一致性、setup-local 加 node --check 與 overview 殘留清理、deploy-hooks 加 4 舊 hook 遷移、exit-codes 加 sed 後援與 session 隔離）。模板草稿經獨立 context 子 agent 審查（3 high / 9 medium 全採納）；誠實邊界：同模型不同 context，非跨 LLM。理由與還原路徑見 `design/15-v8-slim.md` |
 | **v7.1.2** | **dev:handoff bundle 健壯性強化 + 誠實校正**（patch · 2026-06-15 · 外部評估報告驅動 · 三段 workflow 收斂）——UK_Wrok 的 `dev-handoff-評估報告.md`（27 findings / 25 valid）觸發，經「評估研讀 → 35-agent 強化路線圖 → 套用」+ 異源對抗驗證收斂為 PR1+PR2（5 檔 +67/−15）。**A(ENCODE-1)**：path-resolution cwd 編碼 `sed 's\|/\|-\|g'` → `'s\|[/_]\|-\|g'`（真實 auto-memory 目錄連 `_` 也轉 `-`，含底線專案 fallback 落孤兒目錄、實機 `ls` 證偽）+ 移除「與系統編碼一致」假斷言 + load glob 存在性 fallback。**B(誠實校正)**：dev 版 5 references 對 wt:handoff md5 全異、4/5 僅 namespace 等價、conflict-resolution.md 已分化（backup 守衛 + 單人單寫 section）→ SKILL.md + CLAUDE.md「byte-equivalent」自述改精確版、「TaskList 雙向同步」→「兩端對齊」（v7.0.1 改檔漏改自述的內部矛盾）。**E**：home/root 改 `pwd -P` 正規化守衛。**C(freshness 查證)**：load-mode Step 6 重建前先 `git status`/`git diff` 分辨「真未做 vs 已做未提交」、防破壞性覆蓋（advisory+fail-open、零時戳解析、排除 .claude-loop churn）——把已實證事故（2026-06-01 handoff 說「待寫」但 9 檔已完成）固化成 spec。**D(保守備份)**：conflict 對「marker 缺失但字串命中」之疑似外部來源 deterministic cp 先備份。**compact**：SKILL.md 加 /compact↔/dev:handoff 時機表（auto-compact 前先 handoff）+ load-mode 耐久源澄清。tests 7/7 全綠；異源 cross-source review C/D 皆 pass、零 blocker。**對抗駁回（不做）**：compact 獨立協議 / F3 SessionEnd-Stop staleness hook / 「時戳新≠內容新」升格承重核（僅 1 樣本，違反 ≥3 升格紀律）/ 並行競態告警——多為「把模型本就會做的事包成會狼來了的 ritual」。**誠實邊界**：本輪為修漏+不說謊+一條小紀律、非加能力；wt:handoff 個人版同病（同 sed bug）須另同步。連動：bundle 內容變更 → setup.sh 部署/驗證 + test-setup-local Check 5.5（檔數不變、已 PASS 證無回歸）。重裝：`git pull && bash setup.sh`（remote 用 curl 重跑）|
 | **v7.1.1** | **修 v7.1.0 command shim 在原生 Windows 不註冊**（patch · 2026-06-03）——v7.1.0 發佈後 Windows 實機：`/dev:` 只出 `/dev:init-claude`，handoff/overview 兩 shim 不顯示。19-agent 對抗驗證 workflow 定位兩確定缺陷：(1) **overview.md frontmatter 無效 YAML**：單行純量 description 內 `NOT for: ` 冒號+空格被當 mapping → ScannerError（line3 col501）→ command 被丟棄；改 `>-` 折疊塊（與 handoff 同款；單/雙引號因值內含字面 `"` 與 `'` 需逐個轉義易錯，verifier 實測排除）。(2) **兩 shim 移除冗餘顯式 `name:`**（值含冒號 `dev:handoff`/`dev:overview`）：指令名應由路徑 `commands/dev/` 合成，對齊唯一在 Windows 正常的 init-claude（無 frontmatter name）。tests 加 Check 5.6c（python `yaml.safe_load` 驗 shim frontmatter）+ name-absent grep 斷言守門。連動：CLAUDE.md 靜態規則新增「command shim frontmatter 規約（無顯式 name + description 用 `>-` 折疊塊）」。**誠實邊界**：overview-YAML 為已證偽必修缺陷；name-colon 對 handoff 為「對齊 proven-working init-claude」的假設修法，**未能在 mac 直接證實 Windows 因果**（mac 探針 zztest 帶 `name:` 冒號仍註冊，故「name 冒號→Windows 不註冊」的 Windows 專屬性未證）；**另一未排除可能：git pull 此 rename commit 因刪除 colon-path 在 Windows abort 致新檔未落地**，需實機確認（若重裝後 handoff 仍不出現即屬此類，非本 patch 涵蓋）。重裝：`git pull && bash setup.sh`（remote 用 curl 重跑）|

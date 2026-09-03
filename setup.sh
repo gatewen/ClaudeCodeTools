@@ -383,7 +383,9 @@ echo "================================================"
 echo "  ✅ 安裝完成"
 echo "================================================"
 echo ""
-echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署方法論（v8.0.0）。"
+# 版本從模板 marker 讀，不在這裡另抄一份（SSOT：模板末尾 closed-loop vX.Y.Z 是唯一出處）
+TEMPLATE_VERSION=$(grep -o 'closed-loop v[0-9.]*' "${SOURCE_DIR}/dev-closed-loop/CLAUDE_TEMPLATE.md" 2>/dev/null | tail -1 | sed 's/closed-loop //')
+echo "現在可以在任何專案目錄執行 /dev:init-claude 來部署方法論（${TEMPLATE_VERSION:-版本未知}）。"
 echo "跨 session 交接：/dev:handoff save / load"
 echo "大型任務或需求未定時可用 workflow：/dev-prd /dev-design /dev-review /dev-verify"
 echo "  （需 Claude Code v2.1.154+ · 付費方案 · research preview；不可用則走 CLAUDE.md 內的退化做法）"
