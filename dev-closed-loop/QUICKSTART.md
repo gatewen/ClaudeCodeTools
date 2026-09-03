@@ -1,88 +1,52 @@
-# 開發設計閉環 — 30 分鐘快速上手
+# 開發設計閉環：十分鐘上手
 
-> 給「想開始用，但還不想讀完整方法論」的人。看完這篇 + 跑過一次 `/dev:init-claude`，你就能用了。
-> 想找東西放哪 / 看完整檔案分布 → 看 [README.md](README.md)
+> 給「想開始用，但不想先讀方法論」的人。看完這篇，跑一次 `/dev:init-claude`，就能用了。
 
----
+## 它做什麼
 
-## 5 個核心概念
+裝進專案後，Claude Code 每個 session 會載入一份約 125 行的 CLAUDE.md，管四件事：
 
-只要懂這 5 個，就能開始用。
+1. **先判任務大小再動手**。改一行不走流程，新模組先出設計。
+2. **改既有程式碼前先寫出誰會被牽動**。一支 hook 會在你第一次改某個原始碼檔時擋一下，要 Claude 先寫 2-4 行分析再重試。
+3. **斷言環境事實前先查證據**。看到一個 IP 就說它是某服務，這種錯不會因為模型變強就消失。
+4. **只在五種情境反對你**，其他時候不多嘴。
 
-### 1. 閉環五階段
+## 三個場景
 
-每寫一段非微小程式碼，Claude 會跑 5 個角色：
+**改一個 typo**
 
+> 「README 第 42 行 `recieve` 改成 `receive`」
+
+直接改。README 不是原始碼，hook 不會擋。
+
+**加一個函式**
+
+> 「在 `utils.py` 加個算折扣價的函式」
+
+Claude 先寫三到五行設計，至少一條行為契約（例如 BC-1：折扣率超出 0 到 1 時拋 ValueError），實作，寫測試，最後列一張表確認每條 BC 都有實作有測試。改 `utils.py` 第一下會被 hook 擋一次，Claude 會先列出誰用到 utils 再繼續。
+
+**設計一個新模組**
+
+> 「做一個密碼重設 API，要 email 驗證、rate limit、寄信重試」
+
+Claude 會建議開 `/dev-design`：三個視角各提一個架構方案，每個方案派一個沒看過設計過程的 agent 找缺陷，評審後綜合成規格。實作後用 `/code-review` 或 `/dev-review` 審，測試，逐條追溯。
+
+`/dev-design` 這類 workflow 需要付費方案和 research preview。開不了的話 Claude 會自己列方案取捨問你，核心紀律不變。
+
+## 安裝
+
+```bash
+curl -sL https://raw.githubusercontent.com/gatewen/ClaudeCodeTools/main/setup.sh | bash
 ```
-架構師 → 程序設計師 → 檢核師 → 測試師 → 自證師
-（設計）  （實作）    （檢核）   （測試）  （驗證一致性）
-```
 
-**特色在最後一步**：自證師會「**橫向比對**」前 4 個階段的產出物有沒有矛盾——傳統 Code Review 是縱向看程式碼好壞，自證是橫向看設計、實作、測試、檢核之間有沒有對齊。
+然後在任何專案目錄開 Claude Code，輸入 `/dev:init-claude`。它會偵測語言、框架、測試指令，問你確認後部署。
 
-### 2. BC-x / EH-x 編號（讓所有階段對齊）
+## 之後
 
-設計時每個邊界條件編號（`BC-1`：空輸入、`BC-2`：超大值），錯誤處理也編號（`EH-1`：網路逾時）。後面所有階段（程式碼、測試、檢核、自證）都用同樣編號 reference。自證才能精確比對「BC-1 有設計、有實作、有測試嗎？」
-
-### 3. 三段任務分流（不是每件事都走閉環）
-
-| 等級 | 條件 | 做什麼 |
-|------|------|--------|
-| **微小** | < 50 行 / 單檔 / 「快速修改」 | **直通** — 直接寫，不走閉環 |
-| **中型** | 1-3 檔 / < 300 行 | **精簡六步** — 設計 → 設計快審 → 實作 → 品質審 → 測試 → 迷你追溯 |
-| **大型** | ≥ 3 檔 / ≥ 300 行 / 多模組 | **完整 5-Phase** — 上面五階段含獨立子 agent 委派 |
-
-修個 typo 不會被「閉環」拖慢——三段分流就是為了避免 overhead。
-
-### 4. 認知驗證（Claude 也會質疑自己跟用戶）
-
-LLM 容易「基於單線索就斷言事實」（例：看到一個 IP 就說是某服務）。閉環加了三層認知驗證：
-
-- Claude 對自己推論：**事實主張閘門**（升格為「事實」前查 A 級證據 + 反例 + 共用值）
-- Claude 對用戶斷言：**Section 12.5 第 5 條反向質疑**（用戶說「X 是 Y」要做後續行動 → Claude 反問「我能查到的是 Z」）
-- 用戶對 Claude 結論：**質疑熔斷協議**（用戶說「你怎麼證明 X」→ Claude 立即停下重審）
-
-### 5. 學習自動沉澱（learning-log → 升格警惕）
-
-每次失敗（斷點觸發 / 設計缺陷 / 測試不過）即時寫進 `learning-log.md`。同類失敗累積 ≥ 3 次 → 用戶確認後升格為「長期警惕模式」（`問題追蹤.md`），下次架構師起手就讀，自動避坑。
-
----
-
-## 3 個常見場景示例
-
-### 場景 1：修一個 typo（微小直通）
-
-> 「README 第 42 行有 typo `recieve` 應為 `receive`，請改一下」
-
-Claude 直接改那一行，不跑閉環。如果順手 reformat 引號或加 type hints → 違反 K-07 範例 03 警告的 Q3 Surgical 原則。
-
-### 場景 2：加一個函式（中型精簡六步）
-
-> 「請在 `utils.py` 加個算打折價的函式」
-
-Claude 走精簡六步：
-1. **設計**：寫函式簽名 + BC-1（折扣率 0-1 範圍）+ BC-2（負價格邊界）
-2. **設計快審**：design-reviewer 子 agent 挑戰「會不會過度設計」（Q2 Simplicity）
-3. **實作**：簡單一行算，不套 strategy pattern
-4. **品質審**：code-reviewer 檢查 R-x
-5. **測試**：覆蓋 BC-1 / BC-2
-6. **迷你追溯**：列表確認每個 BC 都有實作 + 測試
-
-### 場景 3：設計新模組（大型完整 5-Phase）
-
-> 「請設計一個密碼重設 API（含 email 驗證、rate limit、寄信、retry）」
-
-走完整 5-Phase + 獨立子 agent 委派。Phase 1b 設計審查、Phase 3 安全審查、Phase 5 雙向追溯都用獨立子 agent（不繼承主 agent context，避免「球員兼裁判」）。
-
----
-
-## 進階指南
-
-| 想知道 | 看這裡 |
-|--------|--------|
-| 完整方法論文檔 | [.claudedocs/](.claudedocs/) |
-| 閉環核心理念（為什麼這樣設計）| [.claudedocs/concepts/閉環核心理念.md](.claudedocs/concepts/閉環核心理念.md) |
-| 5 個 anti-pattern 對照範例（K-07）| [.claudedocs/examples/](.claudedocs/examples/) |
-| KPI 健康指標 + 校準時機 | [.claudedocs/concepts/方法論運作指標.md](.claudedocs/concepts/方法論運作指標.md) |
-| 設計演進歷史（v3 → v6.x）| [design/](design/) |
-| Hook 系統 6 個閘門 | [hooks/](hooks/) |
+| 想做什麼 | 指令或檔案 |
+|---------|-----------|
+| 看部署狀態 | `/dev:init-claude status` |
+| 升級 | `/dev:init-claude upgrade` |
+| 換 session 前存進度 | `/dev:handoff save`，新 session `/dev:handoff load` |
+| 記一個踩過的坑 | 寫進專案的 `.claudedocs/records/問題追蹤.md`，Claude 設計前會掃 |
+| 了解為什麼砍成這樣 | `.claudedocs/concepts/閉環核心理念.md` |

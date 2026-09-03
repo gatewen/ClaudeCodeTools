@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # test-cross-file-consistency.sh
-# 驗證跨檔案宣告一致性，防範 codex_recommand.md 揭露的歷史最大失敗類：
-#   - 文檔數量陳述（17/17, 9/9, 7/7）跨檔案不矛盾
-#   - 可選依賴（SuperClaude/Superpowers/claude-mem）不被誤標為必須
-#   - setup.sh 陣列宣告與宣告數字一致
+# 驗證跨檔案宣告一致性，防範歷史上最大的失敗類：
+#   - 文檔數量陳述（.claudedocs 5/5、hooks 4/4）跨檔案不矛盾
+#   - 可選依賴（claude-mem 等）不被誤標為必須
+#   - setup.sh 陣列宣告與陣列列出的檔案實際存在
+#   - CLAUDE_TEMPLATE.md 版本 marker 與 README 版本歷史一致
 
 set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -20,22 +21,26 @@ count_array_entries() {
 }
 
 # --------------------------------------------------
-# Check 1: setup.sh 陣列實際數量 == 用戶可見訊息宣告
+# Check 1: setup.sh 陣列實際數量 == 對外契約
 # --------------------------------------------------
 echo "Check 1: setup.sh 陣列數量符合宣告"
 SETUP="$REPO_ROOT/setup.sh"
 
 expected_count=$(count_array_entries "EXPECTED_FILES" "$SETUP")
-assert_eq "$expected_count" "17" "EXPECTED_FILES 有 17 條" || FAIL=$((FAIL+1))
-
-agent_count=$(count_array_entries "AGENT_FILES" "$SETUP")
-assert_eq "$agent_count" "9" "AGENT_FILES 有 9 條" || FAIL=$((FAIL+1))
-
-lang_count=$(count_array_entries "LANG_FILES" "$SETUP")
-assert_eq "$lang_count" "7" "LANG_FILES 有 7 條" || FAIL=$((FAIL+1))
+assert_eq "$expected_count" "5" "EXPECTED_FILES 有 5 條（v8 部署包 .claudedocs）" || FAIL=$((FAIL+1))
 
 hook_count=$(count_array_entries "HOOK_FILES" "$SETUP")
-assert_eq "$hook_count" "6" "HOOK_FILES 有 6 條（5 hooks + _helpers.sh）" || FAIL=$((FAIL+1))
+assert_eq "$hook_count" "4" "HOOK_FILES 有 4 條（3 hooks + _helpers.sh）" || FAIL=$((FAIL+1))
+
+# v8 起不再部署 agents / languages / overview；陣列不該存在
+for gone in AGENT_FILES LANG_FILES OVERVIEW_BUNDLE_FILES; do
+    if grep -q "^${gone}=(" "$SETUP"; then
+        echo "  ❌ setup.sh 仍含已淘汰的陣列 ${gone}"
+        FAIL=$((FAIL+1))
+    else
+        echo "  ✅ setup.sh 無 ${gone}（v8 已淘汰）"
+    fi
+done
 
 # --------------------------------------------------
 # Check 2: setup.sh 陣列列出的檔案實際存在於 disk
@@ -58,24 +63,6 @@ done < <(awk '/^EXPECTED_FILES=\(/,/^\)/' "$SETUP" | grep -oE '"[^"]+"')
 while IFS= read -r entry; do
     f="${entry#\"}"; f="${f%\"}"
     [ -z "$f" ] && continue
-    if [ ! -f "$docs_dir/$f" ]; then
-        echo "  ❌ AGENT_FILES 中宣告但檔案不存在：.claudedocs/$f"
-        missing=$((missing+1))
-    fi
-done < <(awk '/^AGENT_FILES=\(/,/^\)/' "$SETUP" | grep -oE '"[^"]+"')
-
-while IFS= read -r entry; do
-    f="${entry#\"}"; f="${f%\"}"
-    [ -z "$f" ] && continue
-    if [ ! -f "$docs_dir/$f" ]; then
-        echo "  ❌ LANG_FILES 中宣告但檔案不存在：.claudedocs/$f"
-        missing=$((missing+1))
-    fi
-done < <(awk '/^LANG_FILES=\(/,/^\)/' "$SETUP" | grep -oE '"[^"]+"')
-
-while IFS= read -r entry; do
-    f="${entry#\"}"; f="${f%\"}"
-    [ -z "$f" ] && continue
     if [ ! -f "$hook_dir/$f" ]; then
         echo "  ❌ HOOK_FILES 中宣告但檔案不存在：dev-closed-loop/$f"
         missing=$((missing+1))
@@ -84,6 +71,17 @@ done < <(awk '/^HOOK_FILES=\(/,/^\)/' "$SETUP" | grep -oE '"[^"]+"')
 
 assert_eq "$missing" "0" "所有陣列宣告的檔案皆實際存在" || FAIL=$((FAIL+1))
 
+# 反向：.claudedocs 內不該有陣列沒列的檔案（防止部署包悄悄長回去）
+extra=0
+while IFS= read -r f; do
+    rel="${f#"$docs_dir"/}"
+    if ! awk '/^EXPECTED_FILES=\(/,/^\)/' "$SETUP" | grep -qF "\"$rel\""; then
+        echo "  ❌ .claudedocs/$rel 存在但未列於 EXPECTED_FILES（部署包不該悄悄長回去）"
+        extra=$((extra+1))
+    fi
+done < <(find "$docs_dir" -type f -name '*.md' | sort)
+assert_eq "$extra" "0" ".claudedocs 無未宣告的檔案" || FAIL=$((FAIL+1))
+
 # --------------------------------------------------
 # Check 3: CLAUDE.md 宣告的數量與 setup.sh 一致
 # --------------------------------------------------
@@ -91,10 +89,10 @@ echo ""
 echo "Check 3: CLAUDE.md 文檔數量宣告與 setup.sh 一致"
 CLAUDE_MD="$REPO_ROOT/CLAUDE.md"
 
-if grep -qE "核心\s*17/17.*agents\s*9/9.*languages\s*7/7" "$CLAUDE_MD"; then
-    echo "  ✅ CLAUDE.md 宣告 17/17 + 9/9 + 7/7（與 setup.sh 一致）"
+if grep -qE "\.claudedocs\s*5/5.*hooks\s*4/4" "$CLAUDE_MD"; then
+    echo "  ✅ CLAUDE.md 宣告 .claudedocs 5/5 + hooks 4/4（與 setup.sh 一致）"
 else
-    echo "  ❌ CLAUDE.md 數量宣告與 setup.sh 不符（預期：核心 17/17 + agents 9/9 + languages 7/7）"
+    echo "  ❌ CLAUDE.md 數量宣告與 setup.sh 不符（預期：.claudedocs 5/5 + hooks 4/4）"
     FAIL=$((FAIL+1))
 fi
 
@@ -104,7 +102,6 @@ fi
 echo ""
 echo "Check 4: SuperClaude/Superpowers/claude-mem 不被誤標為必須"
 
-# 只檢查使用者可見的 prose 檔案（README/CLAUDE.md），略過 design history（含早期討論）
 DOCS=(
     "$REPO_ROOT/README.md"
     "$REPO_ROOT/CLAUDE.md"
@@ -117,7 +114,6 @@ violations=0
 for doc in "${DOCS[@]}"; do
     [ -f "$doc" ] || continue
     for tool in "${TOOLS[@]}"; do
-        # 任何將 tool 標為「必須安裝」「required」「需要安裝」的句式都違反
         if grep -qE "${tool}.*(必須安裝|required to install|需要安裝.*${tool})" "$doc" 2>/dev/null; then
             echo "  ❌ $doc 將 ${tool} 標為必須"
             violations=$((violations+1))
@@ -130,6 +126,28 @@ for doc in "${DOCS[@]}"; do
 done
 
 assert_eq "$violations" "0" "可選依賴皆未被誤標為必須" || FAIL=$((FAIL+1))
+
+# --------------------------------------------------
+# Check 5: 版本 marker 與 README 版本歷史一致
+# --------------------------------------------------
+echo ""
+echo "Check 5: CLAUDE_TEMPLATE.md 版本 marker 與 README 一致"
+TEMPLATE="$REPO_ROOT/dev-closed-loop/CLAUDE_TEMPLATE.md"
+marker=$(grep -o 'closed-loop v[0-9.]*' "$TEMPLATE" 2>/dev/null | tail -1 | sed 's/closed-loop v//')
+if [ -n "$marker" ]; then
+    echo "  ✅ marker 版本：v${marker}"
+    for doc in "$REPO_ROOT/README.md" "$REPO_ROOT/dev-closed-loop/README.md"; do
+        if grep -qF "v${marker}" "$doc"; then
+            echo "  ✅ $(basename "$(dirname "$doc")")/$(basename "$doc") 含 v${marker}"
+        else
+            echo "  ❌ $doc 未提及 v${marker}（版本歷史漏更新）"
+            FAIL=$((FAIL+1))
+        fi
+    done
+else
+    echo "  ❌ CLAUDE_TEMPLATE.md 缺少 closed-loop vX.Y.Z marker"
+    FAIL=$((FAIL+1))
+fi
 
 # --------------------------------------------------
 # Result

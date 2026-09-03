@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # test-deploy-hooks.sh
 # 驗證 deploy-hooks.sh 的核心契約：
-#   1. 5 個 hook + 1 個 _helpers.sh 複製到 .claude/hooks/
+#   1. 3 個 hook + 1 個 _helpers.sh 複製到 .claude/hooks/
 #   2. 所有 hook 可執行（chmod +x）
-#   3. settings.json 含 5 個 hook keywords，且不含已移除的舊 hook
+#   3. settings.json 含 3 個 hook keywords，且不含已移除的舊 hook
 #   4. settings.json 是合法 JSON
 #   5. **幂等**：跑 2 次後，每個 hook 在 settings.json 中只出現 1 次（不重複）
-#   6. 舊版部署（含 delegation-gate / prompt-understanding-guard）升級後被清除，其他設定保留
+#   6. 舊版部署（delegation-gate / prompt-understanding-guard / delegation-tracker / learning-log-checker）
+#      升級後被清除，其他設定保留
 
 set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -46,16 +47,14 @@ echo "Running deploy-hooks.sh (1st time) in $PROJECT_DIR..."
 output1=$(bash "$REPO_ROOT/dev-closed-loop/deploy-hooks.sh" "$REPO_ROOT" 2>&1 || true)
 
 # --------------------------------------------------
-# Check 1: 6 個檔案複製
+# Check 1: 4 個檔案複製
 # --------------------------------------------------
 echo ""
-echo "Check 1: hooks 目錄含 6 個檔案（5 hooks + _helpers.sh）"
+echo "Check 1: hooks 目錄含 4 個檔案（3 hooks + _helpers.sh）"
 HOOK_NAMES=(
     impact-analysis-guard.sh
     causal-chain-reset.sh
     incremental-lint.sh
-    delegation-tracker.sh
-    learning-log-checker.sh
     _helpers.sh
 )
 missing=0
@@ -65,7 +64,7 @@ for h in "${HOOK_NAMES[@]}"; do
         missing=$((missing+1))
     fi
 done
-assert_eq "$missing" "0" "全部 6 檔複製完成" || FAIL=$((FAIL+1))
+assert_eq "$missing" "0" "全部 4 檔複製完成" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
 # Check 2: hook 可執行
@@ -82,22 +81,22 @@ done
 assert_eq "$non_exec" "0" "全部 hook 有 +x 權限" || FAIL=$((FAIL+1))
 
 # --------------------------------------------------
-# Check 3: settings.json 含 5 個 hook keywords，且不含已移除的舊 hook
+# Check 3: settings.json 含 3 個 hook keywords，且不含已移除的舊 hook
 # --------------------------------------------------
 echo ""
-echo "Check 3: settings.json 含全部 5 個 hook 配置"
+echo "Check 3: settings.json 含全部 3 個 hook 配置"
 SETTINGS=".claude/settings.json"
 assert_file_exists "$SETTINGS" || FAIL=$((FAIL+1))
 KEYWORDS=(
     impact-analysis-guard
     causal-chain-reset
     incremental-lint
-    delegation-tracker
-    learning-log-checker
 )
 LEGACY_KEYWORDS=(
     delegation-gate
     prompt-understanding-guard
+    delegation-tracker
+    learning-log-checker
 )
 keyword_missing=0
 for k in "${KEYWORDS[@]}"; do
@@ -106,7 +105,7 @@ for k in "${KEYWORDS[@]}"; do
         keyword_missing=$((keyword_missing+1))
     fi
 done
-assert_eq "$keyword_missing" "0" "全部 5 hook keywords 在 settings.json" || FAIL=$((FAIL+1))
+assert_eq "$keyword_missing" "0" "全部 3 hook keywords 在 settings.json" || FAIL=$((FAIL+1))
 legacy_present=0
 for k in "${LEGACY_KEYWORDS[@]}"; do
     if grep -q "$k" "$SETTINGS" 2>/dev/null; then
@@ -161,6 +160,10 @@ cat > "$LEGACY_DIR/.claude/settings.json" <<'JSON'
     "PreToolUse": [
       {"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "bash .claude/hooks/impact-analysis-guard.sh"}]},
       {"matcher": "Agent", "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-gate.sh"}]}
+    ],
+    "PostToolUse": [
+      {"matcher": "Agent", "hooks": [{"type": "command", "command": "bash .claude/hooks/delegation-tracker.sh"}]},
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "bash .claude/hooks/learning-log-checker.sh"}]}
     ],
     "UserPromptSubmit": [
       {"hooks": [{"type": "command", "command": "bash .claude/hooks/prompt-understanding-guard.sh"}]}

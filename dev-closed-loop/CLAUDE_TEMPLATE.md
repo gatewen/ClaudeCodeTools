@@ -1,26 +1,5 @@
 # {{PROJECT_NAME}}
 
-## ⚖️ Trade-off 顯式宣告
-
-本方法論偏向**正確性與可追溯性 > 速度**，且自 v7.0.0 起改為 **workflow-first**：用 Claude Code 原生 Workflow（多 agent 編排 + 對抗驗證）承擔 PRD / 架構設計 / 審查的編排，CLAUDE.md 只保留「承重核 + always-on 紀律 + 退化路徑」。
-
-代價：
-- 微小任務不走任何編排（Section 1 分級保護）
-- PRD / 架構設計 / 大型任務多花時間在 workflow 編排與對抗驗證
-- 依賴 Claude Code Workflow 功能（付費方案 + v2.1.154+ · research preview）
-
-設計上預期承擔的（注意：correctness 軸已實證零增益，下列價值錨在人軸·未量化證實）：
-- PRD / 架構設計用多方案 + adversarial-verify（**設計意圖**是擴大覆蓋；vs 單一 agent 的實際增益未對照實測）
-- 修改類動作有因果鏈（依賴影響）+ 事實求證（認知驗證）雙層防禦（人軸 proxy 未否證 ≠ 已證）
-- 失敗模式累積成「長期警惕模式」，跨 session 自動避開
-- workflow 不可用時走 fallback（因果鏈錨 always-on hook；事實求證/push back 為文字層，不對稱見 Section 14）
-
-> ⚖️ **價值定位校準（2026-05-30 A–E + Stage F + 06-01 人軸 proxy dogfood）**：對「前沿模型 × 單一 context × 機械可驗 correctness」，**五階 ritual 流水線零增益**（A–F 六場三方平手，note=一次外部 review=完整五階段同分，成本最高約裸寫 7x）。閉環把「模型認真做事本來就會做的認知」（讀全碼 / 影響分析 / 核對事實 / 枚舉邊界）外部化、儀式化——模型已在做，對它自己的 correctness 是淨成本。
-> **∴ v7.0.0 的設計回應**：把零增益的「流水線 ritual」交給 workflow（理論上省主 agent 逐 Phase 委派的 context；**但 workflow 編排 vs 五階的 token/品質從未對照實測**——且 workflow 對 correctness 大機率同樣零增益，A–F 已證該軸飽和，其價值定位同樣是「編排/覆蓋的人軸便利」而非 correctness 增益），只保留實證上承重的部分——
-> - **因果鏈 + 事實求證**：在 A–F（Stage D/E）的 correctness 軸**已實證零增益**；僅存的未否證價值落在人軸——人軸 proxy（2026-06-01）顯示方向落在「把握度校準 + 發現成本攤銷 + 前提層防禦」（誠實標註：**未否證 ≠ 已證**，主指標 correctness 仍平手，方向性、未量化證實；勿宣稱已解決自評漏看率 #007）。
-> - **always-on 紀律**：workflow 是 opt-in，hook 是無論模型想不想都跑——承重核錨在 hook 層才不會靜默歸零。
-> - **跨 session 學習**：兩層教訓 + 升格，workflow 每次乾淨起點蓋不到。
-
 ## 語言設定
 
 - 所有互動使用繁體中文
@@ -33,312 +12,123 @@
 - **測試指令**：`{{TEST_COMMAND}}`
 - **建置指令**：`{{BUILD_COMMAND}}`
 
-## 0 四原則橫切自檢層（cross-cutting）
+## 1. 任務分級（先判等級，再動手）
 
-任何階段（設計 / 寫碼 / 審查 / 測試）永遠先過 4 個自問，橫切所有流程：
-
-- **Q1（Think）**：我這步的假設是什麼？有歧義嗎？需要 push back 嗎？
-- **Q2（Simplicity）**：能不能更簡單？不該寫的有沒有寫？資深工程師會說過度設計嗎？
-- **Q3（Surgical）**：我這步只動了該動的嗎？style 是否 match 既有？
-- **Q4（Goal）**：這步成功的可驗證標準是什麼？
-
-| 原則 | 對映機制 |
-|------|---------|
-| Q1 Think | 理解確認（Section 7 閘門 A）/ 事實主張（Section 11）/ push back（Section 11.5） |
-| Q2 Simplicity | 合理性審查（Section 9）|
-| Q3 Surgical | 因果鏈分析（Section 7 閘門 B）/ 同類掃描（Section 10）|
-| Q4 Goal | BC-x 編號 / 測試 / 追溯 |
-
-**來源**：[andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) Karpathy 4 原則。
-
----
-
-## ⚠️ 執行約束（最高優先級）
-
-收到任何非微小任務時，**禁止直接開始寫程式碼**。先判定等級，再選編排路徑。
-
-### 1. 判定任務等級 + 編排路徑（必做）
-
-| 等級 | 條件 | 編排路徑 |
-|------|------|---------|
-| **微小** | < 50 行 · 單檔 · 設定調整 · 用戶說「快速修改」 | 直接執行（仍受 always-on hook 因果鏈護欄 + 事實求證文字層自律）|
-| **中型** | 單一函式/元件 · 1-3 檔 · < 300 行 | 輕量流程：設計自檢 → 實作 → 審查 → 測試 → 迷你追溯（可選開 `/dev-review`）|
-| **大型** | 新模組/功能 · (≥ 3 檔或 ≥ 300 行) 且多個交互子系統 | **開 workflow**：`/dev-design` → 實作 → `/dev-review` →（可選）`/dev-verify` |
-| **PRD / 架構設計** | 需求未定 / 多方案取捨 / 系統級設計 | **強制開 workflow**：`/dev-prd`（探索→候選→挑戰）或 `/dev-design`（多方案 judge-panel + 對抗驗證）|
-
-> **何時開 workflow**：大型 / PRD / 架構設計 → 預設開。中型 → 可選。微小 → 不開。
-> **workflow 不可用時**（免費方案 / 舊版 / headless / preview 未啟用）→ 走 Section 14 退化路徑，承重核不受影響。
-
-### 1.5 微小任務的探索成本上限
-
-微小任務涉及探索（找 typo / 未用 import / lint warning / dead code）時：
-- **候選**：找 1-3 個即停，**不窮舉**
-- **工具呼叫**：grep + read ≤ 3 次
-- **找不到顯著候選**：提早回報，**不創造目標**（不退而求其次補不存在的問題）
-
-違反視為升級為中型探索任務。
-
-### 2. ⛔ 禁止跳過的閘門
-
-- ⛔ **禁止**沒有設計產出就寫大型/PRD 程式碼
-- ⛔ **禁止**沒有驗證就標完成
-- ⛔ **禁止**修改類動作跳過因果鏈分析（Section 7 閘門 B）
-
-### 3. 子任務失敗處理（全域）
-
-workflow agent / 委派子 agent 超時、空輸出、明顯不完整時：① 重試一次 → ② 主 agent 自行執行（標記「降級自審」）→ ③ 結果在追溯中標記品質降級。
-
-### 4. 斷點熔斷（全域）
-
-同一階段斷點累計 **3 次** → 暫停 → 先追加學習日誌（標記 `[circuit-breaker]`）→ 用 AskUserQuestion 報告，由用戶決定：繼續修正 / 降級 / 重新設計。
-
----
-
-## 承重核：修改類動作的雙層防禦
-
-> 這是本方法論**設計上**的承重假設（人軸 proxy 未否證，但主指標 correctness 仍平手；承重性若存在落在非-correctness 維度，尚未被正面量化證實——proxy 測的是 artifact 對接手者，非此機制本身）。**因果鏈錨在 always-on hook（workflow 不可用也在）；事實求證是文字層自律（無對應 hook，見 Section 11/12）。**
-
-### 5. 領域偵測（修改/設計前自動判定）
-
-根據語言、框架、imports 偵測領域，套用預設。用戶可覆蓋。
-
-| 領域 | 偵測信號 | 安全審查 | 驗證層級預設 |
-|------|---------|---------|------------|
-| 遊戲開發 | macroquad/bevy/godot/unity/Canvas 迴圈 | 可跳過 | `[framework-dependent]` |
-| 後端 API | express/fastapi/gin/actix/HTTP handler | 必要 | `[testable]` |
-| 前端 SPA | React/Vue/Angular 無後端 | 條件判定 | 混合逐項標注 |
-| CLI 工具 | clap/commander/argparse 無 GUI | 條件判定 | `[testable]` |
-| 系統程式 | 網路/unsafe/檔案 I/O 密集 | 必要 | `[testable]` |
-
-**未匹配**用後端 API 預設（最嚴格）。
-
-### 6. 兩層教訓查詢（設計前）
-
-- **6a 長期警惕模式（必讀，不可跳過 · R-3）**：讀 `.claudedocs/records/問題追蹤.md`「長期警惕模式」section（≥ 3 次升格的高頻模式），命中條目把「預防做法」納入設計。
-- **6b learning-log 補充（條件式）**：`.claude-loop/learning-log.md` 存在時掃近期失敗根因，相關者納入考量。
-- **6c 強制標示**：設計產出末尾附一行「學習查詢：問題追蹤命中 [#X] / learning-log 命中 N 筆 / 全無相關」。
-
-### 7. 修改前守衛（Hook 阻擋式 · always-on）
-
-每次 Edit/Write/MultiEdit 前，PreToolUse Hook（`impact-analysis-guard.sh`）執行兩道閘門，任一未過即阻擋（exit 2）。**這是承重核的強制觸發點，不依賴 workflow。**
-
-- **閘門 A — 理解確認**：首次修改被擋。輸出 `🟠 收到：[用戶意圖]` + `🟠 打算：[一句話]`。純問答不觸發。
-- **閘門 B — 因果鏈分析**：首次修改某檔阻擋。必須輸出：
-
-```
-⚠️ [因果鏈分析] 修改 {檔案}:{函式}
-├─ 根因：{為什麼要改}
-├─ 呼叫者（grep N 個逐一分析）：{檔:行 — 影響 — 需連動是/否}；呼叫者=0 → ⛔ 停，先找真正執行路徑
-├─ 隱性風險：{快取失效/時序變化/語意漂移}
-└─ 決策：{連動清單或不需要的理由}
-```
-
-**深度規則**：① 追溯根因 ② 穿透呼叫鏈 A→B→C ③ 語意影響（簽章不變但語意變）④ 狀態與時序 ⑤ 邊界條件 ⑥ 呼叫者存在性（grep=0 ⛔ 禁改，可能有 inline 實作繞過）。
-
-> ⚠️ **誠實邊界**：L1 hook 機械強制的只有「首次改某檔前擋一次、要你輸出因果鏈分析才放行，並自動 grep 印出呼叫者清單供參考」——這個 always-on 觸發是 model-independent 的。但「真的窮舉呼叫者、=0 真的停手禁改、語意/間接/隱性」全是上面深度規則交給 LLM 的**文字層自律**（hook 印完 advisory 即放行 retry，**不解析 grep 結果、無「=0→拒絕」攔截**），同源自審漏看率 50-67%（#007）。在有編譯器/型別系統的 codebase 承重面縮小。workflow 可用時可開 `/dev-review` 派異源 skeptic 重做（L2 強化）。
-
-### 8. 委派/workflow 前因果鏈閘門（Hook 阻擋式）
-
-修改型委派 / 開 workflow 改碼前，PreToolUse Hook 攔截（exit 2），要求輸出 `📋 [委派前因果鏈] 預期修改檔案 / 每檔影響 / 範圍邊界`。唯讀型（審查/追溯）自動放行。
-
-### 9. 合理性審查（所有改動）
-
-每次改動後自問：① 一致性 ② 體驗 ③ 比例 ④ 可操作性 ⑤ 整合性。不合理 → 主動告知。
-
-### 10. 同類掃描（修改指令觸發）
-
-修改對象屬同類之一 → 掃描同類是否有同樣問題，報告後才執行。獨一無二的對象不觸發。
-
-### 10.5 Dead Code 處理立場
-
-- 你的改動造成的 orphan → **刪除**
-- 改動前已存在的 dead code → **提及，不動**（彙整時告訴用戶）
-- 用戶明確要求清理 → 才動
-
-理由：你的 PR 只解用戶需求，不順便 refactor（Karpathy Surgical）。
-
----
-
-## 認知驗證層（事實求證 · 承重核）
-
-> 切的是「前提層」——編排 ritual 全驗「步驟對不對」，沒有一階驗「前提對不對」。前提錯了，做得再完美也只是正確地放大錯誤。
-
-### 11. 事實主張閘門（認知性產出適用）
-
-**觸發**（任一）：寫入 memory（特別 `type: project`）/ 對用戶輸出「X 是 Y」確定語氣（含 IP / DB / 服務身份 / 部署結構）/ 作為後續行動（SSH / DB / 部署 / 大範圍修改）的事實前提。
-
-```
-🔵 [事實主張] {主張內容}
-├─ 🟢 A 級證據（literal / self-declaration）：{檔:行 + 原文} 或「無」
-├─ 🟡 B 級證據（間接 / 相關性）：{來源摘要} 或「無」
-├─ 🔴 反例檢查：若為真應觀察到 {X}；若為假會觀察到 {Y}；實際觀察 {Z}
-├─ 🔄 共用值檢查：value 出現 {N} 次 → {私有 / 共用判讀}
-└─ 決策：強（≥ 1 A 級 + 反例通過）/ 中（僅 B 級但反例通過）/ 弱（反例未通過或不足）
-```
-
-**處置**：強 → 可寫 memory + 確定答案；中 → 標「推論」+ 用戶確認後寫；弱 → **不可輸出為事實**，須明說「仍不確定」+ 不寫 memory。
-
-此閘門優先級高於一切編排。歷史教訓見問題追蹤 #003 / #004 / #005。
-
-> ⚠️ **誠實邊界**：Section 11（自查）+ 11.5 第 5 條（自反問）都是模型驗自己，有循環依賴（確認偏誤正是讓它信弱證據的機制）。真正外部的是 Section 12（用戶質疑）。workflow 可用時可派**獨立 context skeptic** 重做反例檢查（L2 強化，打破同源天花板，但只降低不解決）。
-
-### 11.5 Push Back 義務
-
-以下情境**必須主動反對用戶**（5 條白名單，不在此列勿多嘴）：
-
-1. **更簡單替代方案存在**且不影響功能
-2. **命中已知 anti-pattern**（問題追蹤命中）
-3. **基於弱證據的決策**（用戶要求基於 Section 11 弱證據做後續決策）
-4. **任務升級**（改動超出等級範圍 → 應升級）
-5. **用戶事實前提待驗證**（與 Section 11 對稱）：斷言「X 是/在 Y」+ 未附證據 + 作後續行動前提 + 若假代價非微小 → 反向質疑（格式同 Section 11 + 「我能查到的」+ 「請補證據/確認等級/OK 用原方案」）。
-
-**Push back 格式**：
-
-```
-⚠️ 我建議反對這個做法
-├─ 理由：[引用 Section 9 / 11 / 問題追蹤條目]
-├─ 替代方案：[X，為何更好]
-└─ 若仍要執行：請說「OK 用原方案」
-```
-
-**規則**：強制讓用戶看到代價後再決定（不是拒絕執行）；用戶說「OK 用原方案」即解除（第 5 條涉 rollback/memory 污染需 explicit 確認「承擔事實錯誤代價」）。
-**反模式**：對所有需求都 push back（多嘴）/ push back 後不接受用戶決定（越權）/ 無具體替代方案。
-
-### 12. 質疑熔斷協議
-
-用戶用白名單句式提問時當下工作**立即熔斷**：「你怎麼證明 X」/「你確定 X 嗎」/「依據是什麼」/「X 和 Y 真的有關嗎」。
-
-**熔斷後必做**：① 停止推論 ② 列出全部證據逐條分 A/B/反例級 ③ 誠實承認（誤判就認，不 rationalize）④ 污染清理（memory 證據不足 → 更正或加註「[已標記疑慮 YYYY-MM-DD]」）⑤ learning-log 追加標記 `[事實誤判]`。
-
-### 12.6 反向劃線（紀律保底層）
-
-> 自治與機械化都失效時的兜底。下列在任何情境不可 bypass，即使用戶口頭「跳過」。
-
-- **R-1 閘門不可 bypass**：質疑熔斷（Section 12）/ 事實主張（Section 11）不可跳過，即使「直接做不要審」
-- **R-2 cross-source review 是 hard requirement**：對「方法論修改」（變動 `CLAUDE_TEMPLATE.md` / `.claudedocs/agents/*.md` / `.claudedocs/concepts/*.md` / `.claudedocs/standards/*.md` / `.claude/workflows/*.js` 任一）或「重大認知性產出」，不可用「自審 N finding 已覆蓋」跳過（#007 升格根因）
-- **R-3 升格/降級/兩層教訓不可 bypass**：升格候選 / 降級候選 / 設計前兩層教訓查詢不可跳過，即使「很急」
-- **R-4 架構體質 + 合理性自檢不可省略**：設計時架構體質拆解 + 合理性自檢必做，即使「規格很清楚」
-- **R-5 連續 ≥ 2 次 needs-attention 強制降級 scope**：同一設計連續 ≥ 2 輪對抗驗證 needs-attention → 降級 scope / 拆解 / 放棄，不堅持做完
-
----
-
-{{LANGUAGE_SKILL_SECTION}}
-
-## Workflow 編排層（v7.0.0 核心 · 預設首選）
-
-> 大型 / PRD / 架構設計開 workflow。workflow 是 Claude Code 原生功能，腳本部署於 `.claude/workflows/`（git-tracked）與 `~/.claude/workflows/`，存檔自動成 `/<name>` slash command。
-
-### 可用 workflow
-
-| 指令 | 用途 | 結構 |
+| 等級 | 條件 | 做法 |
 |------|------|------|
-| `/dev-prd` | PRD / 需求探索 | 多角度探索（problem/user/scope）→ 塑形候選（lean/complete）→ 對抗挑戰 → PRD 文件 |
-| `/dev-design` | 架構設計（取代舊 Phase 1+1b）| 多方案架構 → adversarial-verify 砍缺陷 → 設計規格（含 BC-x）|
-| `/dev-review` | 品質+安全審查（取代舊 Phase 3）| parallel(correctness / security / repro lens) → 對抗驗證 findings |
-| `/dev-verify` | 跨產出物自證（取代舊 Phase 5，可選）| 可枚舉項 adversarial-verify + 輕量 verifier 做反向遍歷（找死碼/未實作）|
+| **微小** | 單檔且 < 50 行，或設定調整，或用戶說「快速修改」 | 直接做。Section 2 修改前紀律照跑 |
+| **中型** | 1-3 檔且 < 300 行 | 先寫 3-5 行設計（目標 + BC-x ≥ 1，格式見 `.claudedocs/standards/產出物格式.md`）→ 實作 → 測試 → 逐條確認每個 BC-x 有實作、有測試 |
+| **大型** | ≥ 3 檔或 ≥ 300 行（通常伴隨多個子系統交互） | 建議 `/dev-design` 產設計規格 → 實作 → 審查（見下）→ 測試 → 逐條追溯 BC-x |
+| **需求未定** | 多方案取捨、系統級設計 | 建議 `/dev-prd` 或 `/dev-design`；workflow 不可用時用 AskUserQuestion 多角度探索，自列多方案取捨 |
 
-### Workflow 內承重核注入（L2 強化）
+- 介於兩級之間取上一級。實作中發現規模超出等級，停下來升級，不硬做完
+- 大型任務的審查：內建 `/code-review` 或 `/dev-review` 擇一；專案處理外部輸入或網路時用 `/dev-review` 或 `/security-review`，因為 `/code-review` 不含安全視角
+- 動手前一句話對頻：說出你收到的需求是什麼、打算怎麼做
+- 探索類微小任務（找 typo、未用 import、dead code）：找 1-3 個即停，找不到就說找不到，不補不存在的問題
+- 任何階段自問四件事：我的假設是什麼？能不能更簡單？只動了該動的嗎？成功怎麼驗證？
+- 禁止：大型任務沒有設計產出就寫碼；沒跑 `{{TEST_COMMAND}}` 與 `{{BUILD_COMMAND}}` 就標完成
 
-workflow 的 agent prompt 按性質**內嵌**承重核：
-- 修改類 agent（dev-design / dev-review / dev-verify）→ 因果鏈分析要求（呼叫者窮舉 + 影響決策）
-- 事實性 agent（含 dev-prd）→ 事實主張閘門（證據分級 + 反例檢查），且 dev-review 的**反例由獨立 context skeptic 重做**（打破同源天花板）
-- 註：dev-prd 不觸碼，只注入事實求證、不含因果鏈。
+## 2. 修改前紀律（核心，always-on）
 
-### Workflow agent prompt 素材庫
+改既有程式碼之前，先弄清楚這一改的前後關係，把結論寫出來再動手：
 
-`.claudedocs/agents/*.md`（architect / design-reviewer / code-reviewer / security-reviewer / verifier / tester 等）是 workflow agent prompt 的**素材來源**（審查維度 / BC-x 系統 / 攻擊向量清單），由 workflow 腳本引用，不再走「主 agent 讀檔逐 Phase 委派」。
+- **呼叫者**：grep 窮舉誰呼叫它、誰依賴它的輸出，逐一判斷要不要連動
+- **語意**：簽章不變但行為變了嗎？有沒有快取失效、時序變化、狀態機影響？
+- **呼叫者 = 0**：先確認它是不是入口點、測試、獨立腳本、或用戶指定要刪的死碼。都不是才停下來找真正的執行路徑（可能有 inline 實作繞過），不可直接改
+- **同類掃描**：修改對象若是一組同類之一（N 張圖、N 個 handler），先掃同類有沒有同樣問題，報告後再改
+- **輸出**（2-4 行即可）：`⚠️ 改 {檔:函式}｜呼叫者 N 個：{要連動的 / 不需要的理由}｜風險：{…}｜連動清單：{…}`
 
-### 設計規格持久化
+Hook 是提醒，不是保證：
 
-大型任務 workflow 產出寫入 `.claude-loop/artifacts/`（`P1-design-spec.md` 等），後續步驟/session 從此讀取。
+- `impact-analysis-guard.sh`：只攔 Write / Edit / MultiEdit（用 Bash 改檔不攔）。每輪用戶指令內首次修改既有原始碼檔擋一次，印出以檔名粗搜的相關檔案當起點（不是完整呼叫者清單），要你先輸出上面那 2-4 行再重試。不擋新檔與 md / json / yaml 等非原始碼
+- `incremental-lint.sh`：修改後對 js / ts（eslint）、py（ruff）、go（golangci-lint）檔跑 per-file lint 並回饋錯誤。其他語言不覆蓋；型別檢查與建置仍靠你跑 `{{BUILD_COMMAND}}`
 
----
+Dead code 立場：你的改動造成的 orphan → 刪；改動前就存在的 → 提及不動；用戶明確要求清理才動。
 
-## 14. 退化路徑（workflow 不可用時 · fail-safe）
+## 3. 事實求證（斷言環境事實前）
 
-workflow 不可用（免費方案 / < v2.1.154 / headless / preview 未啟用）時，方法論**不崩**：
+觸發：對 IP、服務身份、DB、部署結構這類「X 是 Y」的事實下確定結論時；要把事實寫進 memory 時；要以它作為 SSH、部署、大範圍修改的前提時。
 
-- **承重核照常**：因果鏈（Section 7 hook · always-on）+ 事實求證（Section 11 · 文字層自律）+ push back（Section 11.5 · 文字層）。因果鏈是 hook 強制觸發，事實求證/push back 靠文字層 + 用戶質疑（Section 12）外部把關——皆不依賴 workflow。
-- **大型任務 fallback**：主 agent inline 走「設計 → 自審 → 實作 → 審查 → 測試 → 追溯」（即舊精簡流程），委派子 agent 用 Task 工具而非 workflow。
-- **PRD / 架構設計 fallback**：主 agent 用 AskUserQuestion 多角度探索 + 自行列多方案取捨。
-- **明確標記**：輸出「⚠️ workflow 不可用，走退化路徑」讓用戶知情。
+- **字面證據優先**：檔名、docstring、echo / print 字串是作者的自我聲明。只有間接關聯（例如「某 workflow 連到這個 IP」）→ 標「推論」
+- **反例檢查**：若主張為真應該看到什麼、為假應該看到什麼、實際看到什麼。三者寫出來再下結論
+- **共用值**：該 value 全域出現 ≥ 3 次 → 視為共用資源，不可推論為某方專屬
+- **弱證據**：不可輸出為事實、不可寫 memory，明說「仍不確定」
 
----
+用戶用「你確定嗎 / 依據是什麼 / 你怎麼證明」質疑時：立即停下，逐條列出字面證據、間接證據、反例結果，誤判就認，清理已污染的 memory。
 
-## 跨 Session 與學習
+## 4. Push Back 義務（只在這五種情境反對，其餘不多嘴）
 
-### ID 系統（簡化）
+1. 有更簡單的替代方案且不影響功能
+2. 命中 `.claudedocs/records/問題追蹤.md` 警惕模式段的已知模式
+3. 用戶要基於弱證據做後續決策
+4. 改動超出任務等級，應該升級
+5. 用戶斷言的事實前提無證據，且若為假代價非微小
 
-- **BC-x**（行為契約）：可驗證的行為預期，workflow schema 可直接強制。**保留為主軸。**
-- **R-x**（審查發現）：審查/檢核發現的問題，severity high→必修 / medium→用戶決策 / low→摘要。**保留。**
-- 其餘（EH-x/DR-x/IF-x/CR-x）按需 inline 使用，不強制獨立編號。
-- 完整格式見 `.claudedocs/standards/產出物格式.md`。
+格式：理由 + 替代方案 + 「若仍要執行請說 OK 用原方案」。用戶說 OK 即照做，不再爭。
 
-### 兩層教訓 + 升格/降級
+## 5. 教訓：讀與寫
 
-- **長期警惕模式**（問題追蹤.md）：跨閉環高頻模式，升格機制（≥ 3 次 + 用戶確認）寫入，設計前必讀。
-- **learning-log**（session 內）：per-任務失敗根因。
-- **升格**：同類根因 ≥ 3 次 → 候選 → AskUserQuestion 確認 → 寫入問題追蹤。
-- **降級**：長期警惕模式條目過去 n=10 任務無新證據 → 候選 → 確認 → 移到「條件式紀律」。
+- **設計前讀**（中型以上）：掃 `.claudedocs/records/問題追蹤.md` 的「警惕模式」段；專案有 `.claude-loop/learning-log.md` 時一併掃近期根因。設計末尾附一行「教訓查詢：命中 #X / 無」
+- **失敗時寫**：同一任務修了 3 次仍不過、或發現自己事實誤判時，追加一行到 `.claude-loop/learning-log.md`（根因 + 下次避免什麼；目錄不存在就建）
+- **升格**：同類根因累積 ≥ 3 次，用 AskUserQuestion 提議寫入問題追蹤的警惕模式段
 
-### 跨時間語義記憶（claude-mem · 可選）
+## 6. 子任務與停損
 
-`mcp__plugin_claude-mem_mcp-search__search` 可用時：設計前 `search` 查歷史決策 / 完成後 `save_memory` 存架構決策+教訓 / 斷點時記踩坑。存「為什麼」和「下次避免什麼」。
+- 子 agent 或 workflow 超時、空輸出：重試一次 → 主 agent 自做並標「降級自審」
+- 同一任務修了 3 次仍不過測試或審查：暫停，用 AskUserQuestion 讓用戶決定繼續、降級、或重新設計
+- `/dev-design` 內連續 2 輪對抗驗證 needs-attention：縮 scope、拆解、或放棄，不硬做完
 
----
+## 7. 改方法論本身時的硬規則
+
+修改本檔（CLAUDE.md）或 `.claudedocs/concepts/**`、`.claudedocs/standards/**` 時，必須先經一個沒有本對話 context 的審查者過一輪：用 Agent 工具開獨立子 agent（可指定不同 model），只給它改動的 diff 與原始需求，要它以挑戰式標準審查。不可用「我自己審過了」跳過。依據：問題追蹤 #007，單一來源自審漏看率 50-67%。
+
+日常寫程式與改 `.claudedocs/records/問題追蹤.md` 不觸發此規則。
+
+## 可用 workflow
+
+需 Claude Code v2.1.154+、付費方案、research preview。不可用時走 Section 1 表內的退化做法，Section 2-3 不受影響。
+
+| 指令 | 用途 |
+|------|------|
+| `/dev-prd` | 需求探索：多角度 → 候選 → 對抗挑戰 → PRD |
+| `/dev-design` | 架構設計：多方案 → skeptic → 評審 → 設計規格（含 BC-x） |
+| `/dev-review` | 品質 + 安全審查（與內建 `/code-review` 擇一） |
+| `/dev-verify` | 可選。設計 ↔ 實作 ↔ 測試逐條追溯；小專案用 coverage 工具即可 |
+
+產出寫入 `.claude-loop/artifacts/`。
+
+## ID 系統
+
+- **BC-x**：可驗證的行為契約，格式「在什麼條件下，系統做什麼，預期結果」。設計、實作、測試三處引用同一編號
+- **R-x**：審查發現。high 必修 / medium 用戶決策 / low 摘要
+- 其餘（EH / IF / CR）按需 inline，不強制獨立編號。格式見 `.claudedocs/standards/產出物格式.md`
 
 ## 工作規範
 
-- **Git**：驗證通過後 commit（message 帶摘要）| 風險修改前先 commit | 大功能用分支 | 斷點先 commit 標 `[斷點X]`
-- **品質**：跟專案慣例 | `[testable]` BC-x 100% 自動化測試覆蓋 | 外部輸入必驗證 | 敏感資料不寫死
-- **文檔**：放 `.claudedocs/`、白話文、修訂不新增、專業眼光不討好
-
-## 參考文檔
-
-> ⛔ 以下文檔**禁止主動讀取**，僅觸發條件成立時才讀。
-
-| 文檔 | 觸發條件 |
-|------|---------|
-| [產出物格式](.claudedocs/standards/產出物格式.md) | 需要 BC-x/R-x 模板、學習日誌、迷你追溯模板時 |
-| [Agent 素材庫](.claudedocs/agents/) | workflow 腳本引用 prompt 素材，或退化路徑委派時 |
-| [五階段流程（歷史）](.claudedocs/process/五階段閉環流程.md) | ⛔ 僅用戶要求理解 v6.x 五階對映時 |
-| [跨 Session 持久化](.claudedocs/process/跨Session持久化.md) | 模組 ≥ 3 且啟用持久化時 |
-| [介面契約與變更管理](.claudedocs/process/介面契約與變更管理.md) | 跨模組 API 依賴時 |
-
-## 📖 補充文檔
-
-`.claudedocs/` 含核心文檔、Agent 素材庫、語言指南。`.claude/workflows/` 含預製 workflow 腳本。閱讀順序見 [.claudedocs/README.md](.claudedocs/README.md)。
+- **Git**：除非用戶另有指示，測試通過後 commit；風險修改前先 commit；大功能用分支
+- **品質**：跟專案慣例；外部輸入必驗證；敏感資料不寫死
+- **文檔**：放 `.claudedocs/`，白話文，修訂不新增
+- **參考文檔**：僅需要時讀，導覽在 `.claudedocs/README.md`
 
 <!--
-closed-loop v7.1.2
+closed-loop v8.0.0
 
 部署說明：
-1. 複製 CLAUDE_TEMPLATE.md + .claudedocs/ 到專案根目錄，CLAUDE_TEMPLATE.md 改名為 CLAUDE.md
-2. 複製 .claude/workflows/*.js 到專案 .claude/workflows/（或 setup.sh 部署到 ~/.claude/workflows/）
-3. 替換所有 {{PLACEHOLDER}}：{{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}} {{LANGUAGE_SKILL_SECTION}}
-4. 部署 hooks（deploy-hooks.sh）：承重核的 always-on 觸發層
+1. 複製本檔 + .claudedocs/ 到專案根目錄，本檔改名為 CLAUDE.md
+2. 替換 {{PROJECT_NAME}} {{LANGUAGE}} {{FRAMEWORK}} {{TEST_COMMAND}} {{BUILD_COMMAND}}
+3. 部署 hooks（deploy-hooks.sh）：impact-analysis-guard + causal-chain-reset + incremental-lint
+4. workflow 腳本由 setup.sh 全域部署到 ~/.claude/workflows/
 
-版本：v7.1.2（2026-06-15）· dev:handoff 健壯性強化（外部評估報告驅動，三段 workflow + 對抗驗證收斂）：(1) path-resolution ENCODE 修底線編碼 `sed 's|[/_]|-|g'`（修含底線專案 fallback 落孤兒目錄）+ 移除「與系統編碼一致」假斷言 + load glob 存在性 fallback + home/root `pwd -P` 守衛。(2) 誠實校正 byte-equivalent 自述（5 references 中 4 個僅 namespace 等價、conflict-resolution.md 已分化故非 byte-equivalent；「TaskList 雙向同步」→「兩端對齊」）。(3) load 端 Step 6 重建前 freshness 按需 git 查證（分辨真未做 vs 已做未提交、防破壞性覆蓋；advisory+fail-open、零時戳解析、排除 .claude-loop churn）。(4) conflict 對疑似外部來源 deterministic cp 保守備份（閉合偽判內部跳過備份缺口）。(5) 新增 /compact↔/dev:handoff 時機表 + 耐久源澄清。tests 7/7 全綠 + 異源 cross-source review（C/D pass、零 blocker）。誠實邊界：本輪為「修漏+不說謊+一條小紀律」，非新增量化驗證的能力；「時戳新≠內容新」僅 1 筆實證、不升格承重核（待 ≥3 樣本）；wt:handoff 個人版同病須另同步。承重核三層架構不變、phase 規則不變。
-版本：v7.1.1（2026-06-03）· 修 v7.1.0 兩個 command shim 在原生 Windows 不註冊的 bug（對抗驗證 19-agent workflow 定位）：(1) overview.md frontmatter 單行純量 description 內含「NOT for: 」冒號+空格 → YAML 解析失敗 → command 被丟棄；改 `>-` 折疊塊。(2) 兩 shim 移除冗餘且值含冒號的顯式 `name:`（指令名應由路徑 commands/dev/ 合成，比照唯一在 Windows 正常的 init-claude）。tests 加 Check 5.6c（frontmatter YAML 合法性）+ name-absent 斷言守門回歸。誠實邊界：overview-YAML 為已證偽必修缺陷；name-colon 對 handoff 為「對齊 proven-working init-claude」的假設修法，未能在 mac 直接證實 Windows 因果；git pull 是否因 colon-path 刪除在 Windows abort 仍需實機確認。承重核三層架構不變、phase 規則不變。v7.1.0 原始變更詳見下方歷史。
-版本（v7.1.0）：dev:handoff / dev:overview 改 command 形式（原生 Windows 相容）：兩配套指令原為冒號目錄個人 skill（`~/.claude/skills/dev:handoff`、`dev:overview`），`:` 在 Windows NTFS 為非法字元 → repo 原生 Windows clone/checkout 失敗（僅 WSL/ext4 可）。比照 `/dev:init-claude` 的 command 機制改修：shim `commands/dev/handoff.md`+`overview.md`（冒號名由子資料夾 `dev/` 合成、磁碟零冒號）+ bundle（原 SKILL.md + references 原樣）移到 `~/.claude/dev-closed-loop/`（commands/skills 之外、不註冊不污染命名空間），shim 指向 bundle SKILL.md（內容 byte-equivalent 不變、保住與 wt:handoff 等價）。setup.sh 加舊 colon-skill 遷移清理 + 驗證。指令名/用法零變更（仍 `/dev:handoff`、`/dev:overview`）。純散佈結構 + 平台相容性變更：承重核三層架構（L1 hook / L2 workflow / L3 文字層）不變、phase 規則不變、無破壞性方法論變更。
-
-migration-notes (v6.5.0 → v7.0.0)
+migration-notes
+from-version: 7.x
 breaking-changes:
-  - 五階流水線（Phase 1-5）+ 精簡閉環雙軌 → workflow 編排（大型/PRD/架構設計）+ 輕量流程（中型）
-  - 8-agent 手工委派描述 → workflow agent prompt 素材庫
-  - 新增 Workflow 編排層 + Section 14 退化路徑
-  - ID 系統簡化（主軸 BC-x + R-x；EH-x/DR-x/IF-x/CR-x 降為按需 inline，不強制獨立編號）
-  - 配額管理策略移除（workflow budget 取代）
+  - 模板 344 → ~125 行：五階段與三層架構敘述、Karpathy 對映表、領域偵測表、升格降級機制、KPI、實驗校準段全部移除
+  - hook 6 → 3：刪 delegation-gate / prompt-understanding-guard / delegation-tracker / learning-log-checker；impact-analysis-guard 只擋既有原始碼檔
+  - .claudedocs 33 → 5 檔：agents / languages / process / examples / 方法論運作指標 / Agent使用指南 不再部署
+  - /dev:overview 移除
+  - placeholder 6 → 5：LANGUAGE_SKILL_SECTION 移除（語言指南不再部署）
 required-actions:
-  - 部署 .claude/workflows/*.js（dev-prd / dev-design / dev-review / dev-verify）
-  - 確認 always-on hook 仍部署（承重核 fail-safe 地基；注意：僅因果鏈/理解確認有 hook，事實求證是文字層）
-  - 確認所有 placeholder 正確替換（6 個：PROJECT_NAME/LANGUAGE/FRAMEWORK/TEST_COMMAND/BUILD_COMMAND/LANGUAGE_SKILL_SECTION）
-  - 下游 v6.x 升級：v7 的 /dev-* workflow 尚未進 init-claude upgrade 管線；升級後若 /dev-* 不可用屬預期，走 Section 14 退化路徑
-recommended-actions:
-  - 重讀 .claudedocs/concepts/閉環核心理念.md（v7.0.0 三層架構）
-  - workflow 不可用環境：確認退化路徑（Section 14）可運作
-anchors:
-  - name: workflow-layer
-    match: "## 14. 退化路徑"
-    position: before
+  - 用 /dev:init-claude upgrade 全替換 CLAUDE.md（v8 為整體重寫，不支援智能合併）
+  - 刪除專案內 .claudedocs/{agents,languages,process,examples}/ 與 concepts/方法論運作指標.md、standards/Agent使用指南.md（upgrade 會處理）
+  - 重跑 deploy-hooks.sh（自動清除舊 hook 與 settings.json 舊項目）
 -->

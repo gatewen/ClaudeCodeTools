@@ -1,118 +1,53 @@
 # 開發設計閉環
 
-## LLM 編碼的根本問題
+改程式之前先弄清楚兩件事：這一改會牽動誰，我相信的事實是不是真的。這個目錄放方法論的全部產物。
 
-[Andrej Karpathy 觀察](https://x.com/karpathy/status/2015883857489522876)：
+## 這是什麼（v8）
 
-> "The models make wrong assumptions on your behalf and just run along with them without checking. They overcomplicate code and APIs. They sometimes change/remove comments and code they don't sufficiently understand as side effects."
-
-本專案發現的進階問題：
-- **跨產出物矛盾**：設計說 5 種錯誤、實作 3 種、測試 2 種——傳統 Code Review 抓不到
-- **認知前提誤判**：基於單一線索就斷言為事實（GS 誤判事件，問題追蹤 #003-#005）
-
-本方法論是針對這兩層問題的解法：Karpathy 4 原則處理「行為紀律」，閉環方法論處理「跨產出物驗證」。
-
-## ⚖️ Trade-off 宣告
-
-本方法論偏向**正確性與可追溯性 > 速度**。微小任務不走閉環（直通保護），中型任務多花 ~30% 時間在設計/審查，大型任務多花 ~50-80%。換來的是跨產出物矛盾在 commit 前被攔截、認知誤判有三層防禦、失敗模式自動累積避開。**不適用於拋棄式 prototype 與緊急 hotfix。**
-
-## 這是什麼
-
-一套軟體開發的品質保證方法。核心概念是：每寫一段程式碼，都要經過五個角色的驗證（架構師 → 程序設計師 → 檢核師 → 測試師 → 自證師），最後由自證師確認所有產出物之間沒有矛盾，才算完成。
+一份約 125 行的 CLAUDE.md 模板加三支 hook。v3 到 v7 是五角色流水線，2026 年 5 月六場對照實驗證明它對程式正確性零增益，v8 砍到只剩實驗指出有價值的部分。為什麼、砍了什麼、留了什麼，寫在 `.claudedocs/concepts/閉環核心理念.md` 和 `design/15-v8-slim.md`。
 
 ## 文件結構
 
-這個目錄分成兩個部分：
-
-### 實作（拿去用的）
+### 拿去用的
 
 | 文件 | 說明 |
 |------|------|
-| `CLAUDE_TEMPLATE.md` | CLAUDE.md 自包含模板（含 Agent 調度規則、閘門、學習日誌、活動日誌、Task 可見性） |
-| `.claudedocs/` | 技術文檔（11 核心 + 9 agent prompt + 5 anti-pattern 範例），給人類閱讀 |
-| `.claudedocs/agents/` | Agent 專家庫（8 個專家 prompt），Phase 觸發時按需載入 |
-| `.claudedocs/languages/` | 語言 Skills（6 語言：TS/Py/Go/Rust/C#/Bash），部署時只複製偵測到的語言 |
-| `skill/init-claude.md` | Skill 源碼（由 setup.sh 部署到 `~/.claude/commands/dev/`） |
-| `commands/dev/handoff.md` + `command-refs/handoff/` | `/dev:handoff` command shim + bundle（跨 session 交接，等價 `wt:handoff`）。shim → `~/.claude/commands/dev/handoff.md`、bundle → `~/.claude/dev-closed-loop/handoff/`（冒號名靠子資料夾合成，磁碟零冒號 → Windows 相容） |
-| `commands/dev/overview.md` + `command-refs/overview/` | `/dev:overview` command shim + bundle（方法論視覺化介紹 HTML）。shim → `~/.claude/commands/dev/overview.md`、bundle → `~/.claude/dev-closed-loop/overview/` |
-| `hooks/` | 5 個 Hook 腳本（修改前因果鏈守衛、因果鏈重置、增量 lint、委派追蹤、學習日誌提醒）+ `_helpers.sh` 共用層 |
-| `deploy-hooks.sh` | 一鍵部署 Hook 系統（複製腳本 + 合併 settings.json + 驗證） |
-| `check-version.sh` | 版本檢查工具（快取/部署/遠端一次比完，輸出 key=value） |
+| `CLAUDE_TEMPLATE.md` | 核心產物。約 125 行，5 個 placeholder（PROJECT_NAME / LANGUAGE / FRAMEWORK / TEST_COMMAND / BUILD_COMMAND），末尾 HTML 註解含 `closed-loop vX.Y.Z` 版本 marker 與 migration-notes |
+| `.claudedocs/` | 部署到專案的 5 份人類閱讀文檔（README、核心理念、產出物格式、Git 工作流、問題追蹤） |
+| `skill/init-claude.md` | `/dev:init-claude` 源碼，由 setup.sh 替換 `{{REPO_PATH}}` 後部署到 `~/.claude/commands/dev/` |
+| `commands/dev/handoff.md` + `command-refs/handoff/` | `/dev:handoff` command shim + bundle（跨 session 交接）。shim → `~/.claude/commands/dev/handoff.md`、bundle → `~/.claude/dev-closed-loop/handoff/`。冒號名靠子資料夾合成，磁碟零冒號，Windows 相容 |
+| `hooks/` | 3 支 hook（`impact-analysis-guard` 修改前因果鏈守衛、`causal-chain-reset` 每輪重置、`incremental-lint` 增量 lint）+ `_helpers.sh`（project key、session key、jq → sed 的 JSON 欄位解析） |
+| `workflows/` | 4 支 workflow 腳本（dev-prd / dev-design / dev-review / dev-verify），setup.sh 部署到 `~/.claude/workflows/`。需 Claude Code v2.1.154+、付費方案、research preview |
+| `deploy-hooks.sh` | 一鍵部署 hook：複製、合併 settings.json（python3 → python → jq）、清除舊版 hook 殘留、驗證 |
+| `check-version.sh` | 版本檢查（快取 / 部署 / 遠端一次比完，輸出 key=value） |
+| `QUICKSTART.md` | 十分鐘上手 |
 
-### 設計歷史（了解這套方法怎麼來的）
+### 設計歷史
 
 | 文件 | 說明 |
 |------|------|
-| `design/01_原始構想.md` | 最初的閉環設計想法，包含 9 個角色、4 個層級 |
-| `design/02_深度分析.md` | 對原始構想的問題分析和改進方向 |
-| `design/03_落地路線圖.md` | 5 個 Phase 的執行計畫 |
-| `design/04_Skill設計規劃.md` | `dev:init-claude` Skill 的設計藍圖 |
-| `design/05-research-methodology-analysis.md` | 方法論比較分析 |
-| `design/06-analysis-deep-review.md` | 方法論深度檢討 |
-| `design/07-research-project-orchestrator.md` | 專案協調者研究 |
+| `design/01` 到 `04` | v3 原始構想、深度分析、落地路線圖、Skill 設計 |
+| `design/05` 到 `07` | 方法論比較、深度檢討、專案協調者研究 |
+| `design/08` 到 `11` | v6.x：Karpathy 整合、認知 KPI、對照範例、K-13 評估不做 |
+| `design/12` 到 `14` | v7 KPI 校準起點、自治化補強計劃與 review pack、codemap skill（冷凍） |
+| `design/15-v8-slim.md` | v8 評估結論與砍法 |
+| `design/history-v7/` | v7 以前部署過、v8 不再部署的檔案：8 個 agent prompt、6 語言指南、5 份流程文檔、5 個對照範例、KPI 指標、Agent 使用指南、v7.1.2 模板全文 |
 
 ## 使用方式
 
-最簡單的方法是裝好 Skill 後直接跑指令：
-
 ```
-/dev:init-claude          ← 部署閉環到專案
+/dev:init-claude          ← 部署到專案
 /dev:init-claude status   ← 查看部署狀態
-/dev:init-claude upgrade  ← 從 GitHub 下載最新版
+/dev:init-claude upgrade  ← 從 GitHub 下載最新版並升級
 ```
 
-安裝方式見根目錄 README。
-
-手動部署也可以：複製 `CLAUDE_TEMPLATE.md` + `.claudedocs/` 到專案根目錄，改名為 `CLAUDE.md`，替換所有 `{{PLACEHOLDER}}`。
-
-## .claudedocs 目錄結構
-
-```
-.claudedocs/
-├── README.md               ← 閱讀順序指南
-├── agents/                 ← Agent 專家庫（8 個專家 prompt）
-│   ├── README.md
-│   ├── requirements-analyst.md  ← 需求探索
-│   ├── architect.md             ← Phase 1 設計
-│   ├── design-reviewer.md       ← Phase 1b 設計審查
-│   ├── implementer.md           ← Phase 2 實作
-│   ├── code-reviewer.md         ← Phase 3 品質審查
-│   ├── security-reviewer.md     ← Phase 3 安全審查
-│   ├── tester.md                ← Phase 4 測試
-│   └── verifier.md              ← Phase 5 雙向追溯
-├── concepts/
-│   └── 閉環核心理念.md      ← 這套方法在幹嘛、為什麼有用
-├── process/
-│   ├── 五階段閉環流程.md     ← 實際怎麼跑，每個階段做什麼
-│   ├── 層級擴展.md          ← 從函式到模組到框架怎麼串
-│   ├── 跨Session持久化.md   ← 大型專案怎麼跨 Session 保存狀態
-│   └── 介面契約與變更管理.md  ← 跨模組 API 怎麼定義和追蹤變更
-├── standards/
-│   ├── Agent使用指南.md      ← 每個階段該用什麼工具
-│   ├── Git工作流.md          ← 閉環跟 Git 怎麼配合
-│   └── 產出物格式.md         ← 每個階段要交什麼東西
-├── records/
-│   └── 問題追蹤.md           ← 遇到問題怎麼記錄
-└── languages/               ← 語言特定指南
-    ├── README.md
-    ├── typescript.md
-    ├── python.md
-    ├── go.md
-    ├── rust.md
-    ├── csharp.md
-    └── bash.md
-```
-
-## 閱讀建議
-
-- 想**了解背景**：從 `design/01_原始構想` → `design/02_深度分析` → `design/03_落地路線圖` 讀
-- 想**直接用**：從 `CLAUDE_TEMPLATE.md` 開始，搭配 `.claudedocs/` 裡的文檔
-- 想**看閱讀順序**：看 `.claudedocs/README.md`
+安裝方式見根目錄 README。手動部署：複製 `CLAUDE_TEMPLATE.md` 與 `.claudedocs/` 到專案根目錄，模板改名 `CLAUDE.md`，替換 5 個 placeholder，跑 `deploy-hooks.sh`。
 
 ## 版本歷史
 
 | 版本 | 重點 |
 |------|------|
+| **v8.0.0** | **瘦身**（breaking · 2026-09-03）。依 2026-05 六場對照實驗（五階段對 correctness 零增益、成本最高 7 倍）與同年 5 月對抗評估，砍掉儀式只留承重部分。模板 344 → 134 行；`.claudedocs` 33 → 5 檔（agents / languages / process / examples / KPI / Agent使用指南 移至 `design/history-v7/`）；hook 6 → 3（刪 delegation-gate / prompt-understanding-guard / delegation-tracker / learning-log-checker）；`/dev:overview` 移除；placeholder 6 → 5。**因果鏈定為降級非砍**：紀律保留為 always-on 規則，hook 收窄為只擋既有原始碼檔首次修改、不擋新檔與 md / json / yaml、marker 依 session 隔離、新增 `causal-chain-reset.sh` 承接每輪重置、阻擋訊息改走 stderr（exit 2 時模型只看 stderr，舊版印在 stdout 模型看不到）。hook 與 deploy-hooks 不再依賴 python（jq → sed 後援；Windows Store 空殼 python 環境可部署）。dev-verify 改單 agent 追溯。init-claude 重寫（移除語言指南邏輯、awk migration parser、`grep -oP`）。tests 同步（cross-file 加 .claudedocs 反向檢查與版本 marker 一致性、setup-local 加 node --check 與 overview 殘留清理、deploy-hooks 加 4 舊 hook 遷移、exit-codes 加 sed 後援與 session 隔離）。模板草稿經獨立 context 子 agent 審查（3 high / 9 medium 全採納）；誠實邊界：同模型不同 context，非跨 LLM。理由與還原路徑見 `design/15-v8-slim.md` |
 | **v7.1.2** | **dev:handoff bundle 健壯性強化 + 誠實校正**（patch · 2026-06-15 · 外部評估報告驅動 · 三段 workflow 收斂）——UK_Wrok 的 `dev-handoff-評估報告.md`（27 findings / 25 valid）觸發，經「評估研讀 → 35-agent 強化路線圖 → 套用」+ 異源對抗驗證收斂為 PR1+PR2（5 檔 +67/−15）。**A(ENCODE-1)**：path-resolution cwd 編碼 `sed 's\|/\|-\|g'` → `'s\|[/_]\|-\|g'`（真實 auto-memory 目錄連 `_` 也轉 `-`，含底線專案 fallback 落孤兒目錄、實機 `ls` 證偽）+ 移除「與系統編碼一致」假斷言 + load glob 存在性 fallback。**B(誠實校正)**：dev 版 5 references 對 wt:handoff md5 全異、4/5 僅 namespace 等價、conflict-resolution.md 已分化（backup 守衛 + 單人單寫 section）→ SKILL.md + CLAUDE.md「byte-equivalent」自述改精確版、「TaskList 雙向同步」→「兩端對齊」（v7.0.1 改檔漏改自述的內部矛盾）。**E**：home/root 改 `pwd -P` 正規化守衛。**C(freshness 查證)**：load-mode Step 6 重建前先 `git status`/`git diff` 分辨「真未做 vs 已做未提交」、防破壞性覆蓋（advisory+fail-open、零時戳解析、排除 .claude-loop churn）——把已實證事故（2026-06-01 handoff 說「待寫」但 9 檔已完成）固化成 spec。**D(保守備份)**：conflict 對「marker 缺失但字串命中」之疑似外部來源 deterministic cp 先備份。**compact**：SKILL.md 加 /compact↔/dev:handoff 時機表（auto-compact 前先 handoff）+ load-mode 耐久源澄清。tests 7/7 全綠；異源 cross-source review C/D 皆 pass、零 blocker。**對抗駁回（不做）**：compact 獨立協議 / F3 SessionEnd-Stop staleness hook / 「時戳新≠內容新」升格承重核（僅 1 樣本，違反 ≥3 升格紀律）/ 並行競態告警——多為「把模型本就會做的事包成會狼來了的 ritual」。**誠實邊界**：本輪為修漏+不說謊+一條小紀律、非加能力；wt:handoff 個人版同病（同 sed bug）須另同步。連動：bundle 內容變更 → setup.sh 部署/驗證 + test-setup-local Check 5.5（檔數不變、已 PASS 證無回歸）。重裝：`git pull && bash setup.sh`（remote 用 curl 重跑）|
 | **v7.1.1** | **修 v7.1.0 command shim 在原生 Windows 不註冊**（patch · 2026-06-03）——v7.1.0 發佈後 Windows 實機：`/dev:` 只出 `/dev:init-claude`，handoff/overview 兩 shim 不顯示。19-agent 對抗驗證 workflow 定位兩確定缺陷：(1) **overview.md frontmatter 無效 YAML**：單行純量 description 內 `NOT for: ` 冒號+空格被當 mapping → ScannerError（line3 col501）→ command 被丟棄；改 `>-` 折疊塊（與 handoff 同款；單/雙引號因值內含字面 `"` 與 `'` 需逐個轉義易錯，verifier 實測排除）。(2) **兩 shim 移除冗餘顯式 `name:`**（值含冒號 `dev:handoff`/`dev:overview`）：指令名應由路徑 `commands/dev/` 合成，對齊唯一在 Windows 正常的 init-claude（無 frontmatter name）。tests 加 Check 5.6c（python `yaml.safe_load` 驗 shim frontmatter）+ name-absent grep 斷言守門。連動：CLAUDE.md 靜態規則新增「command shim frontmatter 規約（無顯式 name + description 用 `>-` 折疊塊）」。**誠實邊界**：overview-YAML 為已證偽必修缺陷；name-colon 對 handoff 為「對齊 proven-working init-claude」的假設修法，**未能在 mac 直接證實 Windows 因果**（mac 探針 zztest 帶 `name:` 冒號仍註冊，故「name 冒號→Windows 不註冊」的 Windows 專屬性未證）；**另一未排除可能：git pull 此 rename commit 因刪除 colon-path 在 Windows abort 致新檔未落地**，需實機確認（若重裝後 handoff 仍不出現即屬此類，非本 patch 涵蓋）。重裝：`git pull && bash setup.sh`（remote 用 curl 重跑）|
 | **v7.1.0** | **dev:handoff / dev:overview colon-skill → command 形式（原生 Windows 相容）**（minor · 2026-06-03）——**根因**：兩配套指令原為冒號目錄個人 skill（`~/.claude/skills/dev:handoff`、`dev:overview`），`:` 為 Windows NTFS 非法字元 → repo 原生 Windows clone/checkout 失敗（僅 WSL/ext4 可）。**修法**（比照 `/dev:init-claude` 的 command 機制，實證 30+ 個 `sc:*` + 本 session 探針驗證）：(1) shim `commands/dev/handoff.md`+`overview.md`——冒號名由子資料夾 `dev/` 合成，磁碟零冒號、原生 Windows 相容；(2) bundle（原 SKILL.md + references 原樣）移到 `~/.claude/dev-closed-loop/{handoff,overview}/`——在 commands/skills 之外，避免 `commands/` 下任何 `.md` 被註冊成指令污染命名空間（探針實證 `commands/dev/x/y.md` → `/dev:x:y`）；(3) shim 指向 bundle SKILL.md，bundle 內 references 靠相對路徑自解析、**內容 byte-equivalent 不變**（保住與 `wt:handoff` 等價）；(4) setup.sh 加遷移段移除舊 colon-skill 目錄 + 驗證已清。**指令名/用法零變更**（仍 `/dev:handoff`、`/dev:overview`）。連動：setup.sh 3.4-3.6 + 驗證陣列 / CLAUDE.md 倉庫結構+影響表+靜態規則 / test-setup-local.sh Check 5.5/5.6 + 遷移斷言 / 兩 README。**重裝**：setup.sh 部署（非 init-claude upgrade）→ `git pull && bash setup.sh` 或重跑 curl。誠實邊界：command 自動觸發=「註冊為 model-invocable + 觸發式 description」實證，非全新 session 實際 fire 觀測（風險低，fallback 為顯式 `/dev:handoff`）；`wt:handoff` 為個人 skill、不在本 repo、未一併修 |

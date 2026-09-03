@@ -1,6 +1,6 @@
 export const meta = {
   name: 'dev-review',
-  description: '品質+安全審查 workflow（取代閉環 Phase 3）：parallel 多視角審查（correctness/security/repro lens）→ 對抗驗證 findings。異源 skeptic 打破同源自審天花板（#007）。',
+  description: '品質 + 安全審查 workflow：correctness / security / 可測性三個視角並行審查 → 每條 high/medium finding 派獨立 skeptic 反駁 → 只留反駁失敗的。與內建 /code-review 擇一；處理外部輸入的專案建議用本 workflow（含安全視角）。',
   phases: [
     { title: 'Review' },
     { title: 'Verify' },
