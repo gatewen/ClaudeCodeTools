@@ -60,7 +60,7 @@ v8 的定位（2026-09-03）：v3 到 v7 的五角色流水線經六場對照實
 - `hooks/` 內容含反斜線時用 Write 工具寫，不用 Bash heredoc（本機 Bash 工具層會吃掉一層反斜線，見 2026-09-03 日誌）。含反斜線的測試輸入先寫成 fixture 檔再 `< fixture` 餵。
 - hook 腳本不得依賴 python；JSON 解析用 `_helpers.sh` 的 `json_field`。
 - `design/` 與 `design/history-v7/` 只增不改。
-- `tests/` 不被 setup.sh 部署。commit 前 `bash tests/run.sh`；本機 Windows 上 `test-setup-remote-sha.sh` 因 mock 下載失敗會 fail，屬已知環境問題。
+- `tests/` 不被 setup.sh 部署。commit 前 `bash tests/run.sh`，macOS 與 Windows Git Bash 皆應 7/7 通過（remote-sha 測試在有 `cygpath` 時自動把 file:// 轉成 Windows 路徑）。
 - 改方法論內容（模板、`.claudedocs/concepts`、`.claudedocs/standards`）前，用 Agent 工具開一個沒有本對話 context 的獨立子 agent 審一輪（問題追蹤 #007）。
 
 ## 每日日誌（maintainer 與 Claude 的協作脈絡）
