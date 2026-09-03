@@ -4,6 +4,7 @@
 
 - 所有互動使用繁體中文
 - 程式碼註解使用繁體中文
+- 對用戶說話用白話：先講結論再講理由；專有名詞在每則回覆內第一次出現時跟一句白話解釋；說明改動時講清楚「改了哪裡、為什麼、會影響誰」，Section 2 輸出行已講的哪裡與連動不重複，補白話的為什麼即可。白話不等於冗長，一句能講完就一句
 
 ## 專案配置
 
@@ -36,7 +37,8 @@
 - **語意**：簽章不變但行為變了嗎？有沒有快取失效、時序變化、狀態機影響？
 - **呼叫者 = 0**：先確認它是不是入口點、測試、獨立腳本、或用戶指定要刪的死碼。都不是才停下來找真正的執行路徑（可能有 inline 實作繞過），不可直接改
 - **同類掃描**：修改對象若是一組同類之一（N 張圖、N 個 handler），先掃同類有沒有同樣問題，報告後再改
-- **輸出**（2-4 行即可）：`⚠️ 改 {檔:函式}｜呼叫者 N 個：{要連動的 / 不需要的理由}｜風險：{…}｜連動清單：{…}`
+- **重複定義**：這個值、規則、清單、格式有沒有別處也寫了一份（文檔、測試、設定檔、另一種語言的實作）？有就列進連動清單一起改。漏掉的那一份就是下次的 bug
+- **輸出**（2-4 行即可）：`⚠️ 改 {檔:函式}｜呼叫者 N 個：{要連動的 / 不需要的理由}｜重複定義：{N 處 / 無}｜風險：{…}｜連動清單：{…}`
 
 Hook 是提醒，不是保證：
 
@@ -45,7 +47,22 @@ Hook 是提醒，不是保證：
 
 Dead code 立場：你的改動造成的 orphan → 刪；改動前就存在的 → 提及不動；用戶明確要求清理才動。
 
-## 3. 事實求證（斷言環境事實前）
+## 3. 架構與可維護性（新增或重構時）
+<!-- arch-rules -->
+
+目標只有一個：一年後別人看得懂、改得動。下面每條都是能檢查的動作，不是口號：
+
+- **先找再造**：新增函式、模組、設定前，先 grep 專案有沒有做同一件事的東西。有就沿用或擴充；要新開一套，說出舊的為什麼不能用
+- **一處一事**：一個檔只做一件事，一個改動只為一個理由。同一個概念的改動散在很多檔、而且不是同一份事實的副本在同步時，先停下來報告，可能是切法有問題
+- **依賴只往下**：新增 import 前確認被 import 的模組沒有反過來依賴你這層（grep 它有沒有 import 你）。底層不 import 上層，不繞圈
+- **不預留抽象**：只有一個用例就不抽介面、不開 plugin 點、不加「以後可能用到」的參數。第二個用例出現再抽
+- **留下為什麼**：不顯而易見的決定（為什麼不用 X、為什麼是這個順序）寫在註解或模組說明。「做了什麼」程式碼自己會說，不用寫
+- **單一事實來源（SSOT）**：同一個事實（常數、設定值、規則、格式、清單）只定義一處，其他地方 import、引用、或由它產生，不抄一份。做不到合併時依序退：一處產生另一處 → 加自動檢查逼兩處一致 → 靠人記得。退到最後一層時在 `.claudedocs/records/問題追蹤.md` 記一筆，那是技術債
+- **假共用煞車**：兩處內容要「必須同時變」才算同一個事實。只是現在剛好一樣（兩個 timeout 都是 30 秒但理由不同）不能合併，合了以後改一邊會誤傷另一邊
+
+這一節同時是 `/dev-design` 與 `/dev-review` 的審查標準。workflow 會來讀這一節，不另抄一份。
+
+## 4. 事實求證（斷言環境事實前）
 
 觸發：對 IP、服務身份、DB、部署結構這類「X 是 Y」的事實下確定結論時；要把事實寫進 memory 時；要以它作為 SSH、部署、大範圍修改的前提時。
 
@@ -56,7 +73,7 @@ Dead code 立場：你的改動造成的 orphan → 刪；改動前就存在的 
 
 用戶用「你確定嗎 / 依據是什麼 / 你怎麼證明」質疑時：立即停下，逐條列出字面證據、間接證據、反例結果，誤判就認，清理已污染的 memory。
 
-## 4. Push Back 義務（只在這五種情境反對，其餘不多嘴）
+## 5. Push Back 義務（只在這五種情境反對，其餘不多嘴）
 
 1. 有更簡單的替代方案且不影響功能
 2. 命中 `.claudedocs/records/問題追蹤.md` 警惕模式段的已知模式
@@ -66,19 +83,19 @@ Dead code 立場：你的改動造成的 orphan → 刪；改動前就存在的 
 
 格式：理由 + 替代方案 + 「若仍要執行請說 OK 用原方案」。用戶說 OK 即照做，不再爭。
 
-## 5. 教訓：讀與寫
+## 6. 教訓：讀與寫
 
 - **設計前讀**（中型以上）：掃 `.claudedocs/records/問題追蹤.md` 的「警惕模式」段；專案有 `.claude-loop/learning-log.md` 時一併掃近期根因。設計末尾附一行「教訓查詢：命中 #X / 無」
 - **失敗時寫**：同一任務修了 3 次仍不過、或發現自己事實誤判時，追加一行到 `.claude-loop/learning-log.md`（根因 + 下次避免什麼；目錄不存在就建）
 - **升格**：同類根因累積 ≥ 3 次，用 AskUserQuestion 提議寫入問題追蹤的警惕模式段
 
-## 6. 子任務與停損
+## 7. 子任務與停損
 
 - 子 agent 或 workflow 超時、空輸出：重試一次 → 主 agent 自做並標「降級自審」
 - 同一任務修了 3 次仍不過測試或審查：暫停，用 AskUserQuestion 讓用戶決定繼續、降級、或重新設計
 - `/dev-design` 內連續 2 輪對抗驗證 needs-attention：縮 scope、拆解、或放棄，不硬做完
 
-## 7. 改方法論本身時的硬規則
+## 8. 改方法論本身時的硬規則
 
 修改本檔（CLAUDE.md）或 `.claudedocs/concepts/**`、`.claudedocs/standards/**` 時，必須先經一個沒有本對話 context 的審查者過一輪：用 Agent 工具開獨立子 agent（可指定不同 model），只給它改動的 diff 與原始需求，要它以挑戰式標準審查。不可用「我自己審過了」跳過。依據：問題追蹤 #007，單一來源自審漏看率 50-67%。
 
@@ -86,16 +103,30 @@ Dead code 立場：你的改動造成的 orphan → 刪；改動前就存在的 
 
 ## 可用 workflow
 
-需 Claude Code v2.1.154+、付費方案、research preview。不可用時走 Section 1 表內的退化做法，Section 2-3 不受影響。
+需 Claude Code v2.1.154+、付費方案、research preview。不可用時走 Section 1 表內的退化做法，Section 2-4 不受影響。
 
 | 指令 | 用途 |
 |------|------|
 | `/dev-prd` | 需求探索：多角度 → 候選 → 對抗挑戰 → PRD |
-| `/dev-design` | 架構設計：多方案 → skeptic → 評審 → 設計規格（含 BC-x） |
-| `/dev-review` | 品質 + 安全審查（與內建 `/code-review` 擇一） |
+| `/dev-design` | 架構設計：多方案 → skeptic → 評審 → 設計規格（含 BC-x）。以 Section 3 為設計與審查標準 |
+| `/dev-review` | 品質 + 安全 + 可維護性審查（與內建 `/code-review` 擇一） |
 | `/dev-verify` | 可選。設計 ↔ 實作 ↔ 測試逐條追溯；小專案用 coverage 工具即可 |
 
 產出寫入 `.claude-loop/artifacts/`。
+
+### 模型分配（子 agent 與 workflow 內部用）
+
+不是每一步都值得用最強的模型。主對話用哪個模型由你 `/model` 決定，這裡管的是它派出去的子 agent：
+
+| 等級 | 工作性質 | 例子 | 指定 |
+|------|---------|------|------|
+| 低 | 機械型：輸入已結構化、規則已給定 | 枚舉清單、把結構化結果整理成報告 | `haiku`，effort `low` |
+| 中 | 實作與探索 | 規格清楚的實作、讀現況、正向追溯、程式碼審查找問題 | `sonnet` |
+| 高 | 判斷型 | 設計方案、對抗反駁、評審、安全審查、需求挑戰、最終規格與 PRD 收斂 | 不指定，繼承主對話 |
+
+- 判斷型不降級。程式碼審查「找問題」用中階、「反駁驗證」與安全審查用高階：找的人和驗的人不同模型，順便補上「換來源」
+- 用 Agent 工具自己開子 agent 時套同一張表：機械型給 `model: "haiku"`，判斷型不指定
+- 等級的定義只在這張表；哪個 agent 用哪一級寫在各 workflow 腳本裡，腳本是那部分的唯一出處
 
 ## ID 系統
 
@@ -111,7 +142,7 @@ Dead code 立場：你的改動造成的 orphan → 刪；改動前就存在的 
 - **參考文檔**：僅需要時讀，導覽在 `.claudedocs/README.md`
 
 <!--
-closed-loop v8.0.0
+closed-loop v8.1.0
 
 部署說明：
 1. 複製本檔 + .claudedocs/ 到專案根目錄，本檔改名為 CLAUDE.md
@@ -120,15 +151,14 @@ closed-loop v8.0.0
 4. workflow 腳本由 setup.sh 全域部署到 ~/.claude/workflows/
 
 migration-notes
-from-version: 7.x
-breaking-changes:
-  - 模板 344 → ~125 行：五階段與三層架構敘述、Karpathy 對映表、領域偵測表、升格降級機制、KPI、實驗校準段全部移除
-  - hook 6 → 3：刪 delegation-gate / prompt-understanding-guard / delegation-tracker / learning-log-checker；impact-analysis-guard 只擋既有原始碼檔
-  - .claudedocs 33 → 5 檔：agents / languages / process / examples / 方法論運作指標 / Agent使用指南 不再部署
-  - /dev:overview 移除
-  - placeholder 6 → 5：LANGUAGE_SKILL_SECTION 移除（語言指南不再部署）
+from-version: 8.0.x
+breaking-changes: 無
+changes:
+  - 語言設定加白話三條（先結論、術語附解釋、改動講三件事）
+  - Section 2 加「重複定義」檢查與輸出欄位
+  - 新增 Section 3 架構與可維護性（先找再造 / 一處一事 / 依賴只往下 / 不預留抽象 / 留下為什麼 / SSOT / 假共用煞車），節首 arch-rules 錨點供 workflow 定位；原 3-7 順延為 4-8
+  - 可用 workflow 加「模型分配」表；四支 workflow 依表指定 model / effort，dev-design 與 dev-review 改讀專案 CLAUDE.md Section 3 當審查標準
 required-actions:
-  - 用 /dev:init-claude upgrade 全替換 CLAUDE.md（v8 為整體重寫，不支援智能合併）
-  - 刪除專案內 .claudedocs/{agents,languages,process,examples}/ 與 concepts/方法論運作指標.md、standards/Agent使用指南.md（upgrade 會處理）
-  - 重跑 deploy-hooks.sh（自動清除舊 hook 與 settings.json 舊項目）
+  - /dev:init-claude upgrade 替換 CLAUDE.md（專案配置自動保留）
+  - 重跑 setup.sh（clone 者 git pull && bash setup.sh）以更新 ~/.claude/workflows/，upgrade 不會重裝 workflow
 -->

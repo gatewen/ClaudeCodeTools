@@ -68,7 +68,14 @@ fi
     echo "粗搜未找到引用「${STEM}」的檔案。請自行 grep 實際符號確認；呼叫者 = 0 時不可直接改，先找真正的執行路徑（可能有 inline 實作繞過）。"
   fi
   echo "請輸出 2-4 行："
-  echo "  ⚠️ 改 {檔:函式}｜呼叫者 N 個：{要連動的 / 不需要的理由}｜風險：{…}｜連動清單：{…}"
+  # 格式從專案 CLAUDE.md Section 2「輸出」行讀（SSOT：模板是唯一出處）；讀不到才用 fallback，改格式時兩邊同步。
+  # 本腳本 set -e + pipefail：grep 找不到會讓整個 pipeline 非零，必須 || true，否則守衛在這裡提前結束（exit 1 = 不阻擋）。
+  PROJECT_CLAUDE_MD="${CLAUDE_PROJECT_DIR:-.}/CLAUDE.md"
+  FORMAT_LINE=$( { grep -m1 -F '**輸出**' "$PROJECT_CLAUDE_MD" 2>/dev/null || true; } | sed -n 's/.*`\(⚠️[^`]*\)`.*/\1/p')
+  if [[ -z "$FORMAT_LINE" ]]; then
+    FORMAT_LINE="⚠️ 改 {檔:函式}｜呼叫者 N 個：{要連動的 / 不需要的理由}｜重複定義：{N 處 / 無}｜風險：{…}｜連動清單：{…}"
+  fi
+  echo "  ${FORMAT_LINE}"
   echo "同類掃描：若此檔是一組同類之一，先掃同類有無同樣問題。完成後重試即放行。"
 } >&2
 exit 2

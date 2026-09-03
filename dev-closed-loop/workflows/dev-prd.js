@@ -1,12 +1,22 @@
 export const meta = {
   name: 'dev-prd',
-  description: 'PRD / 需求探索 workflow：問題 / 用戶 / 範圍三個視角探索 → 精實與完整兩個候選 → 對抗挑戰砍無證據假設 → PRD 文件。事實求證確保需求前提不是憑空假設。',
+  description: 'PRD / 需求探索 workflow：問題 / 用戶 / 範圍三個視角探索 → 精實與完整兩個候選 → 對抗挑戰砍無證據假設 → PRD 文件。事實求證確保需求前提不是憑空假設。探索與塑形用中階模型，對抗挑戰與最終 PRD 收斂用高階。',
   phases: [
     { title: 'Discover' },
     { title: 'Shape' },
     { title: 'Challenge' },
     { title: 'Synthesize' },
   ],
+}
+
+// ── 模型等級 ──
+// 定義出處：CLAUDE_TEMPLATE.md「模型分配」表。workflow 腳本不能 import，所以四支各放一份相同常數，
+// tests/test-cross-file-consistency.sh 鎖四份相同且與模板一致（SSOT 第三層：合不成一處就用測試逼一致）。
+// low：機械型 · mid：實作與探索 · high：判斷型，不指定 model 即繼承主對話。
+const TIERS = {
+  low: { model: 'haiku', effort: 'low' },
+  mid: { model: 'sonnet' },
+  high: {},
 }
 
 const IDEA = typeof args === 'string' && args.trim()
@@ -47,7 +57,7 @@ const discoveries = (await parallel(angles.map(a => () =>
 （可 Read/Grep 專案現況輔助判斷）
 ${FACT_DISCIPLINE}
 回報：問題陳述 / 目標用戶 / JTBD / 假設（標證據級）/ 待答問題。`,
-    { label: `discover:${a.key}`, phase: 'Discover', schema: DISCOVERY_SCHEMA }
+    { label: `discover:${a.key}`, phase: 'Discover', schema: DISCOVERY_SCHEMA, ...TIERS.mid }
   )
 ))).filter(Boolean)
 const DISC = JSON.stringify(discoveries)
@@ -75,7 +85,7 @@ const candidates = (await parallel([
 探索結果：${DISC}
 產出功能候選：MVP 功能 / 延後項 / 可驗證成功標準 / 風險。
 ${FACT_DISCIPLINE}`,
-    { label: `shape:${c.key}`, phase: 'Shape', schema: FEATURE_SCHEMA }
+    { label: `shape:${c.key}`, phase: 'Shape', schema: FEATURE_SCHEMA, ...TIERS.mid }
   )
 ))).filter(Boolean)
 
@@ -90,7 +100,7 @@ const challenge = await agent(
 - 漏了哪個關鍵用戶/情境/失敗模式？
 探索：${DISC}
 候選：${JSON.stringify(candidates)}`,
-  { label: 'challenge-prd', phase: 'Challenge' }
+  { label: 'challenge-prd', phase: 'Challenge', ...TIERS.high }
 )
 
 // ============================================================
@@ -106,7 +116,7 @@ const prd = await agent(
 PRD 須含：問題陳述 / 目標用戶 + JTBD / MVP 功能（明確邊界）/ 延後項 / 可驗證成功標準 / 風險與假設（標證據級·待驗證的明確標出）/ 下一步建議（通常接 /dev-design）。
 ${FACT_DISCIPLINE}
 用 Write 落檔 + 回報 PRD 要點 + 仍待驗證的關鍵假設。`,
-  { label: 'synthesize-prd', phase: 'Synthesize' }
+  { label: 'synthesize-prd', phase: 'Synthesize', ...TIERS.high }
 )
 
 return { prd }

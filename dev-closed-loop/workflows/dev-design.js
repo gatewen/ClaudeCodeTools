@@ -1,6 +1,6 @@
 export const meta = {
   name: 'dev-design',
-  description: '架構設計 workflow：探索現況 → 三個視角各提一個方案 → 每案派 skeptic 找缺陷 → 評審團排名 → 綜合成設計規格（含 BC-x）。因果鏈與事實求證要求注入每個 agent。',
+  description: '架構設計 workflow：探索現況 → 三個視角各提一個方案 → 每案派 skeptic 找缺陷 → 評審團排名 → 綜合成設計規格（含 BC-x）。因果鏈與事實求證要求注入每個 agent；架構標準讀專案 CLAUDE.md 的 arch-rules 一節；explore 用中階模型，設計 / skeptic / 評審用高階。',
   phases: [
     { title: 'Explore' },
     { title: 'Propose' },
@@ -8,6 +8,23 @@ export const meta = {
     { title: 'Synthesize' },
   ],
 }
+
+// ── 模型等級 ──
+// 定義出處：CLAUDE_TEMPLATE.md「模型分配」表。workflow 腳本不能 import，所以四支各放一份相同常數，
+// tests/test-cross-file-consistency.sh 鎖四份相同且與模板一致（SSOT 第三層：合不成一處就用測試逼一致）。
+// low：機械型 · mid：實作與探索 · high：判斷型，不指定 model 即繼承主對話。
+const TIERS = {
+  low: { model: 'haiku', effort: 'low' },
+  mid: { model: 'sonnet' },
+  high: {},
+}
+
+// ── 架構標準來源 ──
+// SSOT：規則本文只在專案 CLAUDE.md（arch-rules 錨點那一節），這裡只指路，不抄一份。括號內是條目名索引，測試鎖它與模板一致。
+const ARCH_RULES = `
+【架構與可維護性標準】用 Read 讀目前工作目錄（專案根）下的 CLAUDE.md，找到 <!-- arch-rules --> 標記所在的那一節，逐條當標準（先找再造 / 一處一事 / 依賴只往下 / 不預留抽象 / 留下為什麼 / 單一事實來源 / 假共用煞車）。
+找不到該節就在回報開頭明寫「專案未定義架構規則，以下用一般原則」，不要假裝有。
+`
 
 // args: 需求描述字串（由 /dev-design <需求> 傳入），或 undefined（則用 .claude-loop/artifacts 既有需求）
 const REQUIREMENT = typeof args === 'string' && args.trim()
@@ -44,7 +61,7 @@ const ctx = await agent(
 探索專案現況（Read/Grep/Glob）：相關既有模組、架構模式、約束、需求未指定的 unknowns。
 ${LOADBEARING}
 回報：既有架構摘要 / 約束 / unknowns / 你做的事實斷言及證據級。`,
-  { label: 'explore', phase: 'Explore', schema: CONTEXT_SCHEMA }
+  { label: 'explore', phase: 'Explore', schema: CONTEXT_SCHEMA, ...TIERS.mid }
 )
 const CTX = JSON.stringify(ctx)
 
@@ -75,8 +92,9 @@ const proposals = (await parallel(angles.map(a => () =>
 需求：「${REQUIREMENT}」
 探索結果：${CTX}
 產出一個完整架構方案：核心取向 / 模組與職責 / BC-x 行為契約（≥ 2，可驗證）/ 取捨與風險 / 因果鏈觸及的既有連動點。
-${LOADBEARING}`,
-    { label: `propose:${a.key}`, phase: 'Propose', schema: DESIGN_SCHEMA }
+${LOADBEARING}
+${ARCH_RULES}`,
+    { label: `propose:${a.key}`, phase: 'Propose', schema: DESIGN_SCHEMA, ...TIERS.high }
   )
 ))).filter(Boolean)
 
@@ -99,8 +117,9 @@ const critiques = (await parallel(proposals.map((p, i) => () =>
     `你是設計缺陷 skeptic。盡力找出以下架構方案的致命缺陷（過度設計 / 遺漏邊界 / 因果鏈漏接 / 事實前提錯誤 / 可維護性陷阱）。預設懷疑，找不到才說沒有。
 方案：${JSON.stringify(p)}
 需求：「${REQUIREMENT}」
-探索結果：${CTX}`,
-    { label: `refute:${angles[i]?.key || i}`, phase: 'Adversarial' }
+探索結果：${CTX}
+${ARCH_RULES}`,
+    { label: `refute:${angles[i]?.key || i}`, phase: 'Adversarial', ...TIERS.high }
   )
 ))).filter(Boolean)
 
@@ -108,7 +127,7 @@ const judgment = await agent(
   `你是設計評審團。根據 ${proposals.length} 個方案 + 各自的 skeptic 批評，評分排名、列出跨方案的致命缺陷、推薦基底方案並指出該嫁接哪些亮點。
 方案：${JSON.stringify(proposals)}
 批評：${JSON.stringify(critiques)}`,
-  { label: 'judge-panel', phase: 'Adversarial', schema: JUDGE_SCHEMA }
+  { label: 'judge-panel', phase: 'Adversarial', schema: JUDGE_SCHEMA, ...TIERS.high }
 )
 
 // ============================================================
@@ -124,8 +143,9 @@ const spec = await agent(
 
 設計規格須含：目標 / 模組與職責 / BC-x 行為契約（可驗證，編號）/ 因果鏈（觸及的既有連動點 + 影響決策）/ 取捨與風險 / 學習查詢結果（若有讀到 .claudedocs/records/問題追蹤.md 長期警惕模式）。
 ${LOADBEARING}
+${ARCH_RULES}
 用 Write 把規格寫入 .claude-loop/artifacts/P1-design-spec.md（目錄不存在先建），並在回報摘要設計要點 + 殘餘風險。`,
-  { label: 'synthesize-spec', phase: 'Synthesize' }
+  { label: 'synthesize-spec', phase: 'Synthesize', ...TIERS.high }
 )
 
 return { spec, judgment }

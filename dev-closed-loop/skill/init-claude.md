@@ -216,7 +216,7 @@ workflow 腳本（`/dev-prd` `/dev-design` `/dev-review` `/dev-verify`）由 set
    🔄 v{DEPLOYED} → v{CACHE}：v8 為整體重寫
 
    破壞性變更：
-   - CLAUDE.md 344 → ~130 行，五階段 / Karpathy 對映表 / 領域偵測 / 升格降級 / KPI 全部移除
+   - CLAUDE.md 344 行 → 不到 200 行，五階段 / Karpathy 對映表 / 領域偵測 / 升格降級 / KPI 全部移除
    - hook 6 → 3（刪 delegation-gate / prompt-understanding-guard / delegation-tracker / learning-log-checker）
    - .claudedocs 33 → 5 檔（agents / languages / process / examples / KPI / Agent使用指南 不再部署）
    - placeholder 6 → 5（LANGUAGE_SKILL_SECTION 移除）
@@ -301,7 +301,7 @@ bash {{REPO_PATH}}/dev-closed-loop/deploy-hooks.sh {{REPO_PATH}}
 ```
 ✅ 開發設計閉環 v8 已部署完成
 
-- CLAUDE.md（約 130 行，每個 session 自動載入）
+- CLAUDE.md（不到 200 行，每個 session 自動載入）
 - .claudedocs/（5 份文檔）
 - Hook：impact-analysis-guard（修改前因果鏈守衛）· causal-chain-reset（每輪重置）· incremental-lint（增量 lint）
 [升級時] - 已清除 v7 殘留：N 個文檔目錄、N 支舊 hook

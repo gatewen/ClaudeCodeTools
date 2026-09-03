@@ -8,16 +8,19 @@
 
 ## 這是什麼
 
-一份約 125 行的 CLAUDE.md 模板，加三支 hook，加一個一鍵部署指令。裝進專案後，Claude Code 每個 session 會照這份規則做事：
+一份不到 200 行的 CLAUDE.md 模板，加三支 hook，加一個一鍵部署指令。裝進專案後，Claude Code 每個 session 會照這份規則做事：
 
 1. **先判任務大小再動手。** 改一行直接改；新模組先出設計、再實作、再逐條確認每條行為契約有實作有測試。
-2. **改既有程式碼前先寫出誰會被牽動。** hook 會在每輪指令內第一次改某個原始碼檔時擋一下，要 Claude 先寫 2-4 行因果鏈分析再重試。你在它動手前就看得到推理。
-3. **斷言環境事實前先查證據。** 字面證據、反例檢查、共用值三條，來自一次真實的誤判事故。
-4. **只在五種情境反對你**，其他時候照做不多嘴。
+2. **改既有程式碼前先寫出誰會被牽動。** hook 會在每輪指令內第一次改某個原始碼檔時擋一下，要 Claude 先寫 2-4 行因果鏈分析再重試。你在它動手前就看得到推理。分析裡多一欄「重複定義」：這個值還有幾份副本，一起改。
+3. **新增或重構時守七條架構規則。** 先找再造、一處一事、依賴只往下、不預留抽象、留下為什麼、單一事實來源、假共用煞車。同一節也是 `/dev-design` 與 `/dev-review` 的審查標準。
+4. **斷言環境事實前先查證據。** 字面證據、反例檢查、共用值三條，來自一次真實的誤判事故。
+5. **只在五種情境反對你**，其他時候照做不多嘴。
+6. **對你說話用白話。** 先結論再理由，術語附一句解釋，說改動講清楚「改了哪裡、為什麼、影響誰」。
+7. **派子 agent 時看難度選模型。** 機械活給低階、實作與探索給中階、設計與審查判斷不降級。
 
 ## 它不是什麼
 
-v3 到 v7 的版本是一套五角色流水線（架構師、程序設計師、檢核師、測試師、自證師）。2026 年 5 月六場對照實驗顯示，對前沿模型而言這套流水線對程式正確性零增益，成本最高是裸寫的 7 倍。v8 把它砍掉，只留實驗指出有價值的部分：把契約寫下來、換一個沒有原推理脈絡的視角審一次、以及上面四條紀律。細節在 [dev-closed-loop/.claudedocs/concepts/閉環核心理念.md](dev-closed-loop/.claudedocs/concepts/閉環核心理念.md)。
+v3 到 v7 的版本是一套五角色流水線（架構師、程序設計師、檢核師、測試師、自證師）。2026 年 5 月六場對照實驗顯示，對前沿模型而言這套流水線對程式正確性零增益，成本最高是裸寫的 7 倍。v8 把它砍掉，只留實驗指出有價值的部分：把契約寫下來、換一個沒有原推理脈絡的視角審一次、以及上面那些紀律。細節在 [dev-closed-loop/.claudedocs/concepts/閉環核心理念.md](dev-closed-loop/.claudedocs/concepts/閉環核心理念.md)。
 
 ## 安裝
 
@@ -95,7 +98,7 @@ ClaudeCodeTools/
 ├── setup.sh                       ← 安裝腳本（curl 遠端 + 本地雙模式）
 ├── tests/                         ← maintainer 用的 smoke test，不部署
 └── dev-closed-loop/
-    ├── CLAUDE_TEMPLATE.md         ← 核心產物，~125 行，5 個 placeholder
+    ├── CLAUDE_TEMPLATE.md         ← 核心產物，不到 200 行，5 個 placeholder
     ├── QUICKSTART.md
     ├── skill/init-claude.md       ← /dev:init-claude 源碼
     ├── commands/dev/handoff.md    ← /dev:handoff shim
@@ -108,16 +111,17 @@ ClaudeCodeTools/
     │   ├── concepts/閉環核心理念.md
     │   ├── standards/產出物格式.md · Git工作流.md
     │   └── records/問題追蹤.md
-    └── design/                    ← 設計歷史 01-15；history-v7/ 放 v7 以前部署過的文檔
+    └── design/                    ← 設計歷史 01-16；history-v7/ 放 v7 以前部署過的文檔
 ```
 
 ## 版本
 
-目前 **v8.0.0**（2026-09-03）。完整版本歷史在 [dev-closed-loop/README.md](dev-closed-loop/README.md#版本歷史)。
+目前 **v8.1.0**（2026-09-03）。完整版本歷史在 [dev-closed-loop/README.md](dev-closed-loop/README.md#版本歷史)。
 
 | 版本 | 重點 |
 |------|------|
-| **v8.0.0** | 瘦身：模板 344 → 134 行、部署包 33 → 5 檔、hook 6 → 3 支、移除 `/dev:overview`。因果鏈 hook 收窄為只擋既有原始碼檔、訊息改走 stderr、不依賴 python。理由見 `design/15-v8-slim.md` |
+| **v8.1.0** | 補四項：白話互動、架構與可維護性（含 SSOT 與「重複定義」檢查）、workflow 依難度分三級模型、dev-design / dev-review 改讀專案 CLAUDE.md 架構規則。模板 134 → 164 行。理由見 `design/16-v8.1-additions.md` |
+| v8.0.0 | 瘦身：模板 344 → 134 行、部署包 33 → 5 檔、hook 6 → 3 支、移除 `/dev:overview`。因果鏈 hook 收窄為只擋既有原始碼檔、訊息改走 stderr、不依賴 python。理由見 `design/15-v8-slim.md` |
 | v7.x | workflow-first 重構、Windows 相容、handoff 強化 |
 | v6.x | Karpathy 行為哲學、認知驗證、KPI、對照範例 |
 | v5.x | 五階段閉環、hook 系統、agent 專家庫、自動更新 |

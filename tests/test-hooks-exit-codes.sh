@@ -155,6 +155,43 @@ test_hook_exit "impact-analysis-guard.sh" "2" \
     "{\"session_id\":\"sessB\",\"tool_input\":{\"file_path\":\"${SRC_FILE}\"}}" \
     "sed 後援 reset 後 sessB 同檔 → exit 2" || FAIL=$((FAIL+1))
 
+# ── 阻擋訊息的格式行：從 CLAUDE_PROJECT_DIR/CLAUDE.md 讀，讀不到用 fallback。
+#    三種情境都必須 exit 2 且 stderr 含格式行（v8.1 審查 DR-1：曾因 set -e 在這裡提前結束，甚至 exit 1 讓守衛失效）──
+echo ""
+echo "--- 格式行來源（專案 CLAUDE.md → fallback）---"
+FMT_INPUT="{\"session_id\":\"fmt\",\"tool_input\":{\"file_path\":\"${SRC_FILE}\"}}"
+check_guard_stderr() {
+    local dir="$1" expect="$2" msg="$3" rc=0 err
+    reset_markers
+    err=$(echo "$FMT_INPUT" | CLAUDE_PROJECT_DIR="$dir" bash "${HOOKS_DIR}/impact-analysis-guard.sh" 2>&1 >/dev/null) || rc=$?
+    if [ "$rc" = "2" ] && printf '%s' "$err" | grep -qF -- "$expect"; then
+        echo "  ✅ ${msg} (exit=2，stderr 含格式行)"
+        return 0
+    fi
+    echo "  ❌ ${msg}: exit=${rc}，stderr 含「${expect}」的行數：$(printf '%s' "$err" | grep -cF -- "$expect")"
+    return 1
+}
+
+NO_CLAUDE_DIR=$(make_tmpdir)
+check_guard_stderr "$NO_CLAUDE_DIR" "⚠️ 改 {檔:函式}" \
+    "無 CLAUDE.md → exit 2 且印 fallback 格式行" || FAIL=$((FAIL+1))
+
+BARE_CLAUDE_DIR=$(make_tmpdir)
+printf '# proj\n\n自訂規則，沒有輸出行\n' > "$BARE_CLAUDE_DIR/CLAUDE.md"
+check_guard_stderr "$BARE_CLAUDE_DIR" "重複定義：{N 處 / 無}" \
+    "CLAUDE.md 無「輸出」行 → exit 2 且印 fallback（含重複定義欄）" || FAIL=$((FAIL+1))
+
+TPL_CLAUDE_DIR=$(make_tmpdir)
+cp "$REPO_ROOT/dev-closed-loop/CLAUDE_TEMPLATE.md" "$TPL_CLAUDE_DIR/CLAUDE.md"
+TPL_FMT=$(grep -m1 -F '**輸出**' "$TPL_CLAUDE_DIR/CLAUDE.md" | sed -n 's/.*`\(⚠️[^`]*\)`.*/\1/p')
+if [ -z "$TPL_FMT" ]; then
+    echo "  ❌ 從模板抽不出格式行（hook 的 sed 規則與模板「輸出」行不合）"
+    FAIL=$((FAIL+1))
+else
+    check_guard_stderr "$TPL_CLAUDE_DIR" "$TPL_FMT" \
+        "CLAUDE.md = 模板 → exit 2 且印模板內的格式行" || FAIL=$((FAIL+1))
+fi
+
 # ════════════════════════════════════════════
 # incremental-lint.sh
 # ════════════════════════════════════════════
